@@ -16,20 +16,21 @@ function Login({ onLoginSuccess }) {
         },
         body: JSON.stringify({ username, password }),
       });
-
+  
       const data = await response.json();
-
+      console.log("DEBUG: API response:", data); // Debug API response
+  
       if (response.ok) {
-        onLoginSuccess(username);
+        onLoginSuccess(data.role); // Truyền role từ API thay vì username
       } else {
-        alert(data.message || "Đăng nhập thất bại!");
+        alert(data.error || "Đăng nhập thất bại!");
       }
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);
       alert("Có lỗi xảy ra, vui lòng thử lại!");
     }
   };
-
+   
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <div

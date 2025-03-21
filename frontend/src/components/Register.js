@@ -6,7 +6,7 @@ function Register() {
     full_name: "",
     email: "",
     phone: "",
-    user_name: "",
+    username: "",
     password: "",
     confirmPassword: "",
     birth_date: "",
@@ -46,7 +46,8 @@ function Register() {
       formDataToSend.append("user_type", formData.user_type);
       formDataToSend.append("address", formData.address);
       formDataToSend.append("password", formData.password);
-
+      formDataToSend.append("username", formData.username);
+      formDataToSend.append("email", formData.email);
       if (formData.avatar) {
           formDataToSend.append("avatar", formData.avatar);  // Thêm file ảnh nếu có
       }
@@ -88,12 +89,12 @@ function Register() {
               <input type="password" name="password" placeholder="Mật khẩu" required onChange={handleChange} style={ inputStyle} />
             </div>
             <div style={sectionStyle}>
-              <input type="text" name="phone" placeholder="Số điện thoại" required onChange={handleChange} style={inputStyle} />
+              <input type="text" name="phone" placeholder="Số điện thoại" onChange={handleChange} style={inputStyle} />
               <select name="gender" value={formData.gender} onChange={handleChange} style={selectStyle}>
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
               </select>
-              <input type="text" name="user_name" placeholder="Tên đăng nhập" required onChange={handleChange} style={inputStyle} />
+              <input type="text" name="username" placeholder="Tên đăng nhập" required onChange={handleChange} style={inputStyle} />
               <input type="text" name="address" placeholder="Địa chỉ" onChange={handleChange} style={inputStyle} />
               <input type="password" name="confirmPassword" placeholder="Xác nhận mật khẩu" required onChange={handleChange} style={ inputStyle} />
             </div>

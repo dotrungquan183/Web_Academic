@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 import datetime
 
 class Course(models.Model):
@@ -17,16 +18,17 @@ class OTP(models.Model):
         return (datetime.datetime.now(datetime.timezone.utc) - self.created_at).seconds < 300
 
 class UserInformation(models.Model):  
-    id = models.BigAutoField(primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, db_column="user_id", primary_key=True)
     full_name = models.CharField(max_length=255)
-    password = models.CharField(max_length=255, null=True, blank=True)
-    phone = models.CharField(max_length=20, unique=True)
+    #username = models.CharField(max_length=255, unique=True, null=False, blank=False)  # Bắt buộc, không trùng
+    #password = models.CharField(max_length=255, null=False, blank=False)  # Bắt buộc nhập
+    #email = models.CharField(max_length=255, unique=True)  # Bắt buộc, không trùng
+    phone = models.CharField(max_length=20, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=[("Nam", "Nam"), ("Nữ", "Nữ")])
     user_type = models.CharField(max_length=50)
-    address = models.TextField()
+    address = models.TextField(max_length=255, null=True, blank=True)
     avatar = models.CharField(max_length=255, null=True, blank=True)
-
     class Meta:
         db_table = "user_info"
 

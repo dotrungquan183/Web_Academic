@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect} from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Menu from "./components/normal_users/Menu";
 import Login from "./components/Login";
-import ForgotPassword from "./components/Forgotpassword"; // Import ForgotPassword
+import ForgotPassword from "./components/Forgotpassword";
 import AdminTab from "./components/admin/AdminTab";
 import HomeTab from "./components/normal_users/Tabs/HomeTab";
 import Home1 from "./components/normal_users/Tabs/Home/Home1";
@@ -28,17 +28,36 @@ function NormalUserLayout({ children }) {
 function LoginHandler({ setUserRole }) {
   const navigate = useNavigate();
 
-  const handleLoginSuccess = (username) => {
-    if (username.startsWith("ad")) {
-      setUserRole("admin");
-      navigate("/admin", { replace: true });
-    } else {
-      setUserRole("user");
-      navigate("/", { replace: true });
+  useEffect(() => {
+    const isPasswordReset = localStorage.getItem("passwordReset") === "true";
+    if (isPasswordReset) {
+      localStorage.removeItem("passwordReset");
+      navigate("/", { replace: true }); // Ngăn người dùng quay lại ForgotPassword
     }
+  }, [navigate]);
+
+  const handleLoginSuccess = (role) => {
+    console.log("DEBUG: Role nhận từ API:", role);
+    if (!role) return;
+
+    setUserRole(role);
+    localStorage.setItem("userRole", role);
+
+    navigate(role === "admin" ? "/admin" : "/", { replace: true });
   };
 
   return <Login onLoginSuccess={handleLoginSuccess} />;
+}
+
+function ForgotPasswordHandler() {
+
+  const handlePasswordResetSuccess = () => {
+    localStorage.setItem("passwordReset", "true");
+    
+    window.history.replaceState(null, "", "/login");
+  };
+
+  return <ForgotPassword onResetSuccess={handlePasswordResetSuccess} />;
 }
 
 function App() {
@@ -47,14 +66,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <NormalUserLayout>
-              <HomeTab />
-            </NormalUserLayout>
-          }
-        />
+        <Route path="/" element={<NormalUserLayout><HomeTab /></NormalUserLayout>} />
         <Route path="/home1" element={<NormalUserLayout><Home1 /></NormalUserLayout>} />
         <Route path="/home2" element={<NormalUserLayout><Home2 /></NormalUserLayout>} />
         <Route path="/home3" element={<NormalUserLayout><Home3 /></NormalUserLayout>} />
@@ -65,14 +77,14 @@ function App() {
         <Route path="/parents_corner" element={<NormalUserLayout><ParentsCornerTab /></NormalUserLayout>} />
         <Route path="/contact" element={<NormalUserLayout><ContactTab /></NormalUserLayout>} />
 
-        {/* Route đăng nhập */}
+        {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />
-        {/* Route đăng ký */}
+        {/* Đăng ký */}
         <Route path="/register" element={<Register />} />
-        {/* Route Quên mật khẩu */}
-        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        {/* Quên mật khẩu */}
+        <Route path="/forgotpassword" element={<ForgotPasswordHandler />} />
 
-        {/* Route Admin */}
+        {/* Admin */}
         <Route
           path="/admin"
           element={userRole === "admin" ? <AdminTab /> : <LoginHandler setUserRole={setUserRole} />}

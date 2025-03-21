@@ -74,7 +74,8 @@ function ForgotPassword() {
       if (response.ok) {
         setMessage("Mật khẩu đã được đặt lại thành công!");
         setStep(4);
-      } else {
+  
+       } else {
         setMessage(data.error);
       }
     } catch (error) {

@@ -95,14 +95,6 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'webstudy_db',
-        'USER': 'root',
-        'PASSWORD': 'dotrungquan183@',
-        'HOST': 'localhost',
-        'PORT': '3306',
-    },
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'webstudy_db_info', 
         'USER': 'root',
         'PASSWORD': 'dotrungquan183@', 
