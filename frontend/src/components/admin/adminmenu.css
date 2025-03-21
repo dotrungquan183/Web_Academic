@@ -1,0 +1,294 @@
+.nav {
+    background-color: #333;
+    padding: 10px 0;
+    text-align: none;
+    margin-left: -5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .nav li {
+    display: inline-block;
+    position: relative;
+    color: #fff;
+    padding: 6px 45px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: color 0.3s ease;
+  }
+  
+  /* ✅ Đảm bảo chữ menu là trắng */
+  .nav li a {
+    color: white !important; 
+    text-decoration: none; /* Xóa gạch chân */
+    font-weight: none;
+  }
+  
+  /* ✅ Hover vào menu chính */
+  .nav li:hover > a {
+    color: #3399ff !important;
+  }
+  
+  /* 🔹 Submenu */
+  .submenu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 2%; /* Căn giữa theo chiều ngang */
+    transform: translateX(-2%); /* Dịch chuyển lại 50% kích thước submenu để căn giữa */
+    background-color: #333;
+    list-style: none;
+    min-width: 100px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    padding: 0;
+    margin: 0;
+    border-radius: 3px;
+    z-index: 1000;
+    text-align: center; /* Căn chữ submenu vào giữa */
+  }
+  
+  /* ✅ Hiển thị submenu khi hover vào chính LI */
+  .nav li {
+    position: relative;
+  }
+  
+  /* ✅ Khi hover vào LI, submenu sẽ xuất hiện ngay vị trí của chữ */
+  .nav li:hover .submenu {
+    display: block;
+  }
+  
+  /* ✅ Căn chữ submenu vào giữa */
+  .submenu li {
+    padding: 12px 20px;
+    transition: background-color 0.3s ease;
+  }
+  
+  /* ✅ Hover vào submenu */
+  .submenu li:hover {
+    background-color: #333;
+  }
+  
+  /* Table */
+  table {
+    width: 50%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #003366;
+    color: white;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  tr:hover {
+    background-color: #ddd;
+  }
+  
+  /* ✅ Nút đăng nhập */
+  .login-button {
+    padding: 10px 15px;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: bold;
+    text-decoration: none;
+    position: absolute;
+    left: -320px; /* Điều chỉnh vị trí sang trái */
+    top: 20px; /* Giữ nguyên chiều dọc */
+  }
+  
+  /* 🔹 Đăng ký & đăng nhập */
+  .auth-buttons {
+    display: flex;
+    gap: 10px;
+    position: absolute;
+    right: 30px;
+    top: 0;
+  }
+  
+  /* 🏷️ Icon sinh viên */
+  .header-icon {
+    margin-right: 10px;
+    color: #003366;
+    font-size: 24px;
+  }
+  
+  /* ✅ Nút đăng ký */
+  .register-button {
+    padding: 10px 15px;
+    background-color: #003366; 
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: bold;
+    text-decoration: none;
+    position: absolute;
+    left: -175px; /* Điều chỉnh vị trí sang trái */
+    top: 20px; /* Giữ nguyên chiều dọc */
+  }
+  
+  .register-button:hover {
+    background-color: white;
+    color: #003366;
+    border: 2px solid #003366;
+  }
+  
+  .login-button:hover {
+    background-color: white;
+    color: #003366;
+    border: 2px solid #003366;
+  }
+  
+  /* 🔍 Thanh tìm kiếm */
+.search-bar {
+    display: flex;
+    align-items: center;
+    border: 2px solid #0055aa;
+    border-radius: 20px;
+    padding: 5px 10px;
+    background-color: white;
+    position: absolute;
+    right: 370px; /* Điều chỉnh vị trí */
+    top: 20px;
+  }
+  
+  /* 📌 Ô nhập tìm kiếm */
+  .search-input {
+    border: none;
+    outline: none;
+    font-size: 16px;
+    padding: 5px;
+    width: 180px; /* Điều chỉnh độ rộng */
+    background: transparent;
+  }
+  
+  /* 🔎 Icon kính lúp */
+  .search-icon {
+    color: #0055aa;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  
+  /* ✅ Khi focus vào ô tìm kiếm */
+  .search-input:focus {
+    border-bottom: 2px solid #0055aa;
+    border: none;
+    outline: none;
+  }
+  /* 🎨 Giữ màu chữ */
+  .header-text.black {
+    color: black;
+  }
+  
+  .header-text.blue {
+    color: #003366; /* Bắt buộc giữ màu xanh */
+  }
+  
+  /*Chỉnh vị trí của icons và profile*/
+  .icons-and-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: space-between;
+    position: absolute;
+    /*Điều chỉnh để icons và profile không trùng với search-bar, nếu không sẽ bị đẩy xuống dòng dưới*/
+    right: 20px; 
+    top: 30px;
+  }
+  
+  /* Căn chỉnh icons-container bên phải */
+.icons-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+/* Căn chỉnh dropdown của profile */
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+    margin-left: -20px;
+  }
+  
+  .profile-email {
+    cursor: pointer;
+    font-weight: bold;
+    color: #333;
+    padding: 8px;
+    transition: color 0.3s ease;
+  }
+  
+  /* Đổi màu khi hover */
+  .profile-dropdown:hover .profile-email {
+    color: #0055aa; /* Xanh dương */
+  }
+  
+  /* Submenu hiển thị ngay dưới email */
+  .submenu-profile {
+    position: absolute;
+    top: 60%; /* Dính sát ngay dưới email */
+    left: 50%; /* Căn giữa theo chiều ngang */
+    transform: translateX(-50%); /* Dịch chuyển lại 50% kích thước submenu để căn giữa */
+    background: #333;
+    color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    list-style: none;
+    padding: 10px 0;
+    min-width: 180px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  }
+  /* Định dạng các mục trong submenu */
+.submenu-profile li {
+    padding: 10px;
+    text-align: left;
+  }
+  
+  /* Màu chữ trắng và đảm bảo các link không bị đổi màu */
+  .submenu-profile li a {
+    text-decoration: none;
+    color: white ;
+    display: block;
+  }
+  
+  /* Hover đổi nền cho item */
+  .submenu-profile li:hover a {
+    background-color: #333;
+    color: #3399ff ;
+  }
+  /* Hiện submenu khi hover */
+  .profile-dropdown:hover .submenu-profile {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .logout {
+    color: white;
+    font-weight: bold;
+  }
+  

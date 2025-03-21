@@ -3,6 +3,9 @@
   padding: 10px 0;
   text-align: none;
   margin-left: -5px; /* 📌 Dịch menu sang trái 20px */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .nav ul {

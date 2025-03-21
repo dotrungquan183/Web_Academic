@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Menu from "./components/normal_users/Menu";
 import Login from "./components/Login";
 import ForgotPassword from "./components/Forgotpassword";
-import AdminTab from "./components/admin/AdminTab";
+import AdminMenu from "./components/admin/AdminMenu";
 import HomeTab from "./components/normal_users/Tabs/HomeTab";
 import Home1 from "./components/normal_users/Tabs/Home/Home1";
 import Home2 from "./components/normal_users/Tabs/Home/Home2";
@@ -90,7 +90,7 @@ function App() {
         <Route path="/forgotpassword" element={<ForgotPasswordHandler />} />
 
         {/* Admin */}
-        <Route path="/admin" element={userRole === "admin" ? <AdminTab /> : <LoginHandler setUserRole={setUserRole} />} />
+        <Route path="/admin" element={userRole === "admin" ? <AdminMenu /> : <LoginHandler setUserRole={setUserRole} />} />
       </Routes>
     </BrowserRouter>
   );

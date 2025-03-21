@@ -100,7 +100,7 @@ function Login({ onLoginSuccess }) {
               padding: "10px",
               backgroundColor: "#003366",
               color: "white",
-              border: "none",
+              border: "2px solid #003366",
               borderRadius: "5px",
               cursor: "pointer",
               fontSize: "16px",
@@ -110,11 +110,23 @@ function Login({ onLoginSuccess }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "white";
+              e.target.style.color = "#003366";
+              e.target.style.border = "2px solid #003366";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "#003366";
+              e.target.style.color = "white";
+              e.target.style.border = "2px solid #003366";
             }}
           >
             <span>Đăng nhập</span>
             <FaArrowRight size={16} style={{ marginLeft: "8px", position: "absolute", right: "15px" }} />
           </button>
+
         </form>
 
         {/* Link quên mật khẩu */}
