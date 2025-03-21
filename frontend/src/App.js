@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Menu from "./components/normal_users/Menu";
 import Login from "./components/Login";
@@ -50,10 +50,8 @@ function LoginHandler({ setUserRole }) {
 }
 
 function ForgotPasswordHandler() {
-
   const handlePasswordResetSuccess = () => {
     localStorage.setItem("passwordReset", "true");
-    
     window.history.replaceState(null, "", "/login");
   };
 
@@ -61,7 +59,14 @@ function ForgotPasswordHandler() {
 }
 
 function App() {
-  const [userRole, setUserRole] = useState(null);
+  const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || null);
+
+  useEffect(() => {
+    const storedRole = localStorage.getItem("userRole");
+    if (storedRole) {
+      setUserRole(storedRole);
+    }
+  }, []);
 
   return (
     <BrowserRouter>
@@ -85,10 +90,7 @@ function App() {
         <Route path="/forgotpassword" element={<ForgotPasswordHandler />} />
 
         {/* Admin */}
-        <Route
-          path="/admin"
-          element={userRole === "admin" ? <AdminTab /> : <LoginHandler setUserRole={setUserRole} />}
-        />
+        <Route path="/admin" element={userRole === "admin" ? <AdminTab /> : <LoginHandler setUserRole={setUserRole} />} />
       </Routes>
     </BrowserRouter>
   );
