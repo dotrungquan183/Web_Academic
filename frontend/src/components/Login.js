@@ -30,9 +30,10 @@ function Login({ onLoginSuccess }) {
             return;
         }
 
+        // Kiểm tra xem API có trả về user_info.avatar không, chỗ này không có .user_info nhé!!!
         const avatarUrl = data?.avatar && data.avatar.trim() !== "" 
-    ? data.avatar 
-    : "/default-avatar.png";
+        ? data.avatar 
+        : "/default-avatar.png";
 
         const userData = {
             username: data.username,
