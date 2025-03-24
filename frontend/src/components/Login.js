@@ -37,7 +37,7 @@ function Login({ onLoginSuccess }) {
 
         const userData = {
             username: data.username,
-            full_name: data?.user_info?.full_name || data.username,
+            full_name: data?.full_name || data.username,
             avatar: avatarUrl,
             role: data.role,
         };
