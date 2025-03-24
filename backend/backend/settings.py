@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -165,3 +165,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'trungquan1832003@gmail.com'  # Email gửi
 EMAIL_HOST_PASSWORD = 'nhvm fnlq nkhs ljsh'  # Mật khẩu ứng dụng
 
+# Thêm đường dẫn lấy ảnh
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MEDIA_URL = "/image/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "image")

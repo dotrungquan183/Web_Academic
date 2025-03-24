@@ -9,27 +9,49 @@ function Login({ onLoginSuccess }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:8000/api/login/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-  
-      const data = await response.json();
-      console.log("DEBUG: API response:", data); // Debug API response
-  
-      if (response.ok) {
-        onLoginSuccess(data.role); // Truyền role từ API thay vì username
-      } else {
-        alert(data.error || "Đăng nhập thất bại!");
-      }
+        const response = await fetch("http://localhost:8000/api/login/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json();
+        console.log("DEBUG: API response:", data); // Kiểm tra dữ liệu từ API
+
+        if (!response.ok) {
+            alert(data.error || "Đăng nhập thất bại!");
+            return;
+        }
+
+        if (!data.role || !data.username) {
+            alert("Dữ liệu từ API không hợp lệ!");
+            return;
+        }
+
+        const avatarUrl = data?.avatar && data.avatar.trim() !== "" 
+    ? data.avatar 
+    : "/default-avatar.png";
+
+        const userData = {
+            username: data.username,
+            full_name: data?.user_info?.full_name || data.username,
+            avatar: avatarUrl,
+            role: data.role,
+        };
+
+        console.log("DEBUG: userData before saving:", userData); // Kiểm tra dữ liệu trước khi lưu
+        localStorage.setItem("user", JSON.stringify(userData)); // Lưu vào localStorage
+
+        console.log("DEBUG: LocalStorage user:", localStorage.getItem("user")); // Kiểm tra sau khi lưu
+        onLoginSuccess(userData.role);
     } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
-      alert("Có lỗi xảy ra, vui lòng thử lại!");
+        console.error("Lỗi khi đăng nhập:", error);
+        alert("Có lỗi xảy ra, vui lòng thử lại!");
     }
-  };
+};
+  
    
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>

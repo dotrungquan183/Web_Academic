@@ -1,14 +1,34 @@
 import { Link } from "react-router-dom";
-import { FaUserGraduate, FaSearch, FaBell, FaCog, FaQuestionCircle } from "react-icons/fa";
+import { FaUserGraduate, FaSearch, FaBell, FaCog, FaQuestionCircle, FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome} from "react-icons/fa";
 import "./adminmenu.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const BASE_URL = "http://localhost:8000";
 
 function AdminMenu() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+    }
+  }, []);
+
+  const getAvatarUrl = () => {
+    if (user?.avatar) {
+      if (user.avatar.startsWith("http")) {
+        return user.avatar;
+      }
+      return `${BASE_URL}${user.avatar}`;
+    }
+    return null;
+  };
 
   return (
     <div className="menu-container">
-      {/* Header */}
       <div className="header">
         <h1 className="header-title">
           <FaUserGraduate className="header-icon" />
@@ -19,7 +39,6 @@ function AdminMenu() {
         </h1>
       </div>
 
-      {/* Thanh tìm kiếm */}
       <div className="search-bar-container">
         <div className="search-bar">
           <input type="text" placeholder="Tìm kiếm..." className="search-input" />
@@ -27,7 +46,6 @@ function AdminMenu() {
         </div>
       </div>
 
-      {/* Icons và User Profile */}
       <div className="icons-and-profile">
         <div className="icons-container">
           <FaBell className="header-icon" />
@@ -35,31 +53,67 @@ function AdminMenu() {
           <FaCog className="header-icon" />
         </div>
 
-        {/* User Profile */}
         <div
           className="profile-dropdown"
           onMouseEnter={() => setIsDropdownOpen(true)}
           onMouseLeave={() => setIsDropdownOpen(false)}
         >
-          <span className="profile-email">quan.dotrung@fss-user ▾</span>
+          <div className="profile-info">
+            <span className="profile-email">{user?.full_name || "Người dùng"}</span>
+            {getAvatarUrl() ? (
+              <img src={getAvatarUrl()} alt="Avatar" className="profile-avatar" />
+            ) : (
+              <FaUserGraduate className="profile-icon" />
+            )}
+          </div>
+
           {isDropdownOpen && (
             <ul className="submenu-profile">
-              <li><Link to="/profile">Hồ sơ</Link></li>
-              <li><Link to="/settings">Cài đặt</Link></li>
-              <li><Link to="/logout" className="logout">Đăng xuất</Link></li>
+              <li>
+              <Link to="/profile">
+                <FaUser className="submenu-icon" />
+                <span style={{ marginLeft: "10px" }}>Hồ sơ</span>
+              </Link>
+              </li>
+              <li>
+                <Link to="/settings">
+                  <FaWrench className="submenu-icon" />
+                  <span style={{ marginLeft: "10px" }}>Tài khoản</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/logout" className="logout">
+                  <FaSignOutAlt className="submenu-icon" />
+                  <span style={{ marginLeft: "10px" }}>Đăng xuất</span>
+                </Link>
+              </li>
             </ul>
           )}
         </div>
       </div>
 
-      {/* Navigation Menu */}
       <ul className="nav">
         <li>
           <Link to="/" className="menu-item">TRANG CHỦ ▾</Link>
           <ul className="submenu">
-            <li><Link to="/home1">Home 1</Link></li>
-            <li><Link to="/home2">Home 2</Link></li>
-            <li><Link to="/home3">Home 3</Link></li>
+            <li>
+              <Link to="/home1">
+                <FaHome className="submenu-icon" />
+                <span style={{ marginLeft: "10px" }}>Home1</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/home2">
+                <FaBook className="submenu-icon" />
+                <span style={{ marginLeft: "10px" }}>Home2</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/home3">
+                <FaChalkboardTeacher className="submenu-icon" />
+                <span style={{ marginLeft: "10px" }}>Home3</span>
+              </Link>
+            </li>
           </ul>
         </li>
         <li><Link to="/intro">GIỚI THIỆU</Link></li>

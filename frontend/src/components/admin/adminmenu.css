@@ -214,8 +214,8 @@
     justify-content: space-between;
     position: absolute;
     /*Điều chỉnh để icons và profile không trùng với search-bar, nếu không sẽ bị đẩy xuống dòng dưới*/
-    right: 20px; 
-    top: 30px;
+    right: 40px; 
+    top: 20px;
   }
   
   /* Căn chỉnh icons-container bên phải */
@@ -248,8 +248,8 @@
   .submenu-profile {
     position: absolute;
     top: 60%; /* Dính sát ngay dưới email */
-    left: 50%; /* Căn giữa theo chiều ngang */
-    transform: translateX(-50%); /* Dịch chuyển lại 50% kích thước submenu để căn giữa */
+    left: 2%; /* Căn giữa theo chiều ngang */
+    transform: translateX(-2%); /* Dịch chuyển lại 50% kích thước submenu để căn giữa */
     background: #333;
     color: white;
     border: 1px solid #ccc;
@@ -290,5 +290,36 @@
   .logout {
     color: white;
     font-weight: bold;
+  }
+  
+  /* Căn chỉnh avatar */
+  .profile-info {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+  }
+  
+  .profile-avatar {
+    width: 40px; /* Giảm kích thước avatar */
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    object-fit: cover; /* Đảm bảo ảnh không bị méo */
+  }
+  
+  .profile-email {
+    font-weight: bold;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  /* Đảm bảo icon không kéo xuống */
+  .profile-container {
+    display: flex;
+    align-items: center;
+    gap: 100px;
   }
   
