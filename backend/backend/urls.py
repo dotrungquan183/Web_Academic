@@ -20,13 +20,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls.login')),
-    path('api/', include('api.urls.forgotpassword')),
-    path('api/', include('api.urls.normal_users')),
-    path('api/', include('api.urls.admin')),
-    path('api/', include('api.urls.verify_otp')),
-    path('api/', include('api.urls.resetpassword')),
-    path('api/', include('api.urls.register')),
+    path('api/', include('api.urls.auth.login')),
+    path('api/', include('api.urls.auth.forgotpassword')),
+    path('api/', include('api.urls.auth.register')),
+    path('api/', include('api.urls.auth.resetpassword')),
+    path('api/', include('api.urls.auth.verify_otp')),
+
+    path('api/', include('api.urls.user.admin')),
+    path('api/', include('api.urls.user.normal_users')),
+    path('api/', include('api.urls.user.student')),
+    path('api/', include('api.urls.user.teacher')),
 ]
 """Thêm đường dẫn này để lấy được ảnh"""
 if settings.DEBUG:
