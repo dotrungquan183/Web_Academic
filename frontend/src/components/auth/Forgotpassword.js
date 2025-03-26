@@ -33,7 +33,7 @@ function ForgotPassword() {
       if (response.ok) {
         setStep(2);
         setMessage(data.message);
-        setCountdown(300); // Đặt bộ đếm ngược 5 phút
+        setCountdown(300);
       } else {
         setMessage(data.error);
       }
@@ -74,8 +74,7 @@ function ForgotPassword() {
       if (response.ok) {
         setMessage("Mật khẩu đã được đặt lại thành công!");
         setStep(4);
-  
-       } else {
+      } else {
         setMessage(data.error);
       }
     } catch (error) {
@@ -90,18 +89,39 @@ function ForgotPassword() {
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        backgroundImage: "url('https://images.pexels.com/photos/140234/pexels-photo-140234.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div
         style={{
           width: "350px",
           padding: "30px",
           borderRadius: "10px",
-          backgroundColor: "#f9f9f9",
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
           textAlign: "center",
         }}
       >
-        <h2 style={{ textAlign: "center", textTransform: "uppercase", fontWeight: "bold", marginBottom: "20px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
+        <h2
+          style={{
+            textAlign: "center",
+            textTransform: "uppercase",
+            fontWeight: "bold",
+            marginBottom: "20px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
           <FaKey /> Quên Mật Khẩu <FaLock />
         </h2>
 
@@ -109,8 +129,35 @@ function ForgotPassword() {
 
         {step === 1 && (
           <form onSubmit={handleForgotPassword}>
-            <input type="email" placeholder="Nhập email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "94%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc", marginBottom: "10px" }} />
-            <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#003366", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}>Gửi OTP</button>
+            <input
+              type="email"
+              placeholder="Nhập email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{
+                width: "94%",
+                padding: "10px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                marginBottom: "10px",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "10px",
+                backgroundColor: "#003366",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Gửi OTP
+            </button>
           </form>
         )}
 
@@ -132,7 +179,7 @@ function ForgotPassword() {
                   padding: "8px",
                   borderRadius: "5px",
                   border: "1px solid #ccc",
-                  marginBottom: "10px"
+                  marginBottom: "10px",
                 }}
               />
 
@@ -146,7 +193,7 @@ function ForgotPassword() {
                   border: "none",
                   borderRadius: "5px",
                   cursor: "pointer",
-                  fontWeight: "bold"
+                  fontWeight: "bold",
                 }}
               >
                 Xác minh OTP
@@ -157,17 +204,58 @@ function ForgotPassword() {
 
         {step === 3 && (
           <form onSubmit={handleResetPassword}>
-            <input type="password" placeholder="Nhập mật khẩu mới" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required style={{ width: "94%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc", marginBottom: "10px" }} />
-            <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#003366", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}>Đặt lại mật khẩu</button>
+            <input
+              type="password"
+              placeholder="Nhập mật khẩu mới"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              style={{
+                width: "94%",
+                padding: "10px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                marginBottom: "10px",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "10px",
+                backgroundColor: "#003366",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Đặt lại mật khẩu
+            </button>
           </form>
         )}
 
         {step === 4 && (
-          <button onClick={() => navigate("/login")} style={{ width: "94%", padding: "10px", backgroundColor: "#003366", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}>Quay lại đăng nhập</button>
+          <button
+            onClick={() => navigate("/login")}
+            style={{
+              width: "94%",
+              padding: "10px",
+              backgroundColor: "#003366",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            Quay lại đăng nhập
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-export default ForgotPassword ;
+export default ForgotPassword;
