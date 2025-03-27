@@ -17,27 +17,33 @@ import RegistrationTab from "./components/normal_users/Tabs/RegistrationTab";
 import ContactTab from "./components/normal_users/Tabs/ContactTab";
 
 import StudentMenu from "./components/student/StudentMenu";
-import StudentHomeTab from "./components/student/Tabs/StudentHomeTab";
+import StudentHomeTab from "./components/student/Tabs/StudentHome/StudentHomeTab";
 import StudentHome1 from "./components/student/Tabs/StudentHome/StudentHome1Tab";
 import StudentHome2 from "./components/student/Tabs/StudentHome/StudentHome2Tab";
 import StudentHome3 from "./components/student/Tabs/StudentHome/StudentHome3Tab";
 import StudentIntroTab from "./components/student/Tabs/StudentIntroTab";
 import StudentCoursesTab from "./components/student/Tabs/StudentCoursesTab";
 import StudentDocsTab from "./components/student/Tabs/StudentDocsTab"
-import StudentForumTab from "./components/student/Tabs/StudentForumTab"
+import StudentForumTab from "./components/student/Tabs/StudentForumTab/Menu"
+import StudentForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Question"
+import StudentForumUnanswer from "./components/student/Tabs/StudentForumTab/Tabs/Unanswer"
+import StudentForumTag from "./components/student/Tabs/StudentForumTab/Tabs/Tag"
 import StudentSupportTab from "./components/student/Tabs/StudentSupportTab"
 import StudentHomeworkTab from "./components/student/Tabs/StudentHomeworkTab"
 import StudentContactTab from "./components/student/Tabs/StudentContactTab";
 
 import TeacherMenu from "./components/teacher/TeacherMenu";
-import TeacherHomeTab from "./components/teacher/Tabs/TeacherHomeTab";
+import TeacherHomeTab from "./components/teacher/Tabs/TeacherHome/TeacherHomeTab";
 import TeacherHome1 from "./components/teacher/Tabs/TeacherHome/TeacherHome1Tab";
 import TeacherHome2 from "./components/teacher/Tabs/TeacherHome/TeacherHome2Tab";
 import TeacherHome3 from "./components/teacher/Tabs/TeacherHome/TeacherHome3Tab";
 import TeacherIntroTab from "./components/teacher/Tabs/TeacherIntroTab";
 import TeacherCoursesTab from "./components/teacher/Tabs/TeacherCoursesTab";
 import TeacherDocsTab from "./components/teacher/Tabs/TeacherDocsTab"
-import TeacherForumTab from "./components/teacher/Tabs/TeacherForumTab"
+import TeacherForumTab from "./components/teacher/Tabs/TeacherForumTab/Menu"
+import TeacherForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Question"
+import TeacherForumUnanswer from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswer"
+import TeacherForumTag from "./components/teacher/Tabs/TeacherForumTab/Tabs/Tag"
 import TeacherSupportTab from "./components/teacher/Tabs/TeacherSupportTab"
 import TeacherHomeworkTab from "./components/teacher/Tabs/TeacherHomeworkTab"
 import TeacherContactTab from "./components/teacher/Tabs/TeacherContactTab";
@@ -153,6 +159,9 @@ function App() {
         <Route path="/studentsupport" element={<StudentLayout><StudentSupportTab /></StudentLayout>} />
         <Route path="/studentcontact" element={<StudentLayout><StudentContactTab /></StudentLayout>} />
         <Route path="/studenthomework" element={<StudentLayout><StudentHomeworkTab /></StudentLayout>} />
+        <Route path="/studentforum/question" element={<StudentLayout><StudentForumQuestion /></StudentLayout>} />
+        <Route path="/studentforum/unanswer" element={<StudentLayout><StudentForumUnanswer /></StudentLayout>} />
+        <Route path="/studentforum/tag" element={<StudentLayout><StudentForumTag /></StudentLayout>} />
 
         <Route path="/teacher" element={<TeacherLayout><TeacherHomeTab /></TeacherLayout>} />
         <Route path="/teacherhome1" element={<TeacherLayout><TeacherHome1 /></TeacherLayout>} />
@@ -165,6 +174,9 @@ function App() {
         <Route path="/teachersupport" element={<TeacherLayout><TeacherSupportTab /></TeacherLayout>} />
         <Route path="/teachercontact" element={<TeacherLayout><TeacherContactTab /></TeacherLayout>} />
         <Route path="/teacherhomework" element={<TeacherLayout><TeacherHomeworkTab /></TeacherLayout>} />
+        <Route path="/teacherforum/question" element={<TeacherLayout><TeacherForumQuestion /></TeacherLayout>} />
+        <Route path="/teacherforum/unanswer" element={<TeacherLayout><TeacherForumUnanswer /></TeacherLayout>} />
+        <Route path="/teacherforum/tag" element={<TeacherLayout><TeacherForumTag /></TeacherLayout>} />
 
         {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />

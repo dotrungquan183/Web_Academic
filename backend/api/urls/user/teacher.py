@@ -10,7 +10,9 @@ from api.views.teacher.teacher_docs.teacher_docs import TeacherDocView
 from api.views.teacher.teacher_homework.teacher_homework import TeacherHomeworkView
 from api.views.teacher.teacher_support.teacher_support import TeacherSupportView
 from api.views.teacher.teacher_contact.teacher_contact import TeacherContactView
-from api.views.teacher.teacher_forum.teacher_forum import TeacherForumView
+from api.views.teacher.teacher_forum.teacher_question import TeacherQuestionView
+from api.views.teacher.teacher_forum.teacher_unanswer import TeacherUnanswerView
+from api.views.teacher.teacher_forum.teacher_tag import TeacherTagView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -27,7 +29,9 @@ urlpatterns = [
     path('teacher/teacher_docs/teacher_docs/', TeacherDocView.as_view(), name='teacher_docs'),
     path('teacher/teacher_homework/teacher_homework/', TeacherHomeworkView.as_view(), name='teacher_homework'),
     path('teacher/teacher_contact/teacher_contact/', TeacherContactView.as_view(), name='teacher_contact'),
-    path('teacher/teacher_forum/teacher_forum/', TeacherForumView.as_view(), name='teacher_forum'),
+    path('teacher/teacher_forum/teacher_question/', TeacherQuestionView.as_view(), name='teacher_question'),
+    path('teacher/teacher_forum/teacher_unanswer/', TeacherUnanswerView.as_view(), name='teacher_unanswer'),
+    path('teacher/teacher_forum/teacher_tag/', TeacherTagView.as_view(), name='teacher_tag'),
     path('teacher/teacher_support/teacher_support/', TeacherSupportView.as_view(), name='teacher_support'),
 ]
 

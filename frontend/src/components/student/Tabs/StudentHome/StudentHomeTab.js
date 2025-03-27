@@ -1,5 +1,5 @@
 import React from "react";
-import StudentHome1 from "./StudentHome/StudentHome1Tab";
+import StudentHome1 from "./StudentHome1Tab";
 
 function StudentHomeTab() {
   return (

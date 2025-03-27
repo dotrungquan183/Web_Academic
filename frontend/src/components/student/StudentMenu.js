@@ -145,7 +145,7 @@ function StudentMenu() {
           <Link to="/studentdocs">TÀI LIỆU HỌC TẬP</Link>
         </li>
         <li>
-          <Link to="/studenthomework">BÀI TẬP & ĐÁNH GIÁ</Link>
+          <Link to="/studenthomework">BÀI TẬP</Link>
         </li>
         <li>
           <Link to="/studentsupport">HỖ TRỢ HỌC TẬP</Link>

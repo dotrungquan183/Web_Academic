@@ -1,5 +1,5 @@
 import React from "react";
-import TeacherHome1 from "./TeacherHome/TeacherHome1Tab";
+import TeacherHome1 from "./TeacherHome1Tab";
 
 function TeacherHomeTab() {
   return (

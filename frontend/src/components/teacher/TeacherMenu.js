@@ -145,7 +145,7 @@ function TeacherMenu() {
           <Link to="/teacherdocs">TÀI LIỆU HỌC TẬP</Link>
         </li>
         <li>
-          <Link to="/teacherhomework">BÀI TẬP & ĐÁNH GIÁ</Link>
+          <Link to="/teacherhomework">BÀI TẬP</Link>
         </li>
         <li>
           <Link to="/teachersupport">HỖ TRỢ HỌC TẬP</Link>
