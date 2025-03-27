@@ -28,6 +28,7 @@ import StudentForumTab from "./components/student/Tabs/StudentForumTab/Menu"
 import StudentForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Question"
 import StudentForumUnanswer from "./components/student/Tabs/StudentForumTab/Tabs/Unanswer"
 import StudentForumTag from "./components/student/Tabs/StudentForumTab/Tabs/Tag"
+import StudentForumSave from "./components/student/Tabs/StudentForumTab/Tabs/Save"
 import StudentSupportTab from "./components/student/Tabs/StudentSupportTab"
 import StudentHomeworkTab from "./components/student/Tabs/StudentHomeworkTab"
 import StudentContactTab from "./components/student/Tabs/StudentContactTab";
@@ -44,6 +45,7 @@ import TeacherForumTab from "./components/teacher/Tabs/TeacherForumTab/Menu"
 import TeacherForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Question"
 import TeacherForumUnanswer from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswer"
 import TeacherForumTag from "./components/teacher/Tabs/TeacherForumTab/Tabs/Tag"
+import TeacherForumSave from "./components/teacher/Tabs/TeacherForumTab/Tabs/Save"
 import TeacherSupportTab from "./components/teacher/Tabs/TeacherSupportTab"
 import TeacherHomeworkTab from "./components/teacher/Tabs/TeacherHomeworkTab"
 import TeacherContactTab from "./components/teacher/Tabs/TeacherContactTab";
@@ -162,6 +164,7 @@ function App() {
         <Route path="/studentforum/question" element={<StudentLayout><StudentForumQuestion /></StudentLayout>} />
         <Route path="/studentforum/unanswer" element={<StudentLayout><StudentForumUnanswer /></StudentLayout>} />
         <Route path="/studentforum/tag" element={<StudentLayout><StudentForumTag /></StudentLayout>} />
+        <Route path="/studentforum/save" element={<StudentLayout><StudentForumSave /></StudentLayout>} />
 
         <Route path="/teacher" element={<TeacherLayout><TeacherHomeTab /></TeacherLayout>} />
         <Route path="/teacherhome1" element={<TeacherLayout><TeacherHome1 /></TeacherLayout>} />
@@ -177,6 +180,7 @@ function App() {
         <Route path="/teacherforum/question" element={<TeacherLayout><TeacherForumQuestion /></TeacherLayout>} />
         <Route path="/teacherforum/unanswer" element={<TeacherLayout><TeacherForumUnanswer /></TeacherLayout>} />
         <Route path="/teacherforum/tag" element={<TeacherLayout><TeacherForumTag /></TeacherLayout>} />
+        <Route path="/teacherforum/save" element={<TeacherLayout><TeacherForumSave /></TeacherLayout>} />
 
         {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />

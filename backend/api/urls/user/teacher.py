@@ -13,6 +13,7 @@ from api.views.teacher.teacher_contact.teacher_contact import TeacherContactView
 from api.views.teacher.teacher_forum.teacher_question import TeacherQuestionView
 from api.views.teacher.teacher_forum.teacher_unanswer import TeacherUnanswerView
 from api.views.teacher.teacher_forum.teacher_tag import TeacherTagView
+from api.views.teacher.teacher_forum.teacher_save import TeacherSaveView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -32,6 +33,7 @@ urlpatterns = [
     path('teacher/teacher_forum/teacher_question/', TeacherQuestionView.as_view(), name='teacher_question'),
     path('teacher/teacher_forum/teacher_unanswer/', TeacherUnanswerView.as_view(), name='teacher_unanswer'),
     path('teacher/teacher_forum/teacher_tag/', TeacherTagView.as_view(), name='teacher_tag'),
+    path('teacher/teacher_forum/teacher_save/', TeacherSaveView.as_view(), name='teacher_save'),
     path('teacher/teacher_support/teacher_support/', TeacherSupportView.as_view(), name='teacher_support'),
 ]
 

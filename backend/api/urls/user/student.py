@@ -13,6 +13,7 @@ from api.views.student.student_contact.student_contact import StudentContactView
 from api.views.student.student_forum.student_question import StudentQuestionView
 from api.views.student.student_forum.student_unanswer import StudentUnanswerView
 from api.views.student.student_forum.student_tag import StudentTagView
+from api.views.student.student_forum.student_save import StudentSaveView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -32,6 +33,7 @@ urlpatterns = [
     path('student/student_forum/student_question/', StudentQuestionView.as_view(), name='student_question'),
     path('student/student_forum/student_unanswer/', StudentUnanswerView.as_view(), name='student_unanswer'),
     path('student/student_forum/student_tag/', StudentTagView.as_view(), name='student_tag'),
+    path('student/student_forum/student_save/', StudentSaveView.as_view(), name='student_save'),
     path('student/student_support/student_support/', StudentSupportView.as_view(), name='student_support'),
 ]
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag } from "react-icons/fi";
+import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
 
 function Sidebar() {
   const location = useLocation();
@@ -38,6 +38,17 @@ function Sidebar() {
           }}
         >
           <FiTag style={styles.icon} /> Thẻ
+        </button>
+      </Link>
+      <Link to="/Teacherforum/save" style={styles.link}>
+        <button
+          style={{
+            ...styles.button,
+            backgroundColor: location.pathname === "/Teacherforum/save" ? "#003366" : "transparent",
+            color: location.pathname === "/Teacherforum/save" ? "white" : "#003366",
+          }}
+        >
+          <FiSave style={styles.icon} /> Lưu trữ
         </button>
       </Link>
     </div>
