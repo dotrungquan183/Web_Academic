@@ -7,45 +7,45 @@ function Sidebar() {
 
   return (
     <div style={styles.sidebar}>
-      <Link to="/Teacherforum/question" style={styles.link}>
+      <Link to="/studentforum/question" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/Teacherforum/question" ? "#003366" : "transparent",
-            color: location.pathname === "/Teacherforum/question" ? "white" : "#003366",
+            backgroundColor: location.pathname === "/studentforum/question" ? "#003366" : "transparent",
+            color: location.pathname === "/studentforum/question" ? "white" : "#003366",
           }}
         >
           <FiHelpCircle style={styles.icon} /> Câu hỏi
         </button>
       </Link>
-      <Link to="/Teacherforum/unanswer" style={styles.link}>
+      <Link to="/studentforum/unanswer" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/Teacherforum/unanswer" ? "#003366" : "transparent",
-            color: location.pathname === "/Teacherforum/unanswer" ? "white" : "#003366",
+            backgroundColor: location.pathname === "/studentforum/unanswer" ? "#003366" : "transparent",
+            color: location.pathname === "/studentforum/unanswer" ? "white" : "#003366",
           }}
         >
           <FiXCircle style={styles.icon} /> Chưa trả lời
         </button>
       </Link>
-      <Link to="/Teacherforum/tag" style={styles.link}>
+      <Link to="/studentforum/tag" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/Teacherforum/tag" ? "#003366" : "transparent",
-            color: location.pathname === "/Teacherforum/tag" ? "white" : "#003366",
+            backgroundColor: location.pathname === "/studentforum/tag" ? "#003366" : "transparent",
+            color: location.pathname === "/studentforum/tag" ? "white" : "#003366",
           }}
         >
           <FiTag style={styles.icon} /> Thẻ
         </button>
       </Link>
-      <Link to="/Teacherforum/save" style={styles.link}>
+      <Link to="/studentforum/save" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/Teacherforum/save" ? "#003366" : "transparent",
-            color: location.pathname === "/Teacherforum/save" ? "white" : "#003366",
+            backgroundColor: location.pathname === "/studentforum/save" ? "#003366" : "transparent",
+            color: location.pathname === "/studentforum/save" ? "white" : "#003366",
           }}
         >
           <FiSave style={styles.icon} /> Lưu trữ
@@ -59,14 +59,15 @@ const styles = {
   sidebar: {
     backgroundColor: "#ffffff",
     height: "100vh",
-    width: "200px",
+    width: "300px",
     display: "flex",
     flexDirection: "column",
     paddingTop: "53px",
-    position: "fixed",
-    left: "0",
-    top: "140px",
+    position: "sticky", // Giữ sidebar cố định khi cuộn
+    top: "0", // Đảm bảo nó không di chuyển
     borderRight: "1px solid #ccc",
+    marginTop: "-15px",
+    marginRight: "-300px",
   },
   button: {
     padding: "10px",
@@ -95,6 +96,7 @@ const styles = {
     cursor: "pointer",
     color: "#003366",
   },
+  
 };
 
 export default Sidebar;

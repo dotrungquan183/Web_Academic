@@ -41,7 +41,7 @@ function StudentMenu() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    window.location.replace("/login");
+    window.location.replace("/");
   };
 
   return (

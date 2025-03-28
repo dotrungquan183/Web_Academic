@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag, FiSave} from "react-icons/fi";
+import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
 
 function Sidebar() {
   const location = useLocation();
@@ -59,14 +59,15 @@ const styles = {
   sidebar: {
     backgroundColor: "#ffffff",
     height: "100vh",
-    width: "200px",
+    width: "300px",
     display: "flex",
     flexDirection: "column",
     paddingTop: "53px",
-    position: "fixed",
-    left: "0",
-    top: "140px",
+    position: "sticky", // Giữ sidebar cố định khi cuộn
+    top: "0", // Đảm bảo nó không di chuyển
     borderRight: "1px solid #ccc",
+    marginTop: "-15px",
+    marginRight: "-300px",
   },
   button: {
     padding: "10px",
@@ -95,6 +96,7 @@ const styles = {
     cursor: "pointer",
     color: "#003366",
   },
+  
 };
 
 export default Sidebar;
