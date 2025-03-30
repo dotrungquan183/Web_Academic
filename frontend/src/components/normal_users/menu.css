@@ -1,5 +1,5 @@
 .nav {
-  background-color: #333;
+  background: rgba(160, 189, 248, 0.2)  !important;
   padding: 10px 0;
   text-align: none;
   margin-left: -5px; /* 📌 Dịch menu sang trái 20px */
@@ -33,7 +33,7 @@
 
 /* ✅ Hover vào menu chính */
 .nav li:hover > a {
-  color: #3399ff !important;
+  color: #333 !important;
 }
 
 /* 🔹 Submenu */
@@ -199,16 +199,16 @@ tr:hover {
 }
 /* 🎨 Giữ màu chữ */
 .header-text.black {
-  color: black;
+  color: white;
 }
 
 .header-text.blue {
-  color: #003366; /* Bắt buộc giữ màu xanh */
+  color: #3399ff; /* Bắt buộc giữ màu xanh */
 }
 
   /* Thêm ảnh nền đẹp, ý tưởng của siupestcuti */
   body {
-    background-image: url('https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDI0LTExL3Jhd3BpeGVsb2ZmaWNlNF93aGl0ZV9hbmRfc2lsdmVyX3NpbXBsZV9wbGFpbl9ncmFkaWVudF9iYWNrZ3JvdV8xMTgwZTY5Yy0yNjczLTQ2MTItYmFhNC1jMGFiMDFiODRmYzIuanBn.jpg');
+    background-image: url('https://cdn.pixabay.com/photo/2014/05/22/16/52/pyrenees-351266_1280.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

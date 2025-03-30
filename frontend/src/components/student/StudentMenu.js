@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
-import { 
-  FaUserGraduate, FaSearch, FaBell, FaCog, FaQuestionCircle, 
-  FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome 
+import { Link, useLocation } from "react-router-dom";
+import {
+  FaUserGraduate, FaSearch, FaBell, FaCog, FaQuestionCircle,
+  FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome
 } from "react-icons/fa";
 import "./studentmenu.css";
 import { useState, useEffect } from "react";
@@ -11,8 +11,8 @@ const BASE_URL = "http://localhost:8000";
 function StudentMenu() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const location = useLocation();
 
-  // Kiểm tra đăng nhập và bắt buộc reload nếu trang được load từ cache
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -20,24 +20,18 @@ function StudentMenu() {
     } else {
       window.location.replace("/login");
     }
-    // Nếu trang được load lại từ bộ nhớ cache (ấn Back) thì reload lại trang
-    window.onpageshow = function (event) {
-      if (event.persisted) {
-        window.location.reload();
-      }
+    window.onpageshow = (event) => {
+      if (event.persisted) window.location.reload();
     };
   }, []);
 
   const getAvatarUrl = () => {
     if (user?.avatar) {
-      return user.avatar.startsWith("http")
-        ? user.avatar
-        : `${BASE_URL}${user.avatar}`;
+      return user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`;
     }
     return null;
   };
 
-  // Hàm đăng xuất: xóa dữ liệu và chuyển hướng bằng window.location.replace
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
@@ -76,9 +70,7 @@ function StudentMenu() {
           onMouseLeave={() => setIsDropdownOpen(false)}
         >
           <div className="profile-info">
-            <span className="profile-email">
-              {user?.full_name || "Người dùng"}
-            </span>
+            <span className="profile-email">{user?.full_name || "Người dùng"}</span>
             {getAvatarUrl() ? (
               <img src={getAvatarUrl()} alt="Avatar" className="profile-avatar" />
             ) : (
@@ -90,70 +82,67 @@ function StudentMenu() {
             <ul className="submenu-profile">
               <li>
                 <Link to="/profile">
-                  <FaUser className="submenu-icon" />
-                  <span style={{ marginLeft: "10px" }}>Hồ sơ</span>
+                  <FaUser className="submenu-icon" /> Hồ sơ
                 </Link>
               </li>
               <li>
                 <Link to="/settings">
-                  <FaWrench className="submenu-icon" />
-                  <span style={{ marginLeft: "10px" }}>Tài khoản</span>
+                  <FaWrench className="submenu-icon" /> Tài khoản
                 </Link>
               </li>
               <li onClick={handleLogout} className="logout hover-effect">
-                <FaSignOutAlt className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Đăng xuất</span>
+                <FaSignOutAlt className="submenu-icon" /> Đăng xuất
               </li>
             </ul>
           )}
         </div>
       </div>
 
+      {/* ======== NAVIGATION MENU ======== */}
       <ul className="nav">
-        <li>
-          <Link to="/student" className="menu-item">
-            TRANG CHỦ ▾
-          </Link>
+        {/* TRANG CHỦ chỉ active khi đúng "/student", không bị active khi vào trang con */}
+        <li className={location.pathname === "/student" ? "active" : ""}>
+          <Link to="/student" className="menu-item">TRANG CHỦ ▾</Link>
           <ul className="submenu">
-            <li>
+            <li className={location.pathname === "/studenthome1" ? "active" : ""}>
               <Link to="/studenthome1">
-                <FaHome className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home1</span>
+                <FaHome className="submenu-icon" /> Home1
               </Link>
             </li>
-            <li>
+            <li className={location.pathname === "/studenthome2" ? "active" : ""}>
               <Link to="/studenthome2">
-                <FaBook className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home2</span>
+                <FaBook className="submenu-icon" /> Home2
               </Link>
             </li>
-            <li>
+            <li className={location.pathname === "/studenthome3" ? "active" : ""}>
               <Link to="/studenthome3">
-                <FaChalkboardTeacher className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home3</span>
+                <FaChalkboardTeacher className="submenu-icon" /> Home3
               </Link>
             </li>
           </ul>
         </li>
-        <li>
+
+        <li className={location.pathname === "/studentintro" ? "active" : ""}>
           <Link to="/studentintro">GIỚI THIỆU</Link>
         </li>
-        <li>
+        <li className={location.pathname === "/studentcourses" ? "active" : ""}>
           <Link to="/studentcourses">KHÓA HỌC</Link>
         </li>
-        <li>
+        <li className={location.pathname === "/studentdocs" ? "active" : ""}>
           <Link to="/studentdocs">TÀI LIỆU HỌC TẬP</Link>
         </li>
-        <li>
+        <li className={location.pathname === "/studenthomework" ? "active" : ""}>
           <Link to="/studenthomework">BÀI TẬP</Link>
         </li>
-        <li>
+        <li className={location.pathname === "/studentsupport" ? "active" : ""}>
           <Link to="/studentsupport">HỖ TRỢ HỌC TẬP</Link>
         </li>
-        <li>
+
+        <li className={location.pathname.startsWith("/studentforum") ? "active" : ""}>
           <Link to="/studentforum">DIỄN ĐÀN</Link>
         </li>
-        <li>
+
+        <li className={location.pathname === "/studentcontact" ? "active" : ""}>
           <Link to="/studentcontact">LIÊN HỆ</Link>
         </li>
       </ul>

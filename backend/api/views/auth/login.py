@@ -29,24 +29,17 @@ def login_view(request):
 
     # Xác định role theo user_type
     user_type = user_info.user_type.lower()
-    if user_type == "sinh viên":
-        role = "student"
-    elif user_type == "giảng viên":
-        role = "teacher"
-    elif user_type == "admin":
-        role = "admin"
-    else:
-        role = "user"  # Mặc định nếu không thuộc các loại trên
+    role_map = {"sinh viên": "student", "giảng viên": "teacher", "admin": "admin"}
+    role = role_map.get(user_type, "user")  # Mặc định nếu không thuộc các loại trên
 
     # Debug log
     print(f"DEBUG: Đăng nhập thành công! User {username}, Role: {role}")
 
-    # Xóa MEDIA_URL nếu avatar đã chứa nó
-    avatar_path = user_info.avatar.lstrip("/")
-    if avatar_path.startswith(settings.MEDIA_URL.lstrip("/")):
+    # Xử lý avatar
+    avatar_path = user_info.avatar.lstrip("/") if user_info.avatar else "default-avatar.png"
+    if avatar_path and settings.MEDIA_URL.lstrip("/") in avatar_path:
         avatar_path = avatar_path[len(settings.MEDIA_URL.lstrip("/")):]
 
-    # Ghép đường dẫn đầy đủ
     avatar_url = request.build_absolute_uri(f"{settings.MEDIA_URL.rstrip('/')}/{avatar_path}")
 
     print(f"DEBUG: settings.MEDIA_URL = {settings.MEDIA_URL}")  

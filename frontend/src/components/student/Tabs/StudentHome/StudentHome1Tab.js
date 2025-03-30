@@ -11,7 +11,7 @@ function StudentHome1() {
 
   return (
     <div>
-      {data ? <p>{data.content}</p> : <p>Loading...</p>}
+      {data ? <p style={{ color: "white" }}>{data.content}</p> : <p style={{ color: "white" }}>Loading...</p>}
     </div>
   );
 }

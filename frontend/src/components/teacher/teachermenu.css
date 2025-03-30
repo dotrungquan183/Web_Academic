@@ -1,11 +1,13 @@
 .nav {
-    background-color: #333;
+    background-color:rgba(160, 189, 248, 0.2) !important; ;
     padding: 10px 0;
     text-align: none;
     margin-left: -5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-top: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía trên */
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía dưới */
   }
   
   .nav ul {
@@ -36,6 +38,8 @@
     color: #3399ff !important;
   }
   
+
+
   /* 🔹 Submenu */
   .submenu {
     display: none;
@@ -129,7 +133,7 @@
   /* 🏷️ Icon sinh viên */
   .header-icon {
     margin-right: 10px;
-    color: #003366;
+    color: white;
     font-size: 24px;
   }
   
@@ -199,11 +203,11 @@
   }
   /* 🎨 Giữ màu chữ */
   .header-text.black {
-    color: black;
+    color: white;
   }
   
   .header-text.blue {
-    color: #003366; /* Bắt buộc giữ màu xanh */
+    color: #3399ff; /* Bắt buộc giữ màu xanh */
   }
   
   /*Chỉnh vị trí của icons và profile*/
@@ -234,7 +238,7 @@
   .profile-email {
     cursor: pointer;
     font-weight: bold;
-    color: #333;
+    color: white;
     padding: 8px;
     transition: color 0.3s ease;
   }
@@ -301,14 +305,6 @@
     border-radius: 50%;
     border: 2px solid #ccc;
     object-fit: cover; /* Đảm bảo ảnh không bị méo */
-  }
-  
-  .profile-email {
-    font-weight: bold;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 5px;
   }
   
   /* Đảm bảo icon không kéo xuống */

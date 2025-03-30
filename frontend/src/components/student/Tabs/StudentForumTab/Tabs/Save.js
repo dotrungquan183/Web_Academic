@@ -107,7 +107,7 @@ const containerStyle = {
   marginBottom: "30px",
   marginTop: "15px",
   marginLeft:"160px",
-  height: "auto",
+  height: "135px",
   width: "1020px",
 };
 

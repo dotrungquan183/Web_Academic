@@ -1,40 +1,54 @@
-.nav {
-    background-color: #333;
-    padding: 10px 0;
-    text-align: none;
-    margin-left: -5px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .nav ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .nav li {
-    display: inline-block;
-    position: relative;
-    color: #fff;
-    padding: 6px 45px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: color 0.3s ease;
-  }
-  
-  /* ✅ Đảm bảo chữ menu là trắng */
-  .nav li a {
-    color: white !important; 
-    text-decoration: none; /* Xóa gạch chân */
-    font-weight: none;
-  }
-  
-  /* ✅ Hover vào menu chính */
-  .nav li:hover > a {
-    color: #3399ff !important;
-  }
+nav {
+  background: rgba(160, 189, 248, 0.2)  !important;/* Giảm opacity để nhìn thấy nền */
+  padding: 10px 0;
+  margin-left: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px); /* Tạo hiệu ứng mờ nền */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Thêm viền nhẹ để rõ hơn */
+}
+
+.nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav li {
+  display: inline-block;
+  position: relative;
+  color: #fff;
+  padding: 6px 45px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+/* ✅ Đảm bảo chữ menu là trắng */
+.nav li a {
+  color: white !important; 
+  text-decoration: none;
+  position: relative;
+}
+
+/* ✅ Hover vào menu chính + giữ gạch chân khi tab được chọn */
+.nav li:hover > a::after,
+.nav li.active > a::after {  
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 2px;
+  background-color: white; 
+  transition: width 0.3s ease-in-out;
+}
+
+/* ✅ Hover đổi màu chữ */
+.nav li:hover > a {
+  color: #001a4d;
+}
   
   /* 🔹 Submenu */
   .submenu {
@@ -74,7 +88,6 @@
   .submenu li:hover {
     background-color: #333;
   }
-  
   /* Table */
   table {
     width: 50%;
@@ -129,7 +142,7 @@
   /* 🏷️ Icon sinh viên */
   .header-icon {
     margin-right: 10px;
-    color: #003366;
+    color: white;
     font-size: 24px;
   }
   
@@ -199,11 +212,11 @@
   }
   /* 🎨 Giữ màu chữ */
   .header-text.black {
-    color: black;
+    color: white;
   }
   
   .header-text.blue {
-    color: #003366; /* Bắt buộc giữ màu xanh */
+    color: #3399ff; /* Bắt buộc giữ màu xanh */
   }
   
   /*Chỉnh vị trí của icons và profile*/
@@ -234,14 +247,14 @@
   .profile-email {
     cursor: pointer;
     font-weight: bold;
-    color: #333;
+    color: white;
     padding: 8px;
     transition: color 0.3s ease;
   }
   
   /* Đổi màu khi hover */
   .profile-dropdown:hover .profile-email {
-    color: #3399ff; /* Xanh dương */
+    color: #9dcbf8; /* Xanh dương */
   }
   
   /* Submenu hiển thị ngay dưới email */
@@ -303,14 +316,6 @@
     object-fit: cover; /* Đảm bảo ảnh không bị méo */
   }
   
-  .profile-email {
-    font-weight: bold;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  
   /* Đảm bảo icon không kéo xuống */
   .profile-container {
     display: flex;
@@ -330,7 +335,7 @@
   }
   /* Thêm ảnh nền đẹp, ý tưởng của siupestcuti */
   body {
-    background-image: url('https://img.freepik.com/free-photo/artistic-blurry-colorful-wallpaper-background_58702-8173.jpg?semt=ais_hybrid');
+    background-image: url('https://cdn.pixabay.com/photo/2014/05/22/16/52/pyrenees-351266_1280.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
