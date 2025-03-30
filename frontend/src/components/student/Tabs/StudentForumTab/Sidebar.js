@@ -94,7 +94,7 @@ const styles = {
     top: "150px",
     left: "10px",
     cursor: "pointer",
-    color: "#003366",
+    color: "black",
   },
   
 };

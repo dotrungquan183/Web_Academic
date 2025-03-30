@@ -1,102 +1,36 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
+import React, { useState } from "react";
+import Sidebar from "./Sidebar";
+import { FiMenu } from "react-icons/fi";
 
-function Sidebar() {
-  const location = useLocation();
+function StudentForumLayout({ children }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div style={styles.sidebar}>
-      <Link to="/studentforum/question" style={styles.link}>
-        <button
+    <div style={{ display: "flex" }}>
+      {isSidebarOpen && <Sidebar />}
+      <div style={{ marginLeft: isSidebarOpen ? "220px" : "40px", padding: "20px", width: "100%" }}>
+        <div
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           style={{
-            ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/question" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/question" ? "white" : "#003366",
+            ...styles.menuIcon,
+            color: isSidebarOpen ? "#003366" : "white", // Thay đổi màu theo trạng thái
           }}
         >
-          <FiHelpCircle style={styles.icon} /> Câu hỏi
-        </button>
-      </Link>
-      <Link to="/studentforum/unanswer" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/unanswer" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/unanswer" ? "white" : "#003366",
-          }}
-        >
-          <FiXCircle style={styles.icon} /> Chưa trả lời
-        </button>
-      </Link>
-      <Link to="/studentforum/tag" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/tag" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/tag" ? "white" : "#003366",
-          }}
-        >
-          <FiTag style={styles.icon} /> Thẻ
-        </button>
-      </Link>
-      <Link to="/studentforum/save" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/save" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/save" ? "white" : "#003366",
-          }}
-        >
-          <FiSave style={styles.icon} /> Lưu trữ
-        </button>
-      </Link>
+          <FiMenu size={24} />
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  sidebar: {
-    backgroundColor: "#ffffff",
-    height: "100vh",
-    width: "300px",
-    display: "flex",
-    flexDirection: "column",
-    paddingTop: "53px",
-    position: "sticky", // Giữ sidebar cố định khi cuộn
-    top: "0", // Đảm bảo nó không di chuyển
-    borderRight: "1px solid #ccc",
-    marginTop: "-15px",
-    marginRight: "-300px",
-  },
-  button: {
-    padding: "10px",
-    border: "none",
-    backgroundColor: "transparent",
-    cursor: "pointer",
-    textAlign: "left",
-    width: "100%",
-    fontSize: "16px",
-    fontWeight: "bold",
-    transition: "background-color 0.3s, color 0.3s",
-    borderBottom: "1px solid #ccc",
-  },
-  icon: {
-    marginRight: "10px",
-    fontSize: "20px",
-    verticalAlign: "middle",
-  },
-  link: {
-    textDecoration: "none",
-  },
   menuIcon: {
     position: "absolute",
-    top: "150px",
+    top: "155px",
     left: "10px",
     cursor: "pointer",
-    color: "#003366",
   },
-  
 };
 
-export default Sidebar;
+export default StudentForumLayout;

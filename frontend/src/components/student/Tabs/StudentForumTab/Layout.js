@@ -9,7 +9,13 @@ function StudentForumLayout({ children }) {
     <div style={{ display: "flex" }}>
       {isSidebarOpen && <Sidebar />}
       <div style={{ marginLeft: isSidebarOpen ? "220px" : "40px", padding: "20px", width: "100%" }}>
-        <div onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={styles.menuIcon}>
+        <div
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          style={{
+            ...styles.menuIcon,
+            color: isSidebarOpen ? "#003366" : "white", // Thay đổi màu theo trạng thái
+          }}
+        >
           <FiMenu size={24} />
         </div>
         {children}
@@ -24,7 +30,6 @@ const styles = {
     top: "155px",
     left: "10px",
     cursor: "pointer",
-    color: "#003366",
   },
 };
 
