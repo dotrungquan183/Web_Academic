@@ -1,5 +1,5 @@
 .nav {
-  background:  rgba(250, 252, 255, 0.1) !important;
+  background:  rgba(250, 252, 255, 0.05) !important;
   padding: 10px 0;
   text-align: none;
   margin-left: -5px; /* 📌 Dịch menu sang trái 20px */
@@ -227,7 +227,7 @@ tr:hover {
 }
 
 .header-text.blue {
-  color: #a1cfff; /* Bắt buộc giữ màu xanh */
+  color: white; /* Bắt buộc giữ màu xanh */
 }
 
   /* Thêm ảnh nền đẹp, ý tưởng của siupestcuti */

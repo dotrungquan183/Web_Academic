@@ -1,5 +1,5 @@
 nav {
-  background:  rgba(250, 252, 255, 0.1)  !important;/* Giảm opacity để nhìn thấy nền */
+  background:  rgba(250, 252, 255, 0.05)  !important;/* Giảm opacity để nhìn thấy nền */
   padding: 10px 0;
   margin-left: -5px;
   display: flex;
@@ -240,7 +240,7 @@ nav {
   }
   
   .header-text.blue {
-    color: #a1cfff; /* Bắt buộc giữ màu xanh */
+    color: white; /* Bắt buộc giữ màu xanh */
   }
   
   /*Chỉnh vị trí của icons và profile*/

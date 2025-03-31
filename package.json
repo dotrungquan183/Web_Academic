@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "katex": "^0.16.21",
+    "mathjax": "^3.2.2",
+    "react-quill": "^2.0.0",
     "react-select": "^5.10.1"
   }
 }

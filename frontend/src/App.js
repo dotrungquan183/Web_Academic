@@ -25,7 +25,8 @@ import StudentIntroTab from "./components/student/Tabs/StudentIntroTab";
 import StudentCoursesTab from "./components/student/Tabs/StudentCoursesTab";
 import StudentDocsTab from "./components/student/Tabs/StudentDocsTab"
 import StudentForumTab from "./components/student/Tabs/StudentForumTab/Menu"
-import StudentForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Question"
+import StudentForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Questions/Question"
+import StudentAskQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Questions/AskQuestion"
 import StudentForumUnanswer from "./components/student/Tabs/StudentForumTab/Tabs/Unanswer"
 import StudentForumTag from "./components/student/Tabs/StudentForumTab/Tabs/Tag"
 import StudentForumSave from "./components/student/Tabs/StudentForumTab/Tabs/Save"
@@ -165,6 +166,7 @@ function App() {
         <Route path="/studentforum/unanswer" element={<StudentLayout><StudentForumUnanswer /></StudentLayout>} />
         <Route path="/studentforum/tag" element={<StudentLayout><StudentForumTag /></StudentLayout>} />
         <Route path="/studentforum/save" element={<StudentLayout><StudentForumSave /></StudentLayout>} />
+        <Route path="/studentforum/question/askquestion" element={<StudentLayout><StudentAskQuestion /></StudentLayout>} />
 
         <Route path="/teacher" element={<TeacherLayout><TeacherHomeTab /></TeacherLayout>} />
         <Route path="/teacherhome1" element={<TeacherLayout><TeacherHome1 /></TeacherLayout>} />
