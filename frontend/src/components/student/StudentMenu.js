@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  FaUserGraduate, FaSearch, FaBell, FaCog, FaQuestionCircle,
+  FaCalculator, FaSearch, FaBell, FaCog, FaQuestionCircle,
   FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome
 } from "react-icons/fa";
 import "./studentmenu.css";
@@ -42,7 +42,7 @@ function StudentMenu() {
     <div className="menu-container">
       <div className="header">
         <h1 className="header-title">
-          <FaUserGraduate className="header-icon" />
+          <FaCalculator className="header-icon" />
           <span className="header-text black">TOÁN </span>
           <span className="header-text black">HỌC </span>
           <span className="header-text blue">SINH </span>
@@ -74,7 +74,7 @@ function StudentMenu() {
             {getAvatarUrl() ? (
               <img src={getAvatarUrl()} alt="Avatar" className="profile-avatar" />
             ) : (
-              <FaUserGraduate className="profile-icon" />
+              <FaCalculator className="profile-icon" />
             )}
           </div>
 

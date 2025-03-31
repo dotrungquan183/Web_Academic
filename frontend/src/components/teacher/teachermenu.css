@@ -1,5 +1,5 @@
 .nav {
-    background-color: rgba(250, 252, 255, 0.15) !important; ;
+    background-color: rgba(250, 252, 255, 0.1) !important; ;
     padding: 10px 0;
     text-align: none;
     margin-left: -5px;
@@ -8,7 +8,7 @@
     justify-content: space-between;
     border-top: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía trên */
     border-bottom: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía dưới */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8); /* Bóng mờ màu đen */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6); /* Bóng mờ màu đen */
   }
   
   .nav ul {
@@ -32,15 +32,35 @@
     color: white !important; 
     text-decoration: none; /* Xóa gạch chân */
     font-weight: none;
+    font-weight: bold;
   }
   
   /* ✅ Hover vào menu chính */
   .nav li:hover > a {
     color: #a1cfff !important;
   }
-  
+/* ✅ Hover vào thì thêm gạch xanh bên dưới */
+.nav li:hover > a::before {  
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px; /* Dịch xuống dưới gạch trắng */
+  width: 100%;
+  height: 2px;
+  background-color: #a1cfff;  
+  transition: background-color 0.2s ease-in-out;
+}
 
-
+/* ✅ Khi tab active thì gạch trắng giữ lại */
+.nav li.active > a::after {  
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px; /* Vị trí cao hơn gạch xanh */
+  width: 100%;
+  height: 2px;
+  background-color: white;
+}
   /* 🔹 Submenu */
   .submenu {
     display: none;

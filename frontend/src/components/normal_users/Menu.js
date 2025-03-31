@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaUserGraduate, FaSearch, FaHome, FaBook, FaChalkboardTeacher } from "react-icons/fa"; 
+import { FaCalculator, FaSearch, FaHome, FaBook, FaChalkboardTeacher } from "react-icons/fa"; 
 import "./menu.css";
 
 function Menu() {
@@ -7,7 +7,7 @@ function Menu() {
     <div>
       {/* Header */}
       <h1 className="header-title">
-        <FaUserGraduate className="header-icon" />
+        <FaCalculator className="header-icon" />
         <span className="header-text black">TOÁN </span>
         <span className="header-text black">HỌC </span>
         <span className="header-text blue">SINH </span>
