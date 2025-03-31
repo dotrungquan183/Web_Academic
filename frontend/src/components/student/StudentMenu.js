@@ -100,9 +100,11 @@ function StudentMenu() {
 
       {/* ======== NAVIGATION MENU ======== */}
       <ul className="nav">
-        {/* TRANG CHỦ chỉ active khi đúng "/student", không bị active khi vào trang con */}
-        <li className={location.pathname === "/student" ? "active" : ""}>
-          <Link to="/student" className="menu-item">TRANG CHỦ ▾</Link>
+        <li className="menu-item-container">
+        <Link to="/student" className="menu-item no-underline">
+          TRANG CHỦ ▾
+        </Link>
+
           <ul className="submenu">
             <li className={location.pathname === "/studenthome1" ? "active" : ""}>
               <Link to="/studenthome1">
@@ -137,11 +139,9 @@ function StudentMenu() {
         <li className={location.pathname === "/studentsupport" ? "active" : ""}>
           <Link to="/studentsupport">HỖ TRỢ HỌC TẬP</Link>
         </li>
-
         <li className={location.pathname.startsWith("/studentforum") ? "active" : ""}>
           <Link to="/studentforum">DIỄN ĐÀN</Link>
         </li>
-
         <li className={location.pathname === "/studentcontact" ? "active" : ""}>
           <Link to="/studentcontact">LIÊN HỆ</Link>
         </li>

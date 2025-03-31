@@ -1,5 +1,5 @@
 .nav {
-    background-color:rgba(160, 189, 248, 0.2) !important; ;
+    background-color: rgba(250, 252, 255, 0.15) !important; ;
     padding: 10px 0;
     text-align: none;
     margin-left: -5px;
@@ -8,6 +8,7 @@
     justify-content: space-between;
     border-top: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía trên */
     border-bottom: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía dưới */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8); /* Bóng mờ màu đen */
   }
   
   .nav ul {
@@ -35,7 +36,7 @@
   
   /* ✅ Hover vào menu chính */
   .nav li:hover > a {
-    color: #3399ff !important;
+    color: #a1cfff !important;
   }
   
 
@@ -207,7 +208,7 @@
   }
   
   .header-text.blue {
-    color: #3399ff; /* Bắt buộc giữ màu xanh */
+    color: #a1cfff; /* Bắt buộc giữ màu xanh */
   }
   
   /*Chỉnh vị trí của icons và profile*/
@@ -245,7 +246,7 @@
   
   /* Đổi màu khi hover */
   .profile-dropdown:hover .profile-email {
-    color: #0055aa; /* Xanh dương */
+    color: #a1cfff; /* Xanh dương */
   }
   
   /* Submenu hiển thị ngay dưới email */
@@ -283,7 +284,7 @@
   /* Hover đổi nền cho item */
   .submenu-profile li:hover a {
     background-color: #333;
-    color: #3399ff ;
+    color: #a1cfff  ;
   }
   /* Hiện submenu khi hover */
   .profile-dropdown:hover .submenu-profile {
@@ -321,7 +322,7 @@
 
   .logout:hover {
     background-color: #333; /* Giữ hiệu ứng chuyển màu xanh */
-    color: #3399ff;
+    color: #a1cfff ;
     cursor: pointer;
   }
   

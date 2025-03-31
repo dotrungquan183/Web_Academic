@@ -1,5 +1,5 @@
 nav {
-  background: rgba(160, 189, 248, 0.2)  !important;/* Giảm opacity để nhìn thấy nền */
+  background:  rgba(250, 252, 255, 0.15)  !important;/* Giảm opacity để nhìn thấy nền */
   padding: 10px 0;
   margin-left: -5px;
   display: flex;
@@ -7,6 +7,7 @@ nav {
   justify-content: space-between;
   backdrop-filter: blur(8px); /* Tạo hiệu ứng mờ nền */
   border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Thêm viền nhẹ để rõ hơn */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8); /* Bóng mờ màu đen */
 }
 
 .nav ul {
@@ -32,6 +33,12 @@ nav {
   position: relative;
 }
 
+/* ✅ Chỉ gạch chân chữ, không gạch chân icon hoặc dấu tam giác */
+.nav li a span {
+  display: inline-block; /* Đảm bảo chỉ áp dụng hiệu ứng lên chữ */
+  position: relative;
+}
+
 /* ✅ Hover vào menu chính + giữ gạch chân khi tab được chọn */
 .nav li:hover > a::after,
 .nav li.active > a::after {  
@@ -47,9 +54,14 @@ nav {
 
 /* ✅ Hover đổi màu chữ */
 .nav li:hover > a {
-  color: #001a4d;
+  color: #a1cfff !important;
 }
-  
+
+/* ✅ Không gạch chân TRANG CHỦ khi hover */
+.nav li:first-child:hover > a::after {
+  content: none !important;
+}
+
   /* 🔹 Submenu */
   .submenu {
     display: none;
@@ -216,7 +228,7 @@ nav {
   }
   
   .header-text.blue {
-    color: #3399ff; /* Bắt buộc giữ màu xanh */
+    color: #a1cfff; /* Bắt buộc giữ màu xanh */
   }
   
   /*Chỉnh vị trí của icons và profile*/
@@ -292,7 +304,7 @@ nav {
   /* Hover đổi nền cho item */
   .submenu-profile li:hover a {
     background-color: #333;
-    color: #3399ff ;
+    color: #a1cfff  ;
   }
   /* Hiện submenu khi hover */
   .profile-dropdown:hover .submenu-profile {
@@ -330,12 +342,12 @@ nav {
 
   .logout:hover {
     background-color: #333; /* Giữ hiệu ứng chuyển màu xanh */
-    color: #3399ff;
+    color: #a1cfff ;
     cursor: pointer;
   }
   /* Thêm ảnh nền đẹp, ý tưởng của siupestcuti */
   body {
-    background-image: url('https://cdn.pixabay.com/photo/2014/05/22/16/52/pyrenees-351266_1280.jpg');
+    background-image: url('https://images.pexels.com/photos/11297732/pexels-photo-11297732.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

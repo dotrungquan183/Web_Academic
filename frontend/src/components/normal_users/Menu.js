@@ -29,7 +29,18 @@ function Menu() {
       {/* Menu Navigation */}
       <ul className="nav">
         <li className="has-submenu">
-          <Link to="/" className="menu-item">TRANG CHỦ ▾</Link>
+        <Link
+          to="/student"
+          className="menu-item no-underline"
+          style={{ textDecoration: 'none' }}
+          onMouseEnter={(e) => {
+            e.preventDefault();
+            e.target.style.textDecoration = 'none';
+          }}
+          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+        >
+          TRANG CHỦ ▾
+        </Link>
           <ul className="submenu">
             <li>
               <Link to="/home1">
