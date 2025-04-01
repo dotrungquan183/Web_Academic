@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from api.models import UserInformation
 from django.conf import settings
 
@@ -14,42 +15,33 @@ def login_view(request):
     if not username or not password:
         return Response({"error": "Vui lòng nhập đầy đủ thông tin!"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Kiểm tra tài khoản và mật khẩu
     user = authenticate(username=username, password=password)
     if not user:
-        print("DEBUG: Sai tài khoản hoặc mật khẩu!")
         return Response({"error": "Sai tài khoản hoặc mật khẩu!"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # Kiểm tra user có trong UserInformation không
     try:
         user_info = UserInformation.objects.get(user=user)
     except UserInformation.DoesNotExist:
-        print(f"DEBUG: Không tìm thấy thông tin user {username} trong UserInformation")
         return Response({"error": "Không tìm thấy thông tin user!"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Xác định role theo user_type
     user_type = user_info.user_type.lower()
     role_map = {"sinh viên": "student", "giảng viên": "teacher", "admin": "admin"}
-    role = role_map.get(user_type, "user")  # Mặc định nếu không thuộc các loại trên
+    role = role_map.get(user_type, "user")
 
-    # Debug log
-    print(f"DEBUG: Đăng nhập thành công! User {username}, Role: {role}")
-
-    # Xử lý avatar
     avatar_path = user_info.avatar.lstrip("/") if user_info.avatar else "default-avatar.png"
     if avatar_path and settings.MEDIA_URL.lstrip("/") in avatar_path:
         avatar_path = avatar_path[len(settings.MEDIA_URL.lstrip("/")):]
-
     avatar_url = request.build_absolute_uri(f"{settings.MEDIA_URL.rstrip('/')}/{avatar_path}")
 
-    print(f"DEBUG: settings.MEDIA_URL = {settings.MEDIA_URL}")  
-    print(f"DEBUG: user_info.avatar = {user_info.avatar}")  
-    print(f"DEBUG: Final Avatar URL = {avatar_url}")  
+    # Tạo token JWT
+    refresh = RefreshToken.for_user(user)
+    access_token = str(refresh.access_token)
 
-    # Trả về thông tin đầy đủ
     return Response({
         "message": "Đăng nhập thành công!",
         "role": role,
         "username": user.username,
-        "avatar": avatar_url
+        "avatar": avatar_url,
+        "token": access_token,
+        "refresh_token": str(refresh)
     }, status=status.HTTP_200_OK)

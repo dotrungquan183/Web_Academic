@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { getToken } from '../../../../../auth/authHelper'
 
 function StudentAskQuestion() {
   const navigate = useNavigate();
@@ -8,32 +9,69 @@ function StudentAskQuestion() {
     title: "",
     description: "",
     tags: "",
+    bounty_amount: 0,
   });
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      alert("Bạn chưa đăng nhập! Vui lòng đăng nhập để tiếp tục.");
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === "bounty_amount" && (isNaN(value) || Number(value) < 0)) {
+      alert("Giá trị treo thưởng không hợp lệ!");
+      return;
+    }
+    
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, description, tags } = formData;
+    const { title, description, tags, bounty_amount } = formData;
+
     if (!title || !description || !tags) {
       alert("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
+    const token = getToken();
+    if (!token) {
+      alert("Bạn chưa đăng nhập!");
+      navigate("/login");
+      return;
+    }
+
+    const questionData = {
+      title,
+      description,
+      tags: tags.split(",").map((tag) => tag.trim()).join(","),
+      bounty_amount: bounty_amount || 0,
+    };
+
+    console.log("Dữ liệu gửi lên:", questionData);
     try {
-      const response = await fetch("http://localhost:8000/api/questions", {
-        method: "POST",
-        body: JSON.stringify(formData),
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await fetch(
+        "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/",
+        {
+          method: "POST",
+          body: JSON.stringify(questionData),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const result = await response.json();
       if (response.ok) {
         alert("Câu hỏi đã được đăng!");
-        navigate("/questions");
+        navigate("/studentforum/question");
       } else {
         alert(`Lỗi: ${result.error}`);
       }
@@ -51,32 +89,11 @@ function StudentAskQuestion() {
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.sectionContainer}>
             <div style={styles.leftSection}>
-              <input
-                type="text"
-                name="title"
-                placeholder="Tiêu đề câu hỏi"
-                required
-                onChange={handleChange}
-                style={styles.input}
-              />
-              <textarea
-                name="description"
-                placeholder="Mô tả câu hỏi"
-                required
-                onChange={handleChange}
-                style={styles.textarea}
-              />
-              <input
-                type="text"
-                name="tags"
-                placeholder="Thẻ (cách nhau bằng dấu phẩy)"
-                required
-                onChange={handleChange}
-                style={styles.input}
-              />
-              <button type="submit" style={styles.button}>
-                Đăng câu hỏi
-              </button>
+              <input type="text" name="title" placeholder="Tiêu đề câu hỏi" required onChange={handleChange} style={styles.input} />
+              <textarea name="description" placeholder="Mô tả câu hỏi" required onChange={handleChange} style={styles.textarea} />
+              <input type="text" name="tags" placeholder="Thẻ (cách nhau bằng dấu phẩy)" required onChange={handleChange} style={styles.input} />
+              <input type="number" name="bounty_amount" placeholder="Treo thưởng (VND)" onChange={handleChange} style={styles.input} />
+              <button type="submit" style={styles.button}>Đăng câu hỏi</button>
             </div>
             <div style={styles.rightSection}>
               <h3 style={styles.stepTitle}>Hướng dẫn đặt câu hỏi đúng chuẩn</h3>
@@ -100,7 +117,7 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    height: "77vh",
+    height: "85vh",
   },
   formContainer: {
     width: "1000px",

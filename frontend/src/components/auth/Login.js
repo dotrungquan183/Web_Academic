@@ -18,12 +18,15 @@ function Login({ onLoginSuccess }) {
       });
 
       const data = await response.json();
+
+      // Kiểm tra lỗi trả về từ API
       if (!response.ok) {
         alert(data.error || "Đăng nhập thất bại!");
         return;
       }
 
-      if (!data.role || !data.username) {
+      // Kiểm tra các trường dữ liệu cần thiết có tồn tại
+      if (!data.role || !data.username || !data.avatar) {
         alert("Dữ liệu từ API không hợp lệ!");
         return;
       }
@@ -39,7 +42,13 @@ function Login({ onLoginSuccess }) {
         role: data.role,
       };
 
+      // Lưu thông tin người dùng vào localStorage
       localStorage.setItem("user", JSON.stringify(userData));
+
+      // Lưu token vào localStorage
+      localStorage.setItem("token", data.token); // Lưu token
+
+      // Gọi callback khi đăng nhập thành công
       onLoginSuccess(userData.role);
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);

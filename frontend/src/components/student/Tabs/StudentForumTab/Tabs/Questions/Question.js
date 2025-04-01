@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentForumLayout from "../.././Layout";
+import StudentForumLayout from "../../Layout";
 
 function StudentForumQuestion() {
   const [data, setData] = useState(null);
   const [timeFilter, setTimeFilter] = useState("Newest");
   const [bountyFilter, setBountyFilter] = useState("Bountied");
-  const [interestFilter, setInterestFilter] = useState("Active");
-  const [qualityFilter, setQualityFilter] = useState("Score");
+  const [interestFilter, setInterestFilter] = useState("Trending");
+  const [qualityFilter, setQualityFilter] = useState("Interesting");
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/student/student_forum/student_question/")
+    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched data:", data);
@@ -30,7 +30,7 @@ function StudentForumQuestion() {
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
           <button 
             style={askButtonStyle} 
-            onClick={() => navigate("/studentforum/question/askquestion")} // Điều hướng khi nhấn
+            onClick={() => navigate("/studentforum/question/askquestion")}
           >
             Đặt câu hỏi
           </button>
@@ -41,7 +41,6 @@ function StudentForumQuestion() {
           </div>
           <div style={filterContainerStyle}>
             <div style={filterBoxStyle}>
-              <style>{globalStyle}</style>
               <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} style={dropdownStyle}>
                 <option value="Newest">Newest</option>
                 <option value="Week">Week</option>
@@ -64,32 +63,29 @@ function StudentForumQuestion() {
           </div>
         </div>
       </div>
-
       <div style={questionListStyle}>
         {data === null ? (
           <p>Đang tải dữ liệu...</p>
         ) : data.length > 0 ? (
           <ul style={{ listStyleType: "none", padding: 0 }}>
-            {data.map((question) => {
-              let contentText = "Nội dung không hợp lệ";
-              if (typeof question.content === "string") {
-                contentText = question.content.split(",").map((line, index) => (
-                  <span key={index}>{line}<br /></span>
-                ));
-              } else if (Array.isArray(question.content)) {
-                contentText = question.content.map((line, index) => (
-                  <span key={index}>{String(line)}<br /></span>
-                ));
-              } else if (question.content && typeof question.content === "object") {
-                contentText = <pre>{JSON.stringify(question.content, null, 2)}</pre>;
-              }
-
-              return (
-                <li key={question.id} style={questionItemStyle}>
-                  <p>{contentText}</p>
-                </li>
-              );
-            })}
+            {data.map((question) => (
+              <li 
+                key={question.id} 
+                style={questionContainerStyle} 
+                onClick={() => navigate(`/studentforum/question/${question.id}`)}>
+                <div style={questionContentStyle}>
+                  <h3>{question.title}</h3>
+                  
+                </div>
+                <div style={questionMetaStyle}>
+                  <span>👀 {question.views || 0}</span>
+                  <span>👍 {question.votes || 0}</span>
+                  <span>💬 {question.answers || 0}</span>
+                  <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
+                  <span>🔖 {question.tags && question.tags.length > 0 ? question.tags.join(", ") : "No tags"}</span>
+                </div>
+              </li>
+            ))}
           </ul>
         ) : (
           <p>Không có câu hỏi nào.</p>
@@ -107,7 +103,7 @@ const containerStyle = {
   border: "1px solid #ddd",
   marginBottom: "30px",
   marginTop: "15px",
-  marginLeft:"160px",
+  marginLeft: "160px",
   height: "135px",
   width: "1020px",
 };
@@ -166,22 +162,6 @@ const dropdownStyle = {
   color: "white",
 };
 
-const globalStyle = `
-  select option {
-    background-color: white !important;
-    color: #003366 !important;
-  }
-  select:hover, select:focus {
-    background-color: #003366 !important;
-    color: white !important;
-    border-color: #003366 !important;
-  }
-  select option:hover {
-    background-color: #003366 !important;
-    color: white !important;
-  }
-`;
-
 const questionListStyle = {
   backgroundColor: "#ffffff",
   padding: "20px",
@@ -194,11 +174,27 @@ const questionListStyle = {
   marginLeft: "160px",
 };
 
-const questionItemStyle = {
-  padding: "12px",
-  borderBottom: "1px solid #ddd",
-  fontSize: "16px",
-  lineHeight: "1.5",
+const questionContainerStyle = {
+  backgroundColor: "#f8f9fa",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  marginBottom: "15px",
+  cursor: "pointer",
+};
+
+const questionContentStyle = {
+  fontSize: "18px",
+  fontWeight: "bold",
+  color: "#003366",
+  marginBottom: "10px",
+};
+
+const questionMetaStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  fontSize: "14px",
+  color: "#666",
 };
 
 export default StudentForumQuestion;
