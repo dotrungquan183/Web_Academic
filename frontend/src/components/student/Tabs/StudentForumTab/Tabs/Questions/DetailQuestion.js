@@ -5,8 +5,8 @@ import StudentForumLayout from "../../Layout";
 function StudentForumQuestionDetail() {
   const { id } = useParams();
   const [question, setQuestion] = useState(null);
-  const [votes, setVotes] = useState(0);
-  const [votes_ans, setVotes_ans] = useState(0);
+  const [votes, setVotes] = useState(0); // Lưu trữ vote của câu hỏi
+  const [votes_ans, setVotes_ans] = useState(0); // Lưu trữ vote của câu trả lời
   const [answers, setAnswers] = useState([
     {
       id: 1,
@@ -32,15 +32,44 @@ function StudentForumQuestionDetail() {
 
   if (!question) return <p>Đang tải dữ liệu...</p>;
 
+  // Hàm xử lý tăng giảm vote cho câu hỏi
+  const handleVote = (type, action) => {
+    if (type === "question") {
+      if (action === "up" && votes < 1) {
+        setVotes(votes + 1);
+      } else if (action === "down" && votes > -1) {
+        setVotes(votes - 1);
+      }
+    } else if (type === "answer") {
+      if (action === "up" && votes_ans < 1) {
+        setVotes_ans(votes_ans + 1);
+      } else if (action === "down" && votes_ans > -1) {
+        setVotes_ans(votes_ans - 1);
+      }
+    }
+  };
+
   return (
     <StudentForumLayout>
       <div style={containerStyle}>
         {/* Chi tiết câu hỏi */}
         <div style={questionContainerStyle}>
           <div style={voteContainer}>
-            <button style={voteButton} onClick={() => setVotes(votes + 1)}>⬆</button>
+            <button
+              style={voteButton}
+              onClick={() => handleVote("question", "up")}
+              disabled={votes === 1} // Nếu vote là 1, không thể tăng thêm
+            >
+              ⬆
+            </button>
             <span style={voteCount}>{votes}</span>
-            <button style={voteButton} onClick={() => setVotes(votes - 1)}>⬇</button>
+            <button
+              style={voteButton}
+              onClick={() => handleVote("question", "down")}
+              disabled={votes === -1} // Nếu vote là -1, không thể giảm thêm
+            >
+              ⬇
+            </button>
           </div>
           <div style={questionContentStyle}>
             <h2>{question.title}</h2>
@@ -51,7 +80,7 @@ function StudentForumQuestionDetail() {
             <p>{question.content}</p>
           </div>
         </div>
-        
+
         {/* Khung câu trả lời */}
         <div style={answerContainer}>
           <label style={answerCountLabel}>Tổng số câu trả lời: {answers.length}</label>
@@ -60,9 +89,21 @@ function StudentForumQuestionDetail() {
               {answers.map((ans) => (
                 <li key={ans.id} style={answerItemStyle}>
                   <div style={voteContainer}>
-                    <button style={voteButton} onClick={() => setVotes_ans(votes_ans + 1)}>⬆</button>
+                    <button
+                      style={voteButton}
+                      onClick={() => handleVote("answer", "up")}
+                      disabled={votes_ans === 1} // Nếu vote là 1, không thể tăng thêm
+                    >
+                      ⬆
+                    </button>
                     <span style={voteCount}>{votes_ans}</span>
-                    <button style={voteButton} onClick={() => setVotes_ans(votes_ans - 1)}>⬇</button>
+                    <button
+                      style={voteButton}
+                      onClick={() => handleVote("answer", "down")}
+                      disabled={votes_ans === -1} // Nếu vote là -1, không thể giảm thêm
+                    >
+                      ⬇
+                    </button>
                   </div>
                   <div style={answerContentStyle}>
                     <p>{ans.content}</p>
@@ -79,70 +120,71 @@ function StudentForumQuestionDetail() {
     </StudentForumLayout>
   );
 }
+
 const containerStyle = {
-    backgroundColor: "#f8f9fa",
-    padding: "15px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    marginBottom: "30px",
-    marginTop: "15px",
-    marginLeft: "160px",
-    width: "1020px",
-  };
-  
-  const questionContainerStyle = {
-    backgroundColor: "#ffffff",
-    padding: "20px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    marginBottom: "20px",
-    display: "flex",
-    alignItems: "center",
-  };
-  
-  const voteContainer = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    marginRight: "20px",
-  };
-  
-  const voteButton = {
-    fontSize: "40px",
-    cursor: "pointer",
-    border: "none",
-    background: "none",
-    color: "#003366",
-  };
-  
-  const voteCount = {
-    fontSize: "16px",
-    fontWeight: "bold",
-    color: "#003366",
-  };
-  
-  const questionContentStyle = {
-    flex: 1,
-    fontSize: "16px",
-    color: "#003366",
-  };
-  
-  const answerContainer = {
-    backgroundColor: "#ffffff",
-    padding: "20px 40px 30px 0px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
+  backgroundColor: "#f8f9fa",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  marginBottom: "30px",
+  marginTop: "15px",
+  marginLeft: "160px",
+  width: "1020px",
+};
 
-  };
+const questionContainerStyle = {
+  backgroundColor: "#ffffff",
+  padding: "20px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  marginBottom: "20px",
+  display: "flex",
+  alignItems: "center",
+};
 
-  const metaContainerStyle = { 
-    display: "flex", 
-    justifyContent: "flex-begin", 
-    fontSize: "16px", // Giảm font size
-    marginBottom: "10px" , 
-    gap: "15px",
-  };  
-const answerCountLabel = { fontSize: "16px", fontWeight: "bold", marginBottom: "15px", color: "#003366", marginLeft:"40px" };
+const voteContainer = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  marginRight: "20px",
+};
+
+const voteButton = {
+  fontSize: "40px",
+  cursor: "pointer",
+  border: "none",
+  background: "none",
+  color: "#003366",
+};
+
+const voteCount = {
+  fontSize: "16px",
+  fontWeight: "bold",
+  color: "#003366",
+};
+
+const questionContentStyle = {
+  flex: 1,
+  fontSize: "16px",
+  color: "#003366",
+};
+
+const answerContainer = {
+  backgroundColor: "#ffffff",
+  padding: "20px 40px 30px 0px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+};
+
+const metaContainerStyle = {
+  display: "flex",
+  justifyContent: "flex-begin",
+  fontSize: "16px", // Giảm font size
+  marginBottom: "10px",
+  gap: "15px",
+};
+
+const answerCountLabel = { fontSize: "16px", fontWeight: "bold", marginBottom: "15px", color: "#003366", marginLeft: "40px" };
 const answerItemStyle = { display: "flex", marginBottom: "15px", padding: "10px", border: "1px solid #ddd", borderRadius: "8px" };
 const answerContentStyle = { flex: 1 };
 
