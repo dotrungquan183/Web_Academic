@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
+import { jwtDecode } from 'jwt-decode';
+import { getToken } from '../../../../../auth/authHelper'
 
 function StudentForumQuestion() {
   const [data, setData] = useState(null);
@@ -72,7 +74,52 @@ function StudentForumQuestion() {
               <li 
                 key={question.id} 
                 style={questionContainerStyle} 
-                onClick={() => navigate(`/studentforum/question/${question.id}`)}>
+                onClick={async () => {
+                  const token = getToken();  // Lấy token từ localStorage
+                  let userId = null;
+                
+                  // Kiểm tra nếu token tồn tại và giải mã để lấy user_id
+                  if (token) {
+                    try {
+                      const decoded = jwtDecode(token);                      ;
+                      userId = decoded.user_id; // Giả sử user_id nằm trong payload của token
+                    } catch (error) {
+                      console.error("Token không hợp lệ:", error);
+                    }
+                  }
+                
+                  // Nếu không có user_id, bạn có thể xử lý trường hợp người dùng chưa đăng nhập
+                  if (!userId) {
+                    console.error("User chưa đăng nhập hoặc token không hợp lệ.");
+                    return;  // Không tiếp tục nếu không có user_id
+                  }
+                
+                  console.log("Updating view count for question:", question.id, "by user:", userId);
+                
+                  try {
+                    const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_viewquestion/", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        question_id: question.id,
+                        user_id: userId,
+                      }),
+                    });
+                
+                    if (!response.ok) {
+                      console.error("Failed to update view count:", response.status);
+                    } else {
+                      console.log("Successfully updated view count.");
+                    }
+                  } catch (err) {
+                    console.error("Lỗi khi cập nhật view:", err);
+                  }
+                
+                  navigate(`/studentforum/question/${question.id}`);
+                }}
+                >
                 <div style={questionContentStyle}>
                   <h3>{question.title}</h3>
                   
