@@ -175,3 +175,17 @@ EMAIL_HOST_PASSWORD = 'nhvm fnlq nkhs ljsh'  # Mật khẩu ứng dụng
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIA_URL = "/image/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "image")
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

@@ -83,21 +83,67 @@ class Vote(models.Model):
         ('like', 'Like'),
         ('dislike', 'Dislike'),
     ]
-    
+
     CONTENT_TYPE_CHOICES = [
         ('question', 'Question'),
         ('answer', 'Answer'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    vote_type = models.CharField(max_length=10, choices=VOTE_TYPE_CHOICES, null=True)
-    vote_for = models.CharField(max_length=10, choices=CONTENT_TYPE_CHOICES)  # Xác định loại nội dung được vote
-    content_id = models.BigIntegerField()  # Lưu ID của câu hỏi hoặc câu trả lời
+    vote_type = models.CharField(max_length=10, choices=VOTE_TYPE_CHOICES, null=True, blank=True)
+    vote_for = models.CharField(max_length=10, choices=CONTENT_TYPE_CHOICES)
+    content_id = models.BigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'vote_for', 'content_id')  # Mỗi người chỉ vote 1 lần cho cùng 1 nội dung
-        db_table = 'votes'  # Đặt tên bảng trong database
+        unique_together = ('user', 'vote_for', 'content_id')
+        db_table = 'votes'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.vote_for} ({self.vote_type})"
+
+    @classmethod
+    def toggle_vote(cls, user, vote_for, content_id, vote_type):
+        # Lấy hoặc tạo một vote mới cho user, vote_for, content_id
+        vote, created = cls.objects.get_or_create(
+            user=user,
+            vote_for=vote_for,
+            content_id=content_id,
+        )
+
+        if created:
+            # Nếu vote chưa tồn tại, tạo mới và lưu vote_type
+            vote.vote_type = vote_type
+            vote.save()
+            cls.update_vote_count(vote_for, content_id)  # Cập nhật số lượng vote
+            return vote_type  # Trả về vote_type để frontend biết hành động thích/ghét
+
+        else:
+            if vote.vote_type == vote_type:
+                # Nếu vote_type không thay đổi (ví dụ từ like sang like), thì xóa bản ghi cũ
+                vote.delete()
+                cls.update_vote_count(vote_for, content_id)  # Cập nhật số lượng vote
+                return 'remove'  # Trả về 'remove' khi xóa
+
+            else:
+                # Nếu vote_type thay đổi (like <-> dislike), cập nhật vote
+                vote.vote_type = vote_type
+                vote.save()
+                cls.update_vote_count(vote_for, content_id)  # Cập nhật số lượng vote
+                return vote_type  # Trả về vote_type mới (like hoặc dislike)
+
+    @classmethod
+    def update_vote_count(cls, vote_for, content_id):
+        # Cập nhật số lượng like/dislike cho câu hỏi hoặc câu trả lời
+        likes = cls.objects.filter(vote_for=vote_for, content_id=content_id, vote_type='like').count()
+        dislikes = cls.objects.filter(vote_for=vote_for, content_id=content_id, vote_type='dislike').count()
+
+        # Bạn có thể lưu số lượng này vào bảng câu hỏi hoặc câu trả lời nếu cần
+        # Ví dụ: Cập nhật tổng số vote vào bảng `Question` hoặc `Answer` nếu cần
+        # Question.objects.filter(id=content_id).update(likes=likes, dislikes=dislikes)
+        
+        # Hoặc bạn có thể trả về số lượng để hiển thị trực tiếp trên frontend
+        return likes, dislikes
 
 class View(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)

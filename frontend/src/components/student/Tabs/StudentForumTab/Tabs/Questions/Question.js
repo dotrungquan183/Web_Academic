@@ -97,7 +97,7 @@ function StudentForumQuestion() {
                   console.log("Updating view count for question:", question.id, "by user:", userId);
                 
                   try {
-                    const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_viewquestion/", {
+                    const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/", {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",

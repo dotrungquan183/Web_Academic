@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
+import { getToken } from '../../../../../auth/authHelper';
 
 function StudentForumQuestionDetail() {
   const { id } = useParams();
@@ -16,37 +17,86 @@ function StudentForumQuestionDetail() {
   ]);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/`)
-      .then((response) => response.json())
-      .then((data) => {
-        const selectedQuestion = data.find((q) => q.id.toString() === id);
-        if (selectedQuestion) {
-          setQuestion(selectedQuestion);
-        }
-      });
+  // Lấy câu hỏi
+  fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/`)
+    .then((response) => response.json())
+    .then((data) => {
+      const selectedQuestion = data.find((q) => q.id.toString() === id);
+      if (selectedQuestion) {
+        setQuestion(selectedQuestion);
+      }
+    });
 
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/${id}/answers/`)
-      .then((response) => response.json())
-      .then((data) => setAnswers(data));
-  }, [id]);
+  // Lấy câu trả lời
+  fetch(`http://localhost:8000/api/student/student_forum/student_question/${id}/answers/`)
+    .then((response) => response.json())
+    .then((data) => setAnswers(data));
+
+  // Lấy votes từ student_detailquestion
+  fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${id}/`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data && data.votes !== undefined) {
+        setVotes(data.votes); // Cập nhật votes câu hỏi
+      }
+      if (data && data.answers && data.answers.length > 0 && data.answers[0].votes !== undefined) {
+        setVotes_ans(data.answers[0].votes); // Cập nhật votes câu trả lời
+      }
+    });
+}, [id]);
+
 
   if (!question) return <p>Đang tải dữ liệu...</p>;
 
-  // Hàm xử lý tăng giảm vote cho câu hỏi
   const handleVote = (type, action) => {
+    console.log("handleVote called with:", { type, action }); // Log khi hàm được gọi
+
+    // Kiểm tra nếu đã vote lên hoặc vote xuống rồi thì không làm gì cả
     if (type === "question") {
-      if (action === "up" && votes < 1) {
-        setVotes(votes + 1);
-      } else if (action === "down" && votes > -1) {
-        setVotes(votes - 1);
-      }
+      if (action === "up" && votes === 1) return; // Nếu đã vote lên, không cho phép tăng thêm
+      if (action === "down" && votes === -1) return; // Nếu đã vote xuống, không cho phép giảm thêm
     } else if (type === "answer") {
-      if (action === "up" && votes_ans < 1) {
-        setVotes_ans(votes_ans + 1);
-      } else if (action === "down" && votes_ans > -1) {
-        setVotes_ans(votes_ans - 1);
-      }
+      if (action === "up" && votes_ans === 1) return; // Nếu đã vote lên cho câu trả lời, không cho phép tăng thêm
+      if (action === "down" && votes_ans === -1) return; // Nếu đã vote xuống cho câu trả lời, không cho phép giảm thêm
     }
+
+    const voteType = action === "up" ? "like" : "dislike";
+    const contentType = type === "question" ? "question" : "answer";
+    const contentId = type === "question" ? question.id : answers[0]?.id; // Giả sử bạn đang xử lý một câu trả lời tại một thời điểm
+  
+    const voteData = {
+      vote_type: voteType,
+      vote_for: contentType,
+      content_id: contentId,
+    };
+  
+    const token = getToken(); // Lấy token từ hàm getToken()
+  
+    console.log("Sending vote data:", voteData); // Log dữ liệu vote
+    console.log("Token:", token); // Log token
+  
+    fetch('http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Thêm token vào header
+      },
+      body: JSON.stringify(voteData),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Vote response:", data); // Log phản hồi từ API
+        if (data.success) {
+          if (type === "question") {
+            setVotes((prevVotes) => prevVotes + (action === "up" ? 1 : -1));
+          } else if (type === "answer") {
+            setVotes_ans((prevVotesAns) => prevVotesAns + (action === "up" ? 1 : -1));
+          }
+        } else {
+          console.error("Vote failed:", data); // Log lỗi nếu vote không thành công
+        }
+      })
+      .catch((error) => console.error("Error during vote:", error)); // Log lỗi khi gửi vote
   };
 
   return (
