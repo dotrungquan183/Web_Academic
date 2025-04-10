@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Prefetch, Sum
-from api.models import Question, QuestionTagMap, View
+from api.models import Question, QuestionTagMap, View, UserInformation
 from django.utils import timezone
 from django.contrib.auth.models import User
 import logging
@@ -11,33 +11,43 @@ logger = logging.getLogger(__name__)
 
 class StudentShowQuestionView(APIView):
     def get(self, request):
-        # Lấy danh sách câu hỏi
-        questions = Question.objects.prefetch_related(
+        # Lấy danh sách câu hỏi, kèm user và user_info
+        questions = Question.objects.select_related("user").prefetch_related(
             Prefetch(
                 'questiontagmap_set',
                 queryset=QuestionTagMap.objects.select_related('tag')
             )
-        ).values("id", "title", "content", "created_at")
+        ).all()
 
         question_list = []
 
         for question in questions:
             # Lấy tags
-            tags = QuestionTagMap.objects.filter(question_id=question["id"]).select_related('tag')
-            tag_names = [tag.tag.tag_name for tag in tags]
+            tags = [qt.tag.tag_name for qt in question.questiontagmap_set.all()]
 
             # Tính tổng số lượt xem
-            total_views = View.objects.filter(question_id=question["id"]).aggregate(
+            total_views = View.objects.filter(question_id=question.id).aggregate(
                 total_views=Sum('view_count')
             )["total_views"] or 0
 
+            # Lấy thông tin user
+            username = question.user.username
+            try:
+                user_info = UserInformation.objects.get(user=question.user)
+                avatar = user_info.avatar
+            except UserInformation.DoesNotExist:
+                avatar = None
+
             question_list.append({
-                "id": question["id"],
-                "title": question["title"],
-                "content": question["content"],
-                "created_at": question["created_at"],
-                "tags": tag_names,
-                "views": total_views,  # ✅ thêm vào đây
+                "id": question.id,
+                "title": question.title,
+                "content": question.content,
+                "created_at": question.created_at,
+                "bounty_amount": question.bounty_amount,
+                "tags": tags,
+                "views": total_views,
+                "username": username,
+                "avatar": avatar,
             })
 
         return Response(question_list, status=status.HTTP_200_OK)

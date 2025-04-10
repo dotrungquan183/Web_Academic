@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
 import { jwtDecode } from 'jwt-decode';
-import { getToken } from '../../../../../auth/authHelper'
+import { getToken } from '../../../../../auth/authHelper';
 
 function StudentForumQuestion() {
   const [data, setData] = useState(null);
+  const [votesMap, setVotesMap] = useState({});
   const [timeFilter, setTimeFilter] = useState("Newest");
   const [bountyFilter, setBountyFilter] = useState("Bountied");
   const [interestFilter, setInterestFilter] = useState("Trending");
@@ -15,9 +16,24 @@ function StudentForumQuestion() {
   useEffect(() => {
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
       .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched data:", data);
-        setData(Array.isArray(data) ? data : data ? [data] : []);
+      .then(async (data) => {
+        const formattedData = Array.isArray(data) ? data : data ? [data] : [];
+        setData(formattedData);
+
+        // Fetch votes for each question
+        const votesResults = {};
+        await Promise.all(formattedData.map(async (q) => {
+          try {
+            const res = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`);
+            const detail = await res.json();
+            if (detail.total_vote_score !== undefined) {
+              votesResults[q.id] = detail.total_vote_score;
+            }
+          } catch (err) {
+            console.error(`Error fetching votes for question ${q.id}:`, err);
+          }
+        }));
+        setVotesMap(votesResults);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -65,6 +81,7 @@ function StudentForumQuestion() {
           </div>
         </div>
       </div>
+
       <div style={questionListStyle}>
         {data === null ? (
           <p>Đang tải dữ liệu...</p>
@@ -75,29 +92,25 @@ function StudentForumQuestion() {
                 key={question.id} 
                 style={questionContainerStyle} 
                 onClick={async () => {
-                  const token = getToken();  // Lấy token từ localStorage
+                  const token = getToken();
                   let userId = null;
-                
-                  // Kiểm tra nếu token tồn tại và giải mã để lấy user_id
+
                   if (token) {
                     try {
-                      const decoded = jwtDecode(token);                      ;
-                      userId = decoded.user_id; // Giả sử user_id nằm trong payload của token
+                      const decoded = jwtDecode(token);
+                      userId = decoded.user_id;
                     } catch (error) {
                       console.error("Token không hợp lệ:", error);
                     }
                   }
-                
-                  // Nếu không có user_id, bạn có thể xử lý trường hợp người dùng chưa đăng nhập
+
                   if (!userId) {
                     console.error("User chưa đăng nhập hoặc token không hợp lệ.");
-                    return;  // Không tiếp tục nếu không có user_id
+                    return;
                   }
-                
-                  console.log("Updating view count for question:", question.id, "by user:", userId);
-                
+
                   try {
-                    const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/", {
+                    await fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/", {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
@@ -107,29 +120,31 @@ function StudentForumQuestion() {
                         user_id: userId,
                       }),
                     });
-                
-                    if (!response.ok) {
-                      console.error("Failed to update view count:", response.status);
-                    } else {
-                      console.log("Successfully updated view count.");
-                    }
                   } catch (err) {
                     console.error("Lỗi khi cập nhật view:", err);
                   }
-                
+
                   navigate(`/studentforum/question/${question.id}`);
                 }}
-                >
+              >
                 <div style={questionContentStyle}>
                   <h3>{question.title}</h3>
-                  
                 </div>
                 <div style={questionMetaStyle}>
+                  <span>👤 {question.username}</span>
                   <span>👀 {question.views || 0}</span>
-                  <span>👍 {question.votes || 0}</span>
+                  <span>👍 {votesMap[question.id] ?? 0}</span>
                   <span>💬 {question.answers || 0}</span>
-                  <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
+                  <span>
+                    🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
+                    {new Date(question.created_at).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </span>
                   <span>🔖 {question.tags && question.tags.length > 0 ? question.tags.join(", ") : "No tags"}</span>
+                  <span>💰 {question.bounty_amount || 0}</span>
                 </div>
               </li>
             ))}
@@ -238,10 +253,13 @@ const questionContentStyle = {
 };
 
 const questionMetaStyle = {
-  display: "flex",
-  justifyContent: "space-between",
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(100px, auto))",  // 6 cột tương ứng 6 span
+  gap: "10px",  // khoảng cách giữa các cột
   fontSize: "14px",
   color: "#666",
+  alignItems: "center",  // thêm dòng này
+  lineHeight: "1.4",
 };
 
 export default StudentForumQuestion;
