@@ -6,11 +6,21 @@ import { getToken } from "../../../../../auth/authHelper";
 function StudentForumQuestionDetail() {
   const { id } = useParams();
   const [question, setQuestion] = useState(null);
-  const [votes, setVotes] = useState(0);
-  const [votes_ans, setVotes_ans] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [userVoteQuestion, setUserVoteQuestion] = useState(null);
-  const [userVoteAnswer, setUserVoteAnswer] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUserId(payload.user_id);
+      } catch (err) {
+        console.error("Invalid token");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
@@ -27,92 +37,45 @@ function StudentForumQuestionDetail() {
       .then((res) => res.json())
       .then((data) => {
         setAnswers(data);
-        if (data.length > 0) {
-          setUserVoteAnswer(data[0].user_vote);
-        }
-      });
-
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${id}/`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.total_vote_score !== undefined) {
-          setVotes(data.total_vote_score);
-        }
       });
   }, [id]);
 
   useEffect(() => {
-    const storedVote = localStorage.getItem(`question_vote_${id}`);
-    if (storedVote !== null) {
-      setUserVoteQuestion(parseInt(storedVote, 10));
-    } else {
-      setUserVoteQuestion(0);
+    if (userId) {
+      const storedVote = localStorage.getItem(`question_vote_${id}_${userId}`);
+      if (storedVote !== null) {
+        setUserVoteQuestion(parseInt(storedVote, 10));
+      } else {
+        setUserVoteQuestion(0);
+      }
     }
-  }, [id]);
+  }, [id, userId]);
 
   if (!question) return <p>Đang tải dữ liệu...</p>;
 
-  const handleVote = (type, action) => {
-    let updatedVotes = 0;
+  const handleVote = (action) => {
+    if (!userId) return;
 
-    if (type === "question") {
-      if (action === "up" && userVoteQuestion !== 1) {
-        if (userVoteQuestion === -1) {
-          updatedVotes = votes + 1;
-          setVotes(updatedVotes);
-          setUserVoteQuestion(0);
-          localStorage.setItem(`question_vote_${id}`, "0");
-        } else {
-          updatedVotes = votes + 1;
-          setVotes(updatedVotes);
-          setUserVoteQuestion(1);
-          localStorage.setItem(`question_vote_${id}`, "1");
-        }
-      } else if (action === "down" && userVoteQuestion !== -1) {
-        if (userVoteQuestion === 1) {
-          updatedVotes = votes - 1;
-          setVotes(updatedVotes);
-          setUserVoteQuestion(0);
-          localStorage.setItem(`question_vote_${id}`, "0");
-        } else {
-          updatedVotes = votes - 1;
-          setVotes(updatedVotes);
-          setUserVoteQuestion(-1);
-          localStorage.setItem(`question_vote_${id}`, "-1");
-        }
-      }
-    } else if (type === "answer") {
-      if (action === "up" && userVoteAnswer !== 1) {
-        if (userVoteAnswer === -1) {
-          updatedVotes = votes_ans + 1;
-          setVotes_ans(updatedVotes);
-          setUserVoteAnswer(0);
-        } else {
-          updatedVotes = votes_ans + 1;
-          setVotes_ans(updatedVotes);
-          setUserVoteAnswer(1);
-        }
-      } else if (action === "down" && userVoteAnswer !== -1) {
-        if (userVoteAnswer === 1) {
-          updatedVotes = votes_ans - 1;
-          setVotes_ans(updatedVotes);
-          setUserVoteAnswer(0);
-        } else {
-          updatedVotes = votes_ans - 1;
-          setVotes_ans(updatedVotes);
-          setUserVoteAnswer(-1);
-        }
-      }
+    const voteKey = `question_vote_${id}_${userId}`;
+    const localVote = localStorage.getItem(voteKey);
+    const isLike = action === "like";
+
+    let newVote = 0;
+    if (localVote === "1" && isLike) {
+      newVote = 0;
+    } else if (localVote === "-1" && !isLike) {
+      newVote = 0;
+    } else {
+      newVote = isLike ? 1 : -1;
     }
 
-    const voteType = action === "up" ? "like" : "dislike";
-    const contentType = type === "question" ? "question" : "answer";
-    const contentId = type === "question" ? question.id : answers[0]?.id;
+    setUserVoteQuestion(newVote);
+    localStorage.setItem(voteKey, newVote.toString());
 
     const voteData = {
-      vote_type: voteType,
-      vote_for: contentType,
-      content_id: contentId,
+      vote_type: newVote === 1 ? "like" : newVote === -1 ? "dislike" : "neutral",
+      vote_for: "question",
+      content_id: question.id,
     };
 
     const token = getToken();
@@ -124,33 +87,36 @@ function StudentForumQuestionDetail() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(voteData),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.success) {
-          console.error("Vote failed:", data);
-        }
-      })
-      .catch((error) => console.error("Error during vote:", error));
+    }).catch((error) => console.error("Error during vote:", error));
   };
 
   return (
     <StudentForumLayout>
       <div style={containerStyle}>
         <div style={questionContainerStyle}>
-          <div style={voteContainer}>
-            <button style={voteButton} onClick={() => handleVote("question", "up")} disabled={userVoteQuestion === 1}>
-              ⬆
-            </button>
-            <span style={voteCount}>{votes}</span>
-            <button style={voteButton} onClick={() => handleVote("question", "down")} disabled={userVoteQuestion === -1}>
-              ⬇
-            </button>
-          </div>
-
           <div style={questionContentStyle}>
             <h2>{question.title}</h2>
             <div style={metaContainerStyle}>
+              <div style={{ display: "flex", gap: "4px"}}>
+                <button
+                  onClick={() => handleVote("like")}
+                  style={{
+                    ...voteButton,
+                    backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
+                  }}
+                >
+                  👍
+                </button>
+                <button
+                  onClick={() => handleVote("dislike")}
+                  style={{
+                    ...voteButton,
+                    backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
+                  }}
+                >
+                  👎
+                </button>
+              </div>
               <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
               <span>🔖 {question.tags && question.tags.length > 0 ? question.tags.join(", ") : "No tags"}</span>
             </div>
@@ -164,15 +130,6 @@ function StudentForumQuestionDetail() {
             <ul>
               {answers.map((ans) => (
                 <li key={ans.id} style={answerItemStyle}>
-                  <div style={voteContainer}>
-                    <button style={voteButton} onClick={() => handleVote("answer", "up")} disabled={userVoteAnswer === 1}>
-                      ⬆
-                    </button>
-                    <span style={voteCount}>{votes_ans}</span>
-                    <button style={voteButton} onClick={() => handleVote("answer", "down")} disabled={userVoteAnswer === -1}>
-                      ⬇
-                    </button>
-                  </div>
                   <div style={answerContentStyle}>
                     <p>{ans.content}</p>
                     <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
@@ -198,6 +155,7 @@ const containerStyle = {
   marginTop: "15px",
   marginLeft: "160px",
   width: "1020px",
+  color: "#003366",
 };
 
 const questionContainerStyle = {
@@ -209,33 +167,26 @@ const questionContainerStyle = {
   marginBottom: "20px",
 };
 
-const voteContainer = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  marginRight: "15px",
-};
-
 const voteButton = {
-  background: "none",
-  border: "none",
-  fontSize: "24px",
+  padding: "4px 8px",
+  fontSize: "16px",
+  border: "1px solid #99ccff",
+  borderRadius: "4px",
   cursor: "pointer",
+  transition: "background-color 0.2s ease",
 };
-
-const voteCount = {
-  fontSize: "18px",
-  margin: "5px 0",
-};
-
 const questionContentStyle = {
   flex: 1,
 };
 
 const metaContainerStyle = {
   fontSize: "14px",
-  color: "#555",
+  color: "#003366",
   marginBottom: "10px",
+  display: "flex",        // thêm dòng này
+  gap: "30px",            // giờ mới có tác dụng
+  alignItems: "center",   // cho các phần tử căn giữa theo chiều dọc
+  flexWrap: "wrap",       // nếu dài quá thì xuống dòng
 };
 
 const answerContainer = {
@@ -261,5 +212,6 @@ const answerContentStyle = {
   marginLeft: "15px",
   flex: 1,
 };
+
 
 export default StudentForumQuestionDetail;
