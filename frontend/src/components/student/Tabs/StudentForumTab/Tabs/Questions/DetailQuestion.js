@@ -7,7 +7,7 @@ function StudentForumQuestionDetail() {
   const { id } = useParams();
   const [question, setQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
-  const [userVoteQuestion, setUserVoteQuestion] = useState(null);
+  const [userVoteQuestion, setUserVoteQuestion] = useState(0);
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
@@ -29,7 +29,6 @@ function StudentForumQuestionDetail() {
         const selectedQuestion = data.find((q) => q.id.toString() === id);
         if (selectedQuestion) {
           setQuestion(selectedQuestion);
-          setUserVoteQuestion(selectedQuestion.user_vote);
         }
       });
 
@@ -42,7 +41,8 @@ function StudentForumQuestionDetail() {
 
   useEffect(() => {
     if (userId) {
-      const storedVote = localStorage.getItem(`question_vote_${id}_${userId}`);
+      const voteKey = `question_vote_${id}-${userId}`;
+      const storedVote = localStorage.getItem(voteKey);
       if (storedVote !== null) {
         setUserVoteQuestion(parseInt(storedVote, 10));
       } else {
@@ -56,30 +56,38 @@ function StudentForumQuestionDetail() {
   const handleVote = (action) => {
     if (!userId) return;
 
-    const voteKey = `question_vote_${id}_${userId}`;
-    const localVote = localStorage.getItem(voteKey);
+    const voteKey = `question_vote_${id}-${userId}`;
     const isLike = action === "like";
+    const currentVote = userVoteQuestion;
 
     let newVote = 0;
-    if (localVote === "1" && isLike) {
-      newVote = 0;
-    } else if (localVote === "-1" && !isLike) {
-      newVote = 0;
+    if (currentVote === 1 && isLike) {
+      newVote = 0; // Bỏ like
+    } else if (currentVote === -1 && !isLike) {
+      newVote = 0; // Bỏ dislike
     } else {
-      newVote = isLike ? 1 : -1;
+      newVote = isLike ? 1 : -1; // Đổi sang like hoặc dislike
     }
 
     setUserVoteQuestion(newVote);
     localStorage.setItem(voteKey, newVote.toString());
 
+    let vote_type = null;
+
+  if (currentVote === 1 && isLike) {
+    vote_type = "like"; // Gửi like lại để backend xóa
+  } else if (currentVote === -1 && !isLike) {
+    vote_type = "dislike"; // Gửi dislike lại để backend xóa
+  } else {
+    vote_type = isLike ? "like" : "dislike"; // Gửi vote mới hoặc đổi loại vote
+  }
     const voteData = {
-      vote_type: newVote === 1 ? "like" : newVote === -1 ? "dislike" : "neutral",
+      vote_type,
       vote_for: "question",
       content_id: question.id,
     };
 
     const token = getToken();
-
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/", {
       method: "POST",
       headers: {
@@ -97,12 +105,13 @@ function StudentForumQuestionDetail() {
           <div style={questionContentStyle}>
             <h2>{question.title}</h2>
             <div style={metaContainerStyle}>
-              <div style={{ display: "flex", gap: "4px"}}>
+              <div style={{ display: "flex", gap: "4px" }}>
                 <button
                   onClick={() => handleVote("like")}
                   style={{
                     ...voteButton,
                     backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
+                    color: userVoteQuestion === 1 ? "#fff" : "#000",
                   }}
                 >
                   👍
@@ -112,6 +121,7 @@ function StudentForumQuestionDetail() {
                   style={{
                     ...voteButton,
                     backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
+                    color: userVoteQuestion === -1 ? "#fff" : "#000",
                   }}
                 >
                   👎
@@ -146,6 +156,7 @@ function StudentForumQuestionDetail() {
   );
 }
 
+// CSS styles
 const containerStyle = {
   backgroundColor: "#f8f9fa",
   padding: "15px",
@@ -175,6 +186,7 @@ const voteButton = {
   cursor: "pointer",
   transition: "background-color 0.2s ease",
 };
+
 const questionContentStyle = {
   flex: 1,
 };
@@ -183,10 +195,10 @@ const metaContainerStyle = {
   fontSize: "14px",
   color: "#003366",
   marginBottom: "10px",
-  display: "flex",        // thêm dòng này
-  gap: "30px",            // giờ mới có tác dụng
-  alignItems: "center",   // cho các phần tử căn giữa theo chiều dọc
-  flexWrap: "wrap",       // nếu dài quá thì xuống dòng
+  display: "flex",
+  gap: "30px",
+  alignItems: "center",
+  flexWrap: "wrap",
 };
 
 const answerContainer = {
@@ -212,6 +224,5 @@ const answerContentStyle = {
   marginLeft: "15px",
   flex: 1,
 };
-
 
 export default StudentForumQuestionDetail;
