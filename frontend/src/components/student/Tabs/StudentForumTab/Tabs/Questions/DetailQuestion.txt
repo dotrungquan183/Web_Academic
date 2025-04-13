@@ -14,13 +14,11 @@ function StudentForumQuestionDetail() {
 
   useEffect(() => {
     const token = getToken();
-    const user = JSON.parse(localStorage.getItem("user"));
-  
-    if (token && user) {
+    if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUserId(payload.user_id);
-        setUserName(user.username || "Người dùng ẩn danh");  // ✅ lấy từ localStorage chứ không phải token
+        setUserName(payload.username || "Người dùng ẩn danh");
       } catch (err) {
         console.error("Invalid token");
       }
@@ -28,7 +26,6 @@ function StudentForumQuestionDetail() {
   }, []);
 
   useEffect(() => {
-    // Gọi API lấy chi tiết câu hỏi
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
       .then((res) => res.json())
       .then((data) => {
@@ -37,25 +34,25 @@ function StudentForumQuestionDetail() {
           setQuestion(selectedQuestion);
         }
       });
-  
-    // Gọi API lấy danh sách câu trả lời cho question_id
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        // Kiểm tra dữ liệu và cập nhật danh sách answer
-        const formattedAnswers = data.map((ans) => ({
-          id: ans.id,
-          username: ans.username,
-          content: ans.content,
-          created_at: ans.created_at,
-          userVote: ans.userVote || 0,
-        }));
-        setAnswers(formattedAnswers);
-      })
-      .catch((error) => {
-        console.error("❌ Lỗi khi lấy dữ liệu câu trả lời:", error);
-      });
-  }, [id]);  
+
+    const mockAnswers = [
+      {
+        id: 1,
+        username: "Nguyễn Văn A",
+        content: "Mình nghĩ bạn nên thử dùng useEffect để gọi API nhé!",
+        created_at: new Date().toISOString(),
+        userVote: 0,
+      },
+      {
+        id: 2,
+        username: "Trần Thị B",
+        content: "Bạn có thể thử kiểm tra token bằng thư viện jwt-decode sẽ rõ hơn đó.",
+        created_at: new Date().toISOString(),
+        userVote: 0,
+      },
+    ];
+    setAnswers(mockAnswers);
+  }, [id]);
 
   useEffect(() => {
     if (userId) {
@@ -106,61 +103,18 @@ function StudentForumQuestionDetail() {
     }).catch((error) => console.error("Error during vote:", error));
   };
 
-  const handlePostAnswer = async () => {
+  const handlePostAnswer = () => {
     if (!newAnswer.trim()) return;
-  
-    const token = getToken();
-    if (!token) {
-      alert("Vui lòng đăng nhập để đăng câu trả lời.");
-      return;
-    }
-  
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const user_id = payload.user_id;
-  
-      const answerData = {
-        question_id: parseInt(id),
-        user_id: user_id,
-        content: newAnswer.trim(),
-      };
-  
-      console.log("📤 Payload gửi đi:", answerData);
-  
-      const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(answerData),
-      });
-  
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("❌ Response không ok:", errText);
-        throw new Error("Gửi câu trả lời thất bại.");
-      }
-  
-      const result = await response.json();
-  
-      const newAns = {
-        id: result.id,
-        username: userName,
-        content: newAnswer,
-        created_at: new Date().toISOString(),
-        userVote: 0,
-      };
-  
-      setAnswers((prev) => [newAns, ...prev]);
-      setNewAnswer("");
-      alert("Đăng câu trả lời thành công!");
-    } catch (error) {
-      console.error("❌ Lỗi khi gửi câu trả lời:", error);
-      alert("Đăng câu trả lời thất bại. Vui lòng thử lại sau.");
-    }
+    const newAns = {
+      id: Date.now(),
+      username: userName,
+      content: newAnswer,
+      created_at: new Date().toISOString(),
+      userVote: 0,
+    };
+    setAnswers(prev => [newAns, ...prev]);
+    setNewAnswer("");
   };
-    
 
   if (!question) return <p>Đang tải dữ liệu...</p>;
 
