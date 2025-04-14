@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { getToken } from '../../../../../auth/authHelper'
+import StudentForumLayout from "../../Layout";
+import { getToken } from "../../../../../auth/authHelper";
 
 function StudentAskQuestion() {
   const navigate = useNavigate();
@@ -22,12 +23,12 @@ function StudentAskQuestion() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === "bounty_amount" && (isNaN(value) || Number(value) < 0)) {
       alert("Giá trị treo thưởng không hợp lệ!");
       return;
     }
-    
+
     setFormData({ ...formData, [name]: value });
   };
 
@@ -54,7 +55,6 @@ function StudentAskQuestion() {
       bounty_amount: bounty_amount || 0,
     };
 
-    console.log("Dữ liệu gửi lên:", questionData);
     try {
       const response = await fetch(
         "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/",
@@ -81,34 +81,64 @@ function StudentAskQuestion() {
   };
 
   return (
-    <div style={styles.outerContainer}>
-      <div style={styles.formContainer}>
-        <h2 style={styles.title}>
-          <FaQuestionCircle size={24} color="#003366" /> Đặt Câu Hỏi
-        </h2>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.sectionContainer}>
-            <div style={styles.leftSection}>
-              <input type="text" name="title" placeholder="Tiêu đề câu hỏi" required onChange={handleChange} style={styles.input} />
-              <textarea name="description" placeholder="Mô tả câu hỏi" required onChange={handleChange} style={styles.textarea} />
-              <input type="text" name="tags" placeholder="Thẻ (cách nhau bằng dấu phẩy)" required onChange={handleChange} style={styles.input} />
-              <input type="number" name="bounty_amount" placeholder="Treo thưởng (VND)" onChange={handleChange} style={styles.input} />
-              <button type="submit" style={styles.button}>Đăng câu hỏi</button>
+    <StudentForumLayout>
+      <div style={styles.outerContainer}>
+        <div style={styles.formContainer}>
+          <h2 style={styles.title}>
+            <FaQuestionCircle size={24} color="#003366" /> Đặt Câu Hỏi
+          </h2>
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <div style={styles.sectionContainer}>
+              <div style={styles.leftSection}>
+                <input
+                  type="text"
+                  name="title"
+                  placeholder="Tiêu đề câu hỏi"
+                  required
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                <textarea
+                  name="description"
+                  placeholder="Mô tả câu hỏi"
+                  required
+                  onChange={handleChange}
+                  style={styles.textarea}
+                />
+                <input
+                  type="text"
+                  name="tags"
+                  placeholder="Thẻ (cách nhau bằng dấu phẩy)"
+                  required
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                <input
+                  type="number"
+                  name="bounty_amount"
+                  placeholder="Treo thưởng (VND)"
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                <button type="submit" style={styles.button}>
+                  Đăng câu hỏi
+                </button>
+              </div>
+              <div style={styles.rightSection}>
+                <h3 style={styles.stepTitle}>Hướng dẫn đặt câu hỏi đúng chuẩn</h3>
+                <ul style={styles.stepList}>
+                  <li>1. Tiêu đề phải ngắn gọn và dễ hiểu.</li>
+                  <li>2. Mô tả câu hỏi chi tiết, cụ thể và không mơ hồ.</li>
+                  <li>3. Sử dụng các thẻ phù hợp, cách nhau bằng dấu phẩy.</li>
+                  <li>4. Đảm bảo câu hỏi có đầy đủ thông tin cần thiết cho người trả lời.</li>
+                  <li>5. Nếu có lỗi hoặc vấn đề cụ thể, hãy mô tả rõ ràng.</li>
+                </ul>
+              </div>
             </div>
-            <div style={styles.rightSection}>
-              <h3 style={styles.stepTitle}>Hướng dẫn đặt câu hỏi đúng chuẩn</h3>
-              <ul style={styles.stepList}>
-                <li>1. Tiêu đề phải ngắn gọn và dễ hiểu.</li>
-                <li>2. Mô tả câu hỏi chi tiết, cụ thể và không mơ hồ.</li>
-                <li>3. Sử dụng các thẻ phù hợp, cách nhau bằng dấu phẩy.</li>
-                <li>4. Đảm bảo câu hỏi có đầy đủ thông tin cần thiết cho người trả lời.</li>
-                <li>5. Nếu có lỗi hoặc vấn đề cụ thể, hãy mô tả rõ ràng.</li>
-              </ul>
-            </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+    </StudentForumLayout>
   );
 }
 
@@ -117,7 +147,8 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    height: "85vh",
+    padding: "15px 0", // Thay vì 85vh, dùng padding cho hiển thị tốt hơn với sidebar
+    marginLeft:"108px",
   },
   formContainer: {
     width: "1000px",
@@ -132,7 +163,7 @@ const styles = {
     fontWeight: "bold",
     marginBottom: "30px",
     color: "#003366",
-    marginTop: "30px",
+    marginTop: "10px",
   },
   form: {
     display: "flex",
@@ -142,29 +173,29 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     gap: "20px",
+    flexWrap: "wrap",
   },
   leftSection: {
-    width: "48%",
+    flex: "1 1 48%",
     backgroundColor: "rgba(200, 200, 200, 0.3)",
     padding: "20px",
     borderRadius: "8px",
   },
   rightSection: {
-    width: "48%",
+    flex: "1 1 48%",
     backgroundColor: "rgba(200, 200, 200, 0.3)",
     padding: "20px",
     borderRadius: "8px",
-    marginTop: "0",
   },
   input: {
-    width: "94.5%",
+    width: "97.5%",
     padding: "12px",
     border: "1px solid #ccc",
     borderRadius: "5px",
     marginBottom: "12px",
   },
   textarea: {
-    width: "94.5%",
+    width: "97.5%",
     padding: "12px",
     border: "1px solid #ccc",
     borderRadius: "5px",

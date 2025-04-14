@@ -12,23 +12,25 @@ function StudentForumQuestionDetail() {
   const [userName, setUserName] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
 
+  // Lấy thông tin người dùng từ token
   useEffect(() => {
     const token = getToken();
     const user = JSON.parse(localStorage.getItem("user"));
-  
+
     if (token && user) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUserId(payload.user_id);
-        setUserName(user.username || "Người dùng ẩn danh");  // ✅ lấy từ localStorage chứ không phải token
+        setUserName(user.username || "Người dùng ẩn danh");
       } catch (err) {
-        console.error("Invalid token");
+        console.error("❌ Invalid token");
       }
     }
   }, []);
 
+  // Lấy dữ liệu câu hỏi và danh sách câu trả lời
   useEffect(() => {
-    // Gọi API lấy chi tiết câu hỏi
+    // Lấy câu hỏi
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
       .then((res) => res.json())
       .then((data) => {
@@ -37,26 +39,47 @@ function StudentForumQuestionDetail() {
           setQuestion(selectedQuestion);
         }
       });
-  
-    // Gọi API lấy danh sách câu trả lời cho question_id
+
+    // Lấy câu trả lời
     fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
       .then((res) => res.json())
       .then((data) => {
-        // Kiểm tra dữ liệu và cập nhật danh sách answer
-        const formattedAnswers = data.map((ans) => ({
+        const token = getToken();
+        let localUserId = null;
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            localUserId = payload.user_id;
+          } catch (err) {
+            console.error("❌ Token decode error", err);
+          }
+        }
+
+        const formattedAnswers = data.map((ans) => {
+        const voteKey = `answer_vote_${ans.id}-${localUserId}`;
+        const storedVote = localStorage.getItem(voteKey);
+        const userVote = storedVote ? parseInt(storedVote, 10) : 0;
+        return {
           id: ans.id,
           username: ans.username,
           content: ans.content,
           created_at: ans.created_at,
-          userVote: ans.userVote || 0,
-        }));
+          userVote,
+          like: ans.like, // ✅ thêm
+          dislike: ans.dislike, // ✅ thêm
+          totalVote: ans.totalVote, // ✅ thêm
+        };
+      });
+
+
         setAnswers(formattedAnswers);
       })
       .catch((error) => {
         console.error("❌ Lỗi khi lấy dữ liệu câu trả lời:", error);
       });
-  }, [id]);  
+  }, [id]);
 
+  // Lấy trạng thái vote của người dùng cho câu hỏi
   useEffect(() => {
     if (userId) {
       const voteKey = `question_vote_${id}-${userId}`;
@@ -65,36 +88,72 @@ function StudentForumQuestionDetail() {
     }
   }, [id, userId]);
 
+  // Xử lý vote
   const handleVote = (action, type = "question", contentId = null) => {
     if (!userId) return;
-
+  
     const voteKey = `${type}_vote_${contentId}-${userId}`;
-    const currentVote = type === "question" ? userVoteQuestion : answers.find(a => a.id === contentId)?.userVote || 0;
     const isLike = action === "like";
-
+  
+    const currentVote =
+      type === "question"
+        ? userVoteQuestion
+        : answers.find((a) => a.id === contentId)?.userVote || 0;
+  
     let newVote = 0;
     if (currentVote === 1 && isLike) newVote = 0;
     else if (currentVote === -1 && !isLike) newVote = 0;
     else newVote = isLike ? 1 : -1;
-
-    const voteData = {
-      vote_type: isLike ? "like" : "dislike",
-      vote_for: type,
-      content_id: contentId,
-    };
-
+  
     localStorage.setItem(voteKey, newVote.toString());
-
+  
     if (type === "question") {
+      setQuestion((prev) => {
+        if (!prev) return prev;
+  
+        let updatedLike = prev.like;
+        let updatedDislike = prev.dislike;
+  
+        if (currentVote === 1) updatedLike -= 1;
+        else if (currentVote === -1) updatedDislike -= 1;
+  
+        if (newVote === 1) updatedLike += 1;
+        else if (newVote === -1) updatedDislike += 1;
+  
+        return {
+          ...prev,
+          like: updatedLike,
+          dislike: updatedDislike,
+          totalVote: updatedLike - updatedDislike,
+        };
+      });
+  
       setUserVoteQuestion(newVote);
     } else {
-      setAnswers((prev) =>
-        prev.map((ans) =>
-          ans.id === contentId ? { ...ans, userVote: newVote } : ans
-        )
+      setAnswers((prevAnswers) =>
+        prevAnswers.map((ans) => {
+          if (ans.id !== contentId) return ans;
+  
+          let updatedLike = ans.like;
+          let updatedDislike = ans.dislike;
+  
+          if (currentVote === 1) updatedLike -= 1;
+          else if (currentVote === -1) updatedDislike -= 1;
+  
+          if (newVote === 1) updatedLike += 1;
+          else if (newVote === -1) updatedDislike += 1;
+  
+          return {
+            ...ans,
+            userVote: newVote,
+            like: updatedLike,
+            dislike: updatedDislike,
+            totalVote: updatedLike - updatedDislike,
+          };
+        })
       );
     }
-
+  
     const token = getToken();
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/", {
       method: "POST",
@@ -102,10 +161,48 @@ function StudentForumQuestionDetail() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(voteData),
-    }).catch((error) => console.error("Error during vote:", error));
+      body: JSON.stringify({
+        vote_type: isLike ? "like" : "dislike",
+        vote_for: type,
+        content_id: contentId,
+      }),
+    }).then(() => {
+      // Sau khi gửi vote thành công, tải lại câu hỏi và câu trả lời từ server
+      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/`)
+        .then((res) => res.json())
+        .then((data) => {
+          const selectedQuestion = data.find((q) => q.id.toString() === id);
+          if (selectedQuestion) {
+            setQuestion(selectedQuestion);
+          }
+        });
+  
+      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const formattedAnswers = data.map((ans) => {
+            const voteKey = `answer_vote_${ans.id}-${userId}`;
+            const storedVote = localStorage.getItem(voteKey);
+            const userVote = storedVote ? parseInt(storedVote, 10) : 0;
+            return {
+              id: ans.id,
+              username: ans.username,
+              content: ans.content,
+              created_at: ans.created_at,
+              userVote,
+              like: ans.like,
+              dislike: ans.dislike,
+              totalVote: ans.totalVote,
+            };
+          });
+          setAnswers(formattedAnswers);
+        });
+    }).catch((error) => console.error("❌ Error during vote:", error));
   };
+  
+  
 
+  // Xử lý gửi câu trả lời
   const handlePostAnswer = async () => {
     if (!newAnswer.trim()) return;
   
@@ -124,8 +221,6 @@ function StudentForumQuestionDetail() {
         user_id: user_id,
         content: newAnswer.trim(),
       };
-  
-      console.log("📤 Payload gửi đi:", answerData);
   
       const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/", {
         method: "POST",
@@ -152,14 +247,40 @@ function StudentForumQuestionDetail() {
         userVote: 0,
       };
   
+      const voteKey = `answer_vote_${newAns.id}-${user_id}`;
+      localStorage.setItem(voteKey, "0");
+  
       setAnswers((prev) => [newAns, ...prev]);
       setNewAnswer("");
       alert("Đăng câu trả lời thành công!");
+  
+      // Sau khi đăng câu trả lời mới, tải lại danh sách câu trả lời
+      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const formattedAnswers = data.map((ans) => {
+            const voteKey = `answer_vote_${ans.id}-${userId}`;
+            const storedVote = localStorage.getItem(voteKey);
+            const userVote = storedVote ? parseInt(storedVote, 10) : 0;
+            return {
+              id: ans.id,
+              username: ans.username,
+              content: ans.content,
+              created_at: ans.created_at,
+              userVote,
+              like: ans.like,
+              dislike: ans.dislike,
+              totalVote: ans.totalVote,
+            };
+          });
+          setAnswers(formattedAnswers);
+        });
     } catch (error) {
       console.error("❌ Lỗi khi gửi câu trả lời:", error);
       alert("Đăng câu trả lời thất bại. Vui lòng thử lại sau.");
     }
   };
+  
     
 
   if (!question) return <p>Đang tải dữ liệu...</p>;
@@ -209,29 +330,51 @@ function StudentForumQuestionDetail() {
                   <div style={singleAnswerBox}>
                     <p><strong>{ans.username}</strong></p>
                     <p>{ans.content}</p>
+
                     <div style={metaContainerStyle}>
-                      <div style={{ display: "flex", gap: "4px" }}>
-                        <button
-                          onClick={() => handleVote("like", "answer", ans.id)}
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <button
+                        onClick={() => handleVote("like", "answer", ans.id)}
+                        style={{
+                          ...voteButton,
+                          backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
+                          color: ans.userVote === 1 ? "#fff" : "#000",
+                        }}
+                      >
+                        👍
+                        <span
                           style={{
-                            ...voteButton,
-                            backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
-                            color: ans.userVote === 1 ? "#fff" : "#000",
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            color: ans.userVote === 1 ? '#fff' : '#003366'
                           }}
                         >
-                          👍
-                        </button>
-                        <button
-                          onClick={() => handleVote("dislike", "answer", ans.id)}
+                          {ans.like}
+                        </span>
+
+                      </button>
+                      <button
+                        onClick={() => handleVote("dislike", "answer", ans.id)}
+                        style={{
+                          ...voteButton,
+                          backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
+                          color: ans.userVote === -1 ? "#fff" : "#000",
+                        }}
+                      >
+                        👎
+                        <span
                           style={{
-                            ...voteButton,
-                            backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
-                            color: ans.userVote === -1 ? "#fff" : "#000",
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            color: ans.userVote === -1 ? '#fff' : '#003366'
                           }}
                         >
-                          👎
-                        </button>
+                          {ans.dislike}
+                        </span>
+                      </button>
+                        <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
                       </div>
+
                       <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
                     </div>
                   </div>
@@ -242,6 +385,7 @@ function StudentForumQuestionDetail() {
             <p>Chưa có câu trả lời nào.</p>
           )}
         </div>
+
 
         {/* Khung nhập câu trả lời */}
         <div style={answerInputContainer}>
@@ -330,9 +474,13 @@ const answerItemStyle = {
 const singleAnswerBox = {
   border: "1px solid #ddd",
   borderRadius: "6px",
-  padding: "10px",
+  padding: "20px",
   backgroundColor: "#f0f8ff",
+  width: "96%",           // đừng để 100%, sẽ dính sát hai bên
+  maxWidth: "1000px",
+  boxSizing: "border-box",
 };
+
 
 const answerInputContainer = {
   backgroundColor: "#ffffff",
@@ -342,13 +490,14 @@ const answerInputContainer = {
 };
 
 const textAreaStyle = {
-  width: "97.5%",
+  width: "90%",
   height: "200px",
   borderRadius: "6px",
   border: "2px solid #003366",
   padding: "10px",
   fontSize: "16px",
-  marginBottom: "10px",
+  display: "block",     // đảm bảo là block-level
+  margin: "0 auto",     // 👈 căn giữa theo chiều ngang
 };
 
 const submitButtonStyle = {
@@ -360,6 +509,9 @@ const submitButtonStyle = {
   cursor: "pointer",
   fontSize: "16px",
   fontWeight: "bold",
+  display: "block",
+  marginLeft: "38px",
+  marginTop:"15px",
 };
 
 export default StudentForumQuestionDetail;

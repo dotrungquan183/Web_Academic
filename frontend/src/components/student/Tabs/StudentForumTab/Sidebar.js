@@ -11,8 +11,8 @@ function Sidebar() {
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/question" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/question" ? "white" : "#003366",
+            backgroundColor: location.pathname.startsWith("/studentforum/question") ? "#003366" : "transparent", // Kiểm tra xem URL có bắt đầu với "/studentforum/question"
+            color: location.pathname.startsWith("/studentforum/question") ? "white" : "#003366", // Nếu đúng, đổi màu chữ
           }}
         >
           <FiHelpCircle style={styles.icon} /> Câu hỏi
@@ -96,7 +96,6 @@ const styles = {
     cursor: "pointer",
     color: "black",
   },
-  
 };
 
 export default Sidebar;
