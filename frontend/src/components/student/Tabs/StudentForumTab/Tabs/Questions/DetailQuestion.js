@@ -288,51 +288,73 @@ function StudentForumQuestionDetail() {
   return (
     <StudentForumLayout>
       <div style={containerStyle}>
-        <div style={questionContainerStyle}>
-          <div style={questionContentStyle}>
-            <h2>{question.title}</h2>
-            <div style={metaContainerStyle}>
-              <div style={{ display: "flex", gap: "4px" }}>
-                <button
-                  onClick={() => handleVote("like", "question", question.id)}
-                  style={{
-                    ...voteButton,
-                    backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
-                    color: userVoteQuestion === 1 ? "#fff" : "#000",
-                  }}
-                >
-                  👍
-                </button>
-                <button
-                  onClick={() => handleVote("dislike", "question", question.id)}
-                  style={{
-                    ...voteButton,
-                    backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
-                    color: userVoteQuestion === -1 ? "#fff" : "#000",
-                  }}
-                >
-                  👎
-                </button>
-              </div>
-              <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
-              <span>🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}</span>
+      <div style={questionContainerStyle}>
+        <div style={questionContentStyle}>
+          <h2>{question.title}</h2>
+          <div style={metaContainerStyle}>
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                onClick={() => handleVote("like", "question", question.id)}
+                style={{
+                  ...voteButton,
+                  backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
+                  color: userVoteQuestion === 1 ? "#fff" : "#000",
+                }}
+              >
+                👍
+              </button>
+              <button
+                onClick={() => handleVote("dislike", "question", question.id)}
+                style={{
+                  ...voteButton,
+                  backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
+                  color: userVoteQuestion === -1 ? "#fff" : "#000",
+                }}
+              >
+                👎
+              </button>
+            </div>
+            <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
+            <span>
+              🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}
+            </span>
             </div>
             <p>{question.content}</p>
+          {/* Thông tin thêm về câu hỏi */}
+          <div style={containerSelectStyle}>
+            <div style={topRowStyle}>
+              <div style={buttonGroupStyle}>
+                <button style={actionButtonStyle}>↗️ Chia sẻ</button>
+                <button style={actionButtonStyle}>✏️ Chỉnh sửa</button>
+                <button style={actionButtonStyle}>👁️ Theo dõi</button>
+              </div>
+              <span style={editedTextStyle}> Đã chỉnh sửa 1 p trước</span>
+          </div>
+
+          {/* Nút thêm bình luận */}
+          <div style={commentButtonContainerStyle}>
+              <button style={commentButtonStyle}>💬 Thêm bình luận</button>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div style={answerContainer}>
-          <label style={answerCountLabel}>Tổng số câu trả lời: {answers.length}</label>
-          {answers.length > 0 ? (
-            <ul>
-              {answers.map((ans) => (
-                <li key={ans.id} style={answerItemStyle}>
-                  <div style={singleAnswerBox}>
-                    <p><strong>{ans.username}</strong></p>
-                    <p>{ans.content}</p>
 
-                    <div style={metaContainerStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={answerContainer}>
+        <label style={answerCountLabel}>
+          Tổng số câu trả lời: {answers.length}
+        </label>
+
+        {answers.length > 0 ? (
+          <ul>
+            {answers.map((ans) => (
+              <li key={ans.id} style={answerItemStyle}>
+                <div style={singleAnswerBox}>
+                  <p><strong>{ans.username}</strong></p>
+                  <p>{ans.content}</p>
+
+                  <div style={metaContainerStyle}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <button
                         onClick={() => handleVote("like", "answer", ans.id)}
                         style={{
@@ -342,17 +364,15 @@ function StudentForumQuestionDetail() {
                         }}
                       >
                         👍
-                        <span
-                          style={{
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            color: ans.userVote === 1 ? '#fff' : '#003366'
-                          }}
-                        >
+                        <span style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: ans.userVote === 1 ? '#fff' : '#003366'
+                        }}>
                           {ans.like}
                         </span>
-
                       </button>
+
                       <button
                         onClick={() => handleVote("dislike", "answer", ans.id)}
                         style={{
@@ -362,30 +382,45 @@ function StudentForumQuestionDetail() {
                         }}
                       >
                         👎
-                        <span
-                          style={{
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            color: ans.userVote === -1 ? '#fff' : '#003366'
-                          }}
-                        >
+                        <span style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: ans.userVote === -1 ? '#fff' : '#003366'
+                        }}>
                           {ans.dislike}
                         </span>
                       </button>
-                        <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
-                      </div>
 
-                      <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
+                      <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
+                    </div>
+
+                    <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
+                  </div>
+
+                  {/* Khung chia sẻ, chỉnh sửa, theo dõi, bình luận riêng cho từng câu trả lời */}
+                  <div style={{ ...containerSelectStyle, marginTop: '10px' }}>
+                    <div style={topRowStyle}>
+                      <div style={buttonGroupStyle}>
+                        <button style={actionButtonStyle}>↗️ Chia sẻ</button>
+                        <button style={actionButtonStyle}>✏️ Chỉnh sửa</button>
+                        <button style={actionButtonStyle}>👁️ Theo dõi</button>
+                      </div>
+                      <span style={editedTextStyle}>Đã chỉnh sửa 1 p trước</span>
+                    </div>
+
+                    <div style={commentButtonContainerStyle}>
+                      <button style={commentButtonStyle}>💬 Thêm bình luận</button>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Chưa có câu trả lời nào.</p>
-          )}
-        </div>
 
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Chưa có câu trả lời nào.</p>
+        )}
+      </div>
 
         {/* Khung nhập câu trả lời */}
         <div style={answerInputContainer}>
@@ -474,11 +509,12 @@ const answerItemStyle = {
 const singleAnswerBox = {
   border: "1px solid #ddd",
   borderRadius: "6px",
-  padding: "20px",
+  padding: "10px 100px",
   backgroundColor: "#f0f8ff",
-  width: "96%",           // đừng để 100%, sẽ dính sát hai bên
-  maxWidth: "1000px",
+  width: "120%",
+  maxWidth: "985px",
   boxSizing: "border-box",
+  marginLeft: "-4%", // DỊCH TRÁI
 };
 
 
@@ -490,7 +526,7 @@ const answerInputContainer = {
 };
 
 const textAreaStyle = {
-  width: "90%",
+  width: "97.5%",
   height: "200px",
   borderRadius: "6px",
   border: "2px solid #003366",
@@ -510,8 +546,55 @@ const submitButtonStyle = {
   fontSize: "16px",
   fontWeight: "bold",
   display: "block",
-  marginLeft: "38px",
   marginTop:"15px",
 };
+const containerSelectStyle = {
+  border: "1px solid #ccc",
+  borderRadius: "8px",
+  padding: "16px",
+  marginTop: "20px",
+  backgroundColor: "#f9f9f9",
+};
 
+const topRowStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "12px",
+};
+
+const buttonGroupStyle = {
+  display: "flex",
+  gap: "10px",
+};
+
+const actionButtonStyle = {
+  backgroundColor: "#003366",
+  color: "#fff",
+  border: "none",
+  padding: "8px 20px",
+  borderRadius: "4px",
+  cursor: "pointer",
+  fontWeight: "bold",
+};
+
+const editedTextStyle = {
+  fontStyle: "italic",
+  color: "#666",
+};
+
+const commentButtonContainerStyle = {
+  textAlign: "left",
+  marginTop: "16px",
+};
+
+const commentButtonStyle = {
+  backgroundColor: "#e0e0e0",
+  color: "#003366",
+  border: "1px solid #ccc",
+  padding: "8px 126px",
+  borderRadius: "4px",
+  fontWeight: "bold",
+  cursor: "pointer",
+};
 export default StudentForumQuestionDetail;

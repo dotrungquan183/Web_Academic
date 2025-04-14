@@ -7,6 +7,7 @@ import { getToken } from '../../../../../auth/authHelper';
 function StudentForumQuestion() {
   const [data, setData] = useState(null);
   const [votesMap, setVotesMap] = useState({});
+  const [answersMap, setAnswersMap] = useState({}); // ✅ NEW
   const [timeFilter, setTimeFilter] = useState("Newest");
   const [bountyFilter, setBountyFilter] = useState("Bountied");
   const [interestFilter, setInterestFilter] = useState("Trending");
@@ -14,26 +15,38 @@ function StudentForumQuestion() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Fetch danh sách câu hỏi
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
       .then((response) => response.json())
       .then(async (data) => {
         const formattedData = Array.isArray(data) ? data : data ? [data] : [];
         setData(formattedData);
 
-        // Fetch votes for each question
         const votesResults = {};
+        const answersResults = {}; // ✅ NEW
+
+        // Lấy chi tiết từng câu hỏi để lấy điểm bỏ phiếu và số câu trả lời
         await Promise.all(formattedData.map(async (q) => {
           try {
             const res = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`);
             const detail = await res.json();
+
             if (detail.total_vote_score !== undefined) {
               votesResults[q.id] = detail.total_vote_score;
             }
+
+            if (detail.total_answers !== undefined) { // Đảm bảo lấy đúng số câu trả lời từ backend
+              answersResults[q.id] = detail.total_answers; // Lưu số lượng câu trả lời cho câu hỏi
+            }
+
           } catch (err) {
-            console.error(`Error fetching votes for question ${q.id}:`, err);
+            console.error(`Error fetching detail for question ${q.id}:`, err);
           }
         }));
+
+        // Cập nhật các map
         setVotesMap(votesResults);
+        setAnswersMap(answersResults); // ✅ NEW
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -55,7 +68,7 @@ function StudentForumQuestion() {
         </div>
         <div style={contentStyle}>
           <div style={questionCountStyle}>
-            Tổng số câu hỏi: {data ? data.length : "..."}
+            Tổng số câu hỏi: {data ? data.length : "Đang tải..."}
           </div>
           <div style={filterContainerStyle}>
             <div style={filterBoxStyle}>
@@ -134,7 +147,7 @@ function StudentForumQuestion() {
                   <span>👤 {question.username}</span>
                   <span>👀 {question.views || 0}</span>
                   <span>👍 {votesMap[question.id] ?? 0}</span>
-                  <span>💬 {question.answers || 0}</span>
+                  <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span> {/* ✅ SHOW COUNT */}
                   <span>
                     🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
                     {new Date(question.created_at).toLocaleTimeString([], {
@@ -156,6 +169,7 @@ function StudentForumQuestion() {
     </StudentForumLayout>
   );
 }
+
 
 // 🎨 Styling
 const containerStyle = {

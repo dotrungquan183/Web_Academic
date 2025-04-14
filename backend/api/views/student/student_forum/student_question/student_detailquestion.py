@@ -74,7 +74,7 @@ class StudentDetailQuestionView(APIView):
             logger.error(f"Question not found: {question_id}")
             return Response({"error": "Câu hỏi không tồn tại"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Fix: Ép kiểu content_id về string nếu cần
+        # Lấy tổng điểm bỏ phiếu cho câu hỏi
         total_vote_score = Vote.objects.filter(
             vote_for='question', content_id=str(question_id)
         ).aggregate(
@@ -86,9 +86,14 @@ class StudentDetailQuestionView(APIView):
             ))
         )['total_score']
 
+        # Lấy tổng số câu trả lời cho câu hỏi
+        total_answers = Answer.objects.filter(question=question_id).count()
+
         logger.info(f"Total vote score for question {question_id}: {total_vote_score if total_vote_score is not None else 0}")
+        logger.info(f"Total answers for question {question_id}: {total_answers}")
 
         return Response({
             "question_id": question_id,
-            "total_vote_score": total_vote_score if total_vote_score is not None else 0
+            "total_vote_score": total_vote_score if total_vote_score is not None else 0,
+            "total_answers": total_answers
         }, status=status.HTTP_200_OK)
