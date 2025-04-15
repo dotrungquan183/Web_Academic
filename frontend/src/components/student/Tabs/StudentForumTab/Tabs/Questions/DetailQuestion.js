@@ -320,8 +320,10 @@ function StudentForumQuestionDetail() {
             <span>
               🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}
             </span>
-            </div>
-            <p>{question.content}</p>
+          </div>
+
+          <p>{question.content}</p>
+
           {/* Thông tin thêm về câu hỏi */}
           <div style={containerSelectStyle}>
             <div style={topRowStyle}>
@@ -339,11 +341,30 @@ function StudentForumQuestionDetail() {
                 </button>
                 <button style={actionButtonStyle}>👁️ Theo dõi</button>
               </div>
-              <span > Đã chỉnh sửa 1 p trước</span>
-          </div>
 
-          {/* Nút thêm bình luận */}
-          <div style={commentButtonContainerStyle}>
+              {/* 👇 Chỗ hiển thị thời gian chỉnh sửa */}
+              <span>
+                {question.created_at ? (
+                  (() => {
+                    const updatedAt = new Date(question.created_at);
+                    if (isNaN(updatedAt.getTime())) return "⛔ Invalid updated_at";
+
+                    const now = new Date();
+                    const diffInSeconds = Math.floor((now - updatedAt) / 1000);
+                    if (diffInSeconds < 60) return "Vừa xong";
+
+                    const diffInMinutes = Math.floor(diffInSeconds / 60);
+                    return `Đã chỉnh sửa ${diffInMinutes} phút trước`;
+                  })()
+                ) : (
+                  "⛔ Không có updated_at"
+                )}
+              </span>
+
+            </div>
+
+            {/* Nút thêm bình luận */}
+            <div style={commentButtonContainerStyle}>
               <button style={commentButtonStyle}>💬 Thêm bình luận</button>
             </div>
           </div>
