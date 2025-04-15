@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
+import { useNavigate } from "react-router-dom";
 
 function StudentForumQuestionDetail() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ function StudentForumQuestionDetail() {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const navigate = useNavigate();
 
   // Lấy thông tin người dùng từ token
   useEffect(() => {
@@ -325,10 +327,19 @@ function StudentForumQuestionDetail() {
             <div style={topRowStyle}>
               <div style={buttonGroupStyle}>
                 <button style={actionButtonStyle}>↗️ Chia sẻ</button>
-                <button style={actionButtonStyle}>✏️ Chỉnh sửa</button>
+                <button
+                  style={actionButtonStyle}
+                  onClick={() =>
+                    navigate("/studentforum/question/askquestion", {
+                      state: { question: question }, // 👈 truyền object câu hỏi
+                    })
+                  }
+                >
+                  ✏️ Chỉnh sửa
+                </button>
                 <button style={actionButtonStyle}>👁️ Theo dõi</button>
               </div>
-              <span style={editedTextStyle}> Đã chỉnh sửa 1 p trước</span>
+              <span > Đã chỉnh sửa 1 p trước</span>
           </div>
 
           {/* Nút thêm bình luận */}
@@ -405,7 +416,7 @@ function StudentForumQuestionDetail() {
                         <button style={actionButtonStyle}>✏️ Chỉnh sửa</button>
                         <button style={actionButtonStyle}>👁️ Theo dõi</button>
                       </div>
-                      <span style={editedTextStyle}>Đã chỉnh sửa 1 p trước</span>
+                      <span>Đã chỉnh sửa 1 p trước</span>
                     </div>
 
                     <div style={commentButtonContainerStyle}>
@@ -578,10 +589,6 @@ const actionButtonStyle = {
   fontWeight: "bold",
 };
 
-const editedTextStyle = {
-  fontStyle: "italic",
-  color: "#666",
-};
 
 const commentButtonContainerStyle = {
   textAlign: "left",

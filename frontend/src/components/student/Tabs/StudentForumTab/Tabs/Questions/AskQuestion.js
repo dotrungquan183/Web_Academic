@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // 🔥 dùng useLocation
 import StudentForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 
 function StudentAskQuestion() {
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ lấy state từ navigate
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -13,6 +14,7 @@ function StudentAskQuestion() {
     bounty_amount: 0,
   });
 
+  // Nếu có token thì cho vào, không thì điều hướng sang login
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -20,6 +22,19 @@ function StudentAskQuestion() {
       navigate("/login");
     }
   }, [navigate]);
+
+  // ✅ Nếu có dữ liệu từ state thì fill vào form
+  useEffect(() => {
+    if (location.state?.question) {
+      const q = location.state.question;
+      setFormData({
+        title: q.title || "",
+        description: q.content || "", // dùng q.content nếu field cũ là content
+        tags: q.tags?.join(", ") || "", // nếu là array thì join lại
+        bounty_amount: q.bounty_amount || 0,
+      });
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,57 +50,62 @@ function StudentAskQuestion() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { title, description, tags, bounty_amount } = formData;
-
+  
     if (!title || !description || !tags) {
       alert("Vui lòng điền đầy đủ thông tin!");
       return;
     }
-
+  
     const token = getToken();
     if (!token) {
       alert("Bạn chưa đăng nhập!");
       navigate("/login");
       return;
     }
-
+  
     const questionData = {
       title,
-      description,
-      tags: tags.split(",").map((tag) => tag.trim()).join(","),
-      bounty_amount: bounty_amount || 0,
+      content: description, // API có thể dùng "content" thay vì "description"
+      tags: tags.split(",").map((tag) => tag.trim()),
+      bounty_amount: Number(bounty_amount),
     };
-
+  
+    const isEditing = !!location.state?.question;
+    const method = isEditing ? "PUT" : "POST";
+    const endpoint = isEditing
+      ? `http://localhost:8000/api/student/student_forum/student_question/${location.state.question.id}/`
+      : "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/";
+  
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/",
-        {
-          method: "POST",
-          body: JSON.stringify(questionData),
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await fetch(endpoint, {
+        method,
+        body: JSON.stringify(questionData),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
       const result = await response.json();
       if (response.ok) {
-        alert("Câu hỏi đã được đăng!");
+        alert(isEditing ? "Cập nhật câu hỏi thành công!" : "Câu hỏi đã được đăng!");
         navigate("/studentforum/question");
       } else {
-        alert(`Lỗi: ${result.error}`);
+        alert(`Lỗi: ${result.error || JSON.stringify(result)}`);
       }
     } catch (error) {
       alert("Có lỗi xảy ra. Vui lòng thử lại!");
+      console.error(error);
     }
-  };
+  };  
 
   return (
     <StudentForumLayout>
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
-            <FaQuestionCircle size={24} color="#003366" /> Đặt Câu Hỏi
+            <FaQuestionCircle size={24} color="#003366" />{" "}
+            {location.state?.question ? "Chỉnh sửa câu hỏi" : "Đặt Câu Hỏi"}
           </h2>
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.sectionContainer}>
@@ -95,6 +115,7 @@ function StudentAskQuestion() {
                   name="title"
                   placeholder="Tiêu đề câu hỏi"
                   required
+                  value={formData.title}
                   onChange={handleChange}
                   style={styles.input}
                 />
@@ -102,6 +123,7 @@ function StudentAskQuestion() {
                   name="description"
                   placeholder="Mô tả câu hỏi"
                   required
+                  value={formData.description}
                   onChange={handleChange}
                   style={styles.textarea}
                 />
@@ -110,6 +132,7 @@ function StudentAskQuestion() {
                   name="tags"
                   placeholder="Thẻ (cách nhau bằng dấu phẩy)"
                   required
+                  value={formData.tags}
                   onChange={handleChange}
                   style={styles.input}
                 />
@@ -117,11 +140,12 @@ function StudentAskQuestion() {
                   type="number"
                   name="bounty_amount"
                   placeholder="Treo thưởng (VND)"
+                  value={formData.bounty_amount}
                   onChange={handleChange}
                   style={styles.input}
                 />
                 <button type="submit" style={styles.button}>
-                  Đăng câu hỏi
+                  {location.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
                 </button>
               </div>
               <div style={styles.rightSection}>

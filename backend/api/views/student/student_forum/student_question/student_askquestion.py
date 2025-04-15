@@ -9,24 +9,20 @@ from api.models import Question, QuestionTag, QuestionTagMap
 @method_decorator(csrf_exempt, name="dispatch")
 class StudentAskQuestionView(View):
     def post(self, request, *args, **kwargs):
-        # Gọi hàm lấy user từ token
         user, error_response = get_authenticated_user(request)
         if error_response:
-            return error_response  # Trả về lỗi nếu có
+            return error_response
 
         try:
-            # Lấy dữ liệu từ request body
             data = json.loads(request.body)
             title = data.get("title")
             description = data.get("description")
             tags = data.get("tags")
-            bounty_amount = data.get("bounty_amount", 0)  # Mặc định 0 nếu không có
+            bounty_amount = data.get("bounty_amount", 0)
 
-            # Kiểm tra dữ liệu có đầy đủ không
             if not title or not description or not tags:
                 return JsonResponse({"error": "Vui lòng điền đầy đủ thông tin!"}, status=400)
 
-            # Tạo câu hỏi mới
             question = Question.objects.create(
                 user=user,
                 title=title,
@@ -34,13 +30,58 @@ class StudentAskQuestionView(View):
                 bounty_amount=bounty_amount,
             )
 
-            # Xử lý tag
             tag_names = set(tag.strip() for tag in tags.split(",") if tag.strip())
             for tag_name in tag_names:
-                tag, created = QuestionTag.objects.get_or_create(tag_name=tag_name)
+                tag, _ = QuestionTag.objects.get_or_create(tag_name=tag_name)
                 QuestionTagMap.objects.create(question=question, tag=tag)
 
             return JsonResponse({"message": "Câu hỏi đã được đăng!"}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Dữ liệu không hợp lệ!"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    def put(self, request, question_id, *args, **kwargs):
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response
+
+        try:
+            data = json.loads(request.body)
+            title = data.get("title")
+            content = data.get("content") or data.get("description")  # fallback
+            tags = data.get("tags")
+            bounty_amount = data.get("bounty_amount", 0)
+
+            if not title or not content or not tags:
+                return JsonResponse({"error": "Vui lòng điền đầy đủ thông tin!"}, status=400)
+
+            try:
+                question = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                return JsonResponse({"error": "Câu hỏi không tồn tại!"}, status=404)
+
+            if question.user != user:
+                return JsonResponse({"error": "Bạn không có quyền chỉnh sửa câu hỏi của người dùng khác!"}, status=403)
+
+            # Cập nhật thông tin câu hỏi
+            question.title = title
+            question.content = content
+            question.bounty_amount = bounty_amount
+            question.save()
+
+            # Cập nhật tag
+            QuestionTagMap.objects.filter(question=question).delete()  # xoá tag cũ
+
+            tag_names = set(tag.strip() for tag in tags if tag.strip()) if isinstance(tags, list) else set(
+                tag.strip() for tag in tags.split(",") if tag.strip()
+            )
+            for tag_name in tag_names:
+                tag, _ = QuestionTag.objects.get_or_create(tag_name=tag_name)
+                QuestionTagMap.objects.create(question=question, tag=tag)
+
+            return JsonResponse({"message": "Cập nhật câu hỏi thành công!"}, status=200)
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Dữ liệu không hợp lệ!"}, status=400)

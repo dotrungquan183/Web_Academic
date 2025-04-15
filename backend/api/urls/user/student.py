@@ -42,5 +42,6 @@ urlpatterns = [
     path('student/student_forum/student_tag/', StudentTagView.as_view(), name='student_tag'),
     path('student/student_forum/student_save/', StudentSaveView.as_view(), name='student_save'),
     path('student/student_support/student_support/', StudentSupportView.as_view(), name='student_support'),
+    path("student/student_forum/student_question/<int:question_id>/", StudentAskQuestionView.as_view()),
 ]
 
