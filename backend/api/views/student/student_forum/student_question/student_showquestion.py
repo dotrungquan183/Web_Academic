@@ -48,6 +48,7 @@ class StudentShowQuestionView(APIView):
                 "views": total_views,
                 "username": username,
                 "avatar": avatar,
+                "user_id": question.user.id
             })
 
         return Response(question_list, status=status.HTTP_200_OK)

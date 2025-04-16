@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
-
+import { jwtDecode } from "jwt-decode";
 function StudentForumQuestionDetail() {
   const { id } = useParams();
   const [question, setQuestion] = useState(null);
@@ -259,6 +259,7 @@ function StudentForumQuestionDetail() {
       setAnswers((prev) => [newAns, ...prev]);
       setNewAnswer("");
       alert("Đăng câu trả lời thành công!");
+      window.location.reload();
   
       // Sau khi đăng câu trả lời mới, tải lại danh sách câu trả lời
       fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
@@ -288,74 +289,89 @@ function StudentForumQuestionDetail() {
   };
   
   const handleEditAnswer = (ans) => {
-    setIsEditing(ans.id);
-    setEditContent(ans.content);
-    // Scroll xuống chỗ nhập để dễ thấy (nếu cần):
-    answerInputRef.current?.scrollIntoView({ behavior: "smooth" });
-  };  
-    
+    setIsEditing(ans.id); // Đánh dấu câu trả lời đang chỉnh sửa
+    setEditContent(ans.content); // Cập nhật nội dung câu trả lời
+    answerInputRef.current?.scrollIntoView({ behavior: "smooth" }); // Cuộn đến phần nhập liệu
+  };
+  
+  const getTimeAgo = (isoString) => {
+    const now = new Date();
+    const created = new Date(isoString);
+    const diffInSeconds = Math.floor((now - created) / 1000);
+
+    if (diffInSeconds < 60) {
+        return "vừa xong";
+    }
+
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes} phút trước`;
+  };
+
+
   const submitEditedAnswer = async () => {
     if (!editContent.trim()) {
-        alert("Nội dung không được để trống!");
-        return;
+      alert("Nội dung không được để trống!");
+      return;
     }
-
+  
     try {
-        const question_id = parseInt(id); 
-        const answer_id = isEditing; 
-
-        const url = `http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answer_id}/`;
-        console.log("🔧 Gửi PUT đến:", url);  // In ra URL gửi request để kiểm tra
-
-        const res = await fetch(url, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
+      const question_id = parseInt(id);
+      const answer_id = isEditing;
+  
+      const url = `http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answer_id}/`;
+      console.log("🔧 Gửi PUT đến:", url);
+  
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: editContent,
+          question_id: question_id,
+        }),
+      });
+  
+      const resText = await res.text();
+      console.log("🔍 Response từ server:", resText);
+  
+      let data;
+      try {
+        data = JSON.parse(resText);
+      } catch (err) {
+        console.error("❌ Không thể parse JSON:", err.message);
+        alert("Phản hồi từ server không hợp lệ (không phải JSON).");
+        return;
+      }
+  
+      if (res.ok) {
+        alert("✅ Cập nhật thành công!");
+        const nowISOString = new Date().toISOString();
+  
+        const updatedAnswers = answers.map((ans) =>
+          ans.id === answer_id
+            ? {
+                ...ans,
                 content: editContent,
-                question_id: question_id,
-            }),
-        });
-
-        // Kiểm tra phản hồi của server
-        const resText = await res.text();
-        console.log("🔍 Response từ server:", resText);  // In ra phản hồi từ server
-
-        if (!res.ok) {
-            alert("Server trả về lỗi: " + resText);
-            return;
-        }
-
-        let data;
-        try {
-            data = JSON.parse(resText);
-        } catch (err) {
-            console.error("❌ Không thể parse JSON:", err.message);
-            alert("Phản hồi từ server không hợp lệ (không phải JSON).");
-            return;
-        }
-
-        if (res.ok) {
-            alert("✅ Cập nhật thành công!");
-
-            const updatedAnswers = answers.map((ans) =>
-                ans.id === answer_id
-                    ? { ...ans, content: editContent, created_at: new Date().toISOString() }
-                    : ans
-            );
-            setAnswers(updatedAnswers);
-            setIsEditing(null);
-            setEditContent("");
-        } else {
-            alert(data.error || "❌ Cập nhật thất bại!");
-        }
+                created_at: nowISOString,
+                timeAgo: getTimeAgo(nowISOString),
+              }
+            : ans
+        );
+  
+        setAnswers(updatedAnswers);
+        setIsEditing(null);
+        setEditContent("");
+      } else {
+        alert(data.error || "❌ Cập nhật thất bại!");
+      }
     } catch (err) {
-        console.error("🔥 FETCH ERROR:", err.message, err.stack);
-        alert("Đã xảy ra lỗi khi cập nhật. Kiểm tra kết nối hoặc thử lại sau.");
+      console.error("🔥 FETCH ERROR:", err.message, err.stack);
+      alert("Đã xảy ra lỗi khi cập nhật. Kiểm tra kết nối hoặc thử lại sau.");
     }
-};
+  };
+  
   
   const scrollToAnswerInput = () => {
     if (answerInputRef.current) {
@@ -514,12 +530,30 @@ function StudentForumQuestionDetail() {
                         <button
                           style={actionButtonStyle}
                           onClick={() => {
-                            if (ans.user_id !== userId) {
-                              alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
-                              return;
+                            try {
+                              const token = getToken();
+                              if (!token) {
+                                alert("❌ Bạn chưa đăng nhập!");
+                                return;
+                              }
+
+                              const decoded = jwtDecode(token);
+                              const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
+                              // Kiểm tra quyền chỉnh sửa câu trả lời
+                              if (ans.user_id !== currentUserId) {
+                                alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
+                                return;
+                              }
+
+                              // Chỉnh sửa câu trả lời, cập nhật state
+                              handleEditAnswer(ans);  // Hàm này có thể cần cập nhật nội dung câu trả lời trong state
+                              scrollToAnswerInput();  // Cuộn trang đến phần chỉnh sửa câu trả lời
+
+                            } catch (error) {
+                              console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
+                              alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
                             }
-                            handleEditAnswer(ans);
-                            scrollToAnswerInput();
                           }}
                         >
                           ✏️ Chỉnh sửa
@@ -527,7 +561,17 @@ function StudentForumQuestionDetail() {
 
                         <button style={actionButtonStyle}>👁️ Theo dõi</button>
                       </div>
-                      <span>Đã chỉnh sửa 1 p trước</span>
+                      <span>
+                        {(() => {
+                          const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);
+
+                          if (secondsAgo < 60) {
+                            return "Vừa xong";
+                          }
+
+                          return `Đã chỉnh sửa ${ans.timeAgo || getTimeAgo(ans.created_at)}`;
+                        })()}
+                      </span>
                     </div>
 
                     <div style={commentButtonContainerStyle}>

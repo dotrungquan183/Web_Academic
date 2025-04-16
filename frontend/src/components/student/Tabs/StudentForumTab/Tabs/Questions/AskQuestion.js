@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
-import { useNavigate, useLocation } from "react-router-dom"; // 🔥 dùng useLocation
+import { useNavigate, useLocation } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import StudentForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 
 function StudentAskQuestion() {
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ lấy state từ navigate
+  const location = useLocation();
+  const hasCheckedPermissionRef = useRef(false); // ✅ chặn lặp kiểm tra quyền
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -14,7 +17,7 @@ function StudentAskQuestion() {
     bounty_amount: 0,
   });
 
-  // Nếu có token thì cho vào, không thì điều hướng sang login
+  // Check đăng nhập
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -23,59 +26,75 @@ function StudentAskQuestion() {
     }
   }, [navigate]);
 
-  // ✅ Nếu có dữ liệu từ state thì fill vào form
+  // Nếu có dữ liệu (sửa câu hỏi) thì kiểm tra user_id trước khi cho sửa
   useEffect(() => {
-    if (location.state?.question) {
+    const token = getToken();
+
+    if (
+      location.state?.question &&
+      token &&
+      !hasCheckedPermissionRef.current
+    ) {
+      hasCheckedPermissionRef.current = true; // ✅ set chỉ 1 lần duy nhất
+
+      const decoded = jwtDecode(token);
+      const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
       const q = location.state.question;
+      if (q.user_id && q.user_id !== currentUserId) {
+        alert("Bạn không có quyền chỉnh sửa câu hỏi này!");
+        navigate("/studentforum/question");
+        return;
+      }
+
       setFormData({
         title: q.title || "",
-        description: q.content || "", // dùng q.content nếu field cũ là content
-        tags: q.tags?.join(", ") || "", // nếu là array thì join lại
+        description: q.content || "",
+        tags: q.tags?.join(", ") || "",
         bounty_amount: q.bounty_amount || 0,
       });
     }
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "bounty_amount" && (isNaN(value) || Number(value) < 0)) {
       alert("Giá trị treo thưởng không hợp lệ!");
       return;
     }
-
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { title, description, tags, bounty_amount } = formData;
-  
+
     if (!title || !description || !tags) {
       alert("Vui lòng điền đầy đủ thông tin!");
       return;
     }
-  
+
     const token = getToken();
     if (!token) {
       alert("Bạn chưa đăng nhập!");
       navigate("/login");
       return;
     }
-  
+
+    const tagArray = tags.split(",").map((tag) => tag.trim()).filter(Boolean);
     const questionData = {
       title,
-      content: description, // API có thể dùng "content" thay vì "description"
-      tags: tags.split(",").map((tag) => tag.trim()),
+      content: description,
+      tags: tagArray,
       bounty_amount: Number(bounty_amount),
     };
-  
+
     const isEditing = !!location.state?.question;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
       ? `http://localhost:8000/api/student/student_forum/student_question/${location.state.question.id}/`
       : "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/";
-  
+
     try {
       const response = await fetch(endpoint, {
         method,
@@ -85,7 +104,7 @@ function StudentAskQuestion() {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       const result = await response.json();
       if (response.ok) {
         alert(isEditing ? "Cập nhật câu hỏi thành công!" : "Câu hỏi đã được đăng!");
@@ -97,7 +116,7 @@ function StudentAskQuestion() {
       alert("Có lỗi xảy ra. Vui lòng thử lại!");
       console.error(error);
     }
-  };  
+  };
 
   return (
     <StudentForumLayout>

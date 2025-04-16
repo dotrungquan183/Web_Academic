@@ -196,3 +196,9 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Mặc định là 5 phút
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+# ✅ Dùng múi giờ Việt Nam
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+
+# ✅ Bật múi giờ support
+USE_TZ = False
