@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,  useRef } from "react";
 import { useParams } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
@@ -13,7 +13,10 @@ function StudentForumQuestionDetail() {
   const [userName, setUserName] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
   const navigate = useNavigate();
-
+  const [isEditing, setIsEditing] = useState(null); // ID của câu trả lời đang được chỉnh sửa
+  const [editContent, setEditContent] = useState(""); // Nội dung sửa
+  const token = localStorage.getItem("token");
+  const answerInputRef = useRef(null);
   // Lấy thông tin người dùng từ token
   useEffect(() => {
     const token = getToken();
@@ -70,6 +73,7 @@ function StudentForumQuestionDetail() {
           like: ans.like, // ✅ thêm
           dislike: ans.dislike, // ✅ thêm
           totalVote: ans.totalVote, // ✅ thêm
+          user_id: ans.user_id, // ✅ thêm
         };
       });
 
@@ -283,8 +287,81 @@ function StudentForumQuestionDetail() {
     }
   };
   
+  const handleEditAnswer = (ans) => {
+    setIsEditing(ans.id);
+    setEditContent(ans.content);
+    // Scroll xuống chỗ nhập để dễ thấy (nếu cần):
+    answerInputRef.current?.scrollIntoView({ behavior: "smooth" });
+  };  
     
+  const submitEditedAnswer = async () => {
+    if (!editContent.trim()) {
+        alert("Nội dung không được để trống!");
+        return;
+    }
 
+    try {
+        const question_id = parseInt(id); 
+        const answer_id = isEditing; 
+
+        const url = `http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answer_id}/`;
+        console.log("🔧 Gửi PUT đến:", url);  // In ra URL gửi request để kiểm tra
+
+        const res = await fetch(url, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                content: editContent,
+                question_id: question_id,
+            }),
+        });
+
+        // Kiểm tra phản hồi của server
+        const resText = await res.text();
+        console.log("🔍 Response từ server:", resText);  // In ra phản hồi từ server
+
+        if (!res.ok) {
+            alert("Server trả về lỗi: " + resText);
+            return;
+        }
+
+        let data;
+        try {
+            data = JSON.parse(resText);
+        } catch (err) {
+            console.error("❌ Không thể parse JSON:", err.message);
+            alert("Phản hồi từ server không hợp lệ (không phải JSON).");
+            return;
+        }
+
+        if (res.ok) {
+            alert("✅ Cập nhật thành công!");
+
+            const updatedAnswers = answers.map((ans) =>
+                ans.id === answer_id
+                    ? { ...ans, content: editContent, created_at: new Date().toISOString() }
+                    : ans
+            );
+            setAnswers(updatedAnswers);
+            setIsEditing(null);
+            setEditContent("");
+        } else {
+            alert(data.error || "❌ Cập nhật thất bại!");
+        }
+    } catch (err) {
+        console.error("🔥 FETCH ERROR:", err.message, err.stack);
+        alert("Đã xảy ra lỗi khi cập nhật. Kiểm tra kết nối hoặc thử lại sau.");
+    }
+};
+  
+  const scrollToAnswerInput = () => {
+    if (answerInputRef.current) {
+      answerInputRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
   if (!question) return <p>Đang tải dữ liệu...</p>;
 
   return (
@@ -434,7 +511,20 @@ function StudentForumQuestionDetail() {
                     <div style={topRowStyle}>
                       <div style={buttonGroupStyle}>
                         <button style={actionButtonStyle}>↗️ Chia sẻ</button>
-                        <button style={actionButtonStyle}>✏️ Chỉnh sửa</button>
+                        <button
+                          style={actionButtonStyle}
+                          onClick={() => {
+                            if (ans.user_id !== userId) {
+                              alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
+                              return;
+                            }
+                            handleEditAnswer(ans);
+                            scrollToAnswerInput();
+                          }}
+                        >
+                          ✏️ Chỉnh sửa
+                        </button>
+
                         <button style={actionButtonStyle}>👁️ Theo dõi</button>
                       </div>
                       <span>Đã chỉnh sửa 1 p trước</span>
@@ -452,21 +542,47 @@ function StudentForumQuestionDetail() {
         ) : (
           <p>Chưa có câu trả lời nào.</p>
         )}
+
       </div>
 
-        {/* Khung nhập câu trả lời */}
-        <div style={answerInputContainer}>
-          <label htmlFor="answer" style={answerCountLabel}>Câu trả lời của bạn:</label>
+        {/* Khung nhập hoặc chỉnh sửa câu trả lời */}
+        <div ref={answerInputRef} style={answerInputContainer}>
+          <label htmlFor="answer" style={answerCountLabel}>
+            {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
+          </label>
+
           <textarea
             id="answer"
-            value={newAnswer}
-            onChange={(e) => setNewAnswer(e.target.value)}
+            value={isEditing ? editContent : newAnswer}
+            onChange={(e) =>
+              isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
+            }
             style={textAreaStyle}
-            placeholder="Nhập câu trả lời của bạn tại đây..."
+            placeholder="Nhập câu trả lời tại đây..."
           />
-          <button style={submitButtonStyle} onClick={handlePostAnswer}>
-            Đăng câu trả lời
-          </button>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              {isEditing ? (
+                <>
+                  <button style={submitButtonStyle} onClick={submitEditedAnswer}>
+                    ✅ Lưu chỉnh sửa
+                  </button>
+                  <button
+                    style={{ ...submitButtonStyle, backgroundColor: "#999" }}
+                    onClick={() => {
+                      setIsEditing(null);
+                      setEditContent("");
+                    }}
+                  >
+                    ❌ Hủy
+                  </button>
+                </>
+              ) : (
+                <button style={submitButtonStyle} onClick={handlePostAnswer}>
+                  ➕ Đăng câu trả lời
+                </button>
+              )}
+            </div>
         </div>
       </div>
     </StudentForumLayout>

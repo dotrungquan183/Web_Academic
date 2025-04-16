@@ -6,7 +6,12 @@ from django.shortcuts import get_object_or_404
 import json
 from api.models import Answer, Question, UserInformation, Vote
 from django.contrib.auth.models import User  # Import User model từ auth để lấy username
+from api.views.auth.authHelper import get_authenticated_user
+from django.utils.timezone import now
+import logging
+import traceback
 
+logger = logging.getLogger(__name__)
 @method_decorator(csrf_exempt, name='dispatch')
 class StudentAnsQuestionView(View):
     def dispatch(self, *args, **kwargs):
@@ -102,6 +107,7 @@ class StudentAnsQuestionView(View):
                     'totalVote': total_votes,
                     'like': likes,
                     'dislike': dislikes,
+                    'user_id': user_info.user_id if user_info else None,
                 }
 
                 print(f"✅ Dữ liệu answer được append: {answer_data}")
@@ -112,3 +118,48 @@ class StudentAnsQuestionView(View):
         except Exception as e:
             print("❌ Lỗi khi lấy danh sách câu trả lời:", str(e))
             return JsonResponse({'error': 'Không thể lấy dữ liệu'}, status=500)
+        
+    def put(self, request, answer_id, *args, **kwargs):
+        print(f"Received answer_id: {answer_id}")
+        logger.info(f"Received PUT request with answer_id: {answer_id}")
+        
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response
+
+        try:
+            # Kiểm tra và phân tích dữ liệu từ request
+            data = json.loads(request.body)
+            content = data.get("content")
+
+            if not content:
+                return JsonResponse({"error": "Nội dung câu trả lời không được để trống!"}, status=400)
+
+            try:
+                # Tìm câu trả lời bằng answer_id
+                answer = Answer.objects.get(id=answer_id)
+            except Answer.DoesNotExist:
+                return JsonResponse({"error": "Câu trả lời không tồn tại!"}, status=404)
+
+            # Kiểm tra quyền sở hữu câu trả lời
+            if answer.user.user_id != user.id:  # Sửa phần này để so sánh user_id
+                logger.info(f"User {user.id} tried to edit answer {answer_id} owned by {answer.user.user_id}")
+                return JsonResponse({"error": "Bạn không có quyền chỉnh sửa câu trả lời của người khác!"}, status=403)
+
+            # Cập nhật nội dung câu trả lời và thời gian tạo
+            answer.content = content
+            answer.created_at = now()  # Cập nhật thời gian
+            answer.save()
+            
+            return JsonResponse({"message": "Cập nhật câu trả lời thành công!"}, status=200)
+
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON Decode Error: {str(e)}")
+            return JsonResponse({"error": "Dữ liệu không hợp lệ!"}, status=400)
+
+        except Exception as e:
+            # Ghi lại traceback chi tiết về lỗi
+            logger.error(f"Unexpected error: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")  # Ghi lại traceback chi tiết của lỗi
+
+            return JsonResponse({"error": "Đã xảy ra lỗi khi cập nhật câu trả lời."}, status=500)
