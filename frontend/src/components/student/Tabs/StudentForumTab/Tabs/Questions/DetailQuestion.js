@@ -5,7 +5,7 @@ import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
-
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 function StudentForumQuestionDetail() {
   const { id } = useParams();
@@ -24,8 +24,10 @@ function StudentForumQuestionDetail() {
   const [questionCommentText, setQuestionCommentText] = useState("");
   const [answerCommentText, setAnswerCommentText] = useState({});
   const [activeAnswerId, setActiveAnswerId] = useState(null);
+  // Comment của câu hỏi
   const [comments, setComments] = useState([]);
   const [visibleCommentCount, setVisibleCommentCount] = useState(5);
+  // Comment của câu trả lời
   const [answerComments, setAnswerComments] = useState({});
   const [visibleAnswerComments, setVisibleAnswerComments] = useState({});
 
@@ -105,7 +107,7 @@ function StudentForumQuestionDetail() {
       setUserVoteQuestion(storedVote ? parseInt(storedVote, 10) : 0);
     }
   }, [id, userId]);
- // Phụ thuộc vào questionId, sẽ gọi lại khi questionId thay đổi
+// Lấy comment của câu hỏi
  const fetchComments = async (questionId) => {
   try {
     const res = await axios.get(
@@ -117,6 +119,7 @@ function StudentForumQuestionDetail() {
     console.error("Lỗi khi lấy comment:", error);
   }
 };
+// Lấy comment cho câu trả lời
 const fetchAnswerComments = async (answerId) => {
   try {
     const res = await axios.get(
@@ -131,6 +134,41 @@ const fetchAnswerComments = async (answerId) => {
   }
 };
 
+const handleDeleteAnswer = (answerId) => {
+  const token = getToken();
+  if (!token) {
+    alert("❌ Bạn chưa đăng nhập!");
+    return;
+  }
+
+  const decoded = jwtDecode(token);
+  const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
+  const answer = answers.find(a => a.id === answerId);
+  if (answer.user_id !== currentUserId) {
+    alert("❌ Bạn không có quyền xoá câu trả lời này!");
+    return;
+  }
+
+  if (window.confirm("Bạn có chắc muốn xoá câu trả lời này?")) {
+    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answerId}/`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setAnswers((prev) => prev.filter((ans) => ans.id !== answerId));
+          alert("✅ Đã xoá câu trả lời thành công!");
+        } else {
+          alert("❌ Không thể xoá câu trả lời này.");
+        }
+      })
+      .catch((error) => console.error("❌ Lỗi khi xoá câu trả lời:", error));
+  }
+};
   
   const handleOpenComment = (questionId) => {
     const isSame = showCommentInputId === questionId;
@@ -472,6 +510,16 @@ const fetchAnswerComments = async (answerId) => {
     }
   };
   
+  const handleEditComment = (commentId) => {
+    console.log("Edit comment with ID:", commentId);
+    // Logic để chỉnh sửa comment
+  };
+  
+  const handleDeleteComment = (commentId) => {
+    console.log("Delete comment with ID:", commentId);
+    // Logic để xóa comment
+  };
+  
   
   const scrollToAnswerInput = () => {
     if (answerInputRef.current) {
@@ -611,7 +659,6 @@ const fetchAnswerComments = async (answerId) => {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -626,7 +673,28 @@ const fetchAnswerComments = async (answerId) => {
     <ul>
       {answers.map((ans) => (
         <li key={ans.id} style={answerItemStyle}>
-          <div style={singleAnswerBox}>
+          <div style={{ ...singleAnswerBox, position: "relative" }}>
+          {/* Nút xoá ở góc phải trên */}
+          <button
+            onClick={() => handleDeleteAnswer(ans.id)}
+            style={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+              borderRadius: "4px",
+              transition: "background-color 0.2s",
+              fontSize: "1em",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            title="Xoá câu trả lời"
+          >
+            <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} /> {/* Thêm màu #003366 cho icon */}
+          </button>
             <p><strong>{ans.username}</strong></p>
             <p>{ans.content}</p>
 
@@ -752,7 +820,17 @@ const fetchAnswerComments = async (answerId) => {
                       >
                         <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
                           <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
-                          <span style={{ fontSize: "12px", color: "#666" }}>⏰ {c.created_at}</span>
+                          <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
+                          
+                          {/* Thêm icon chỉnh sửa và xóa */}
+                          <FaEdit 
+                            style={{ marginRight: "8px", cursor: "pointer" }} 
+                            onClick={() => handleEditComment(c.id)} // Hàm xử lý chỉnh sửa comment
+                          />
+                          <FaTrash 
+                            style={{ cursor: "pointer", color: "#003366" }} 
+                            onClick={() => handleDeleteComment(c.id)} // Hàm xử lý xóa comment
+                          />
                         </div>
                         <div style={{ marginLeft: "10px" }}>{c.content}</div>
                       </div>

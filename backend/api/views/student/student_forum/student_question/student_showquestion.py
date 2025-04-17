@@ -6,31 +6,62 @@ from api.models import Question, QuestionTagMap, View, UserInformation
 from django.utils import timezone
 from django.contrib.auth.models import User
 import logging
+from datetime import timedelta
+from django.db.models import Count
 
 logger = logging.getLogger(__name__)
 
 class StudentShowQuestionView(APIView):
     def get(self, request):
-        # Lấy danh sách câu hỏi, kèm user và user_info
+        # Lấy filter từ query params
+        time_filter = request.GET.get("time", None)
+        bounty_filter = request.GET.get("bounty", None)
+        interest_filter = request.GET.get("interest", None)
+        quality_filter = request.GET.get("quality", None)
+
         questions = Question.objects.select_related("user").prefetch_related(
             Prefetch(
                 'questiontagmap_set',
                 queryset=QuestionTagMap.objects.select_related('tag')
             )
-        ).all()
+        )
+
+        # --- TIME FILTER ---
+        if time_filter == "Week":
+            start_date = timezone.now() - timedelta(days=7)
+            questions = questions.filter(created_at__gte=start_date)
+        elif time_filter == "Month":
+            start_date = timezone.now() - timedelta(days=30)
+            questions = questions.filter(created_at__gte=start_date)
+        # Mặc định: newest -> không lọc thời gian
+
+        # --- BOUNTY FILTER ---
+        if bounty_filter == "Bountied":
+            questions = questions.filter(bounty_amount__gt=0)
+
+        # --- INTEREST FILTER (ví dụ: nhiều lượt xem) ---
+        if interest_filter == "Trending":
+            questions = questions.annotate(view_count=Sum('view__view_count')).order_by('-view_count')
+        elif interest_filter == "Hot":
+            questions = questions.annotate(num_answers=Count('answer')).order_by('-num_answers')
+        elif interest_filter == "Frequent":
+            questions = questions.order_by('-id')  # giả định câu hỏi mới = hỏi thường xuyên
+        elif interest_filter == "Active":
+            questions = questions.order_by('-created_at')  # hoặc thêm trường last_active_at nếu có
+
+        # --- QUALITY FILTER ---
+        if quality_filter == "Interesting":
+            questions = questions.annotate(view_count=Sum('view__view_count')).order_by('-view_count')
+        elif quality_filter == "Score":
+            questions = questions.annotate(score=Sum('vote__score')).order_by('-score')
 
         question_list = []
 
         for question in questions:
-            # Lấy tags
             tags = [qt.tag.tag_name for qt in question.questiontagmap_set.all()]
-
-            # Tính tổng số lượt xem
             total_views = View.objects.filter(question_id=question.id).aggregate(
                 total_views=Sum('view_count')
             )["total_views"] or 0
-
-            # Lấy thông tin user
             username = question.user.username
             try:
                 user_info = UserInformation.objects.get(user=question.user)
@@ -52,7 +83,7 @@ class StudentShowQuestionView(APIView):
             })
 
         return Response(question_list, status=status.HTTP_200_OK)
-
+   
     def post(self, request):
         question_id = request.data.get("question_id")
         user_id = request.data.get("user_id")
