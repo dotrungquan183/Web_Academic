@@ -4,6 +4,9 @@ import StudentForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+
+
 function StudentForumQuestionDetail() {
   const { id } = useParams();
   const [question, setQuestion] = useState(null);
@@ -21,6 +24,11 @@ function StudentForumQuestionDetail() {
   const [questionCommentText, setQuestionCommentText] = useState("");
   const [answerCommentText, setAnswerCommentText] = useState({});
   const [activeAnswerId, setActiveAnswerId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [visibleCommentCount, setVisibleCommentCount] = useState(5);
+  const [answerComments, setAnswerComments] = useState({});
+  const [visibleAnswerComments, setVisibleAnswerComments] = useState({});
+
   // Lấy thông tin người dùng từ token
   useEffect(() => {
     const token = getToken();
@@ -97,18 +105,59 @@ function StudentForumQuestionDetail() {
       setUserVoteQuestion(storedVote ? parseInt(storedVote, 10) : 0);
     }
   }, [id, userId]);
+ // Phụ thuộc vào questionId, sẽ gọi lại khi questionId thay đổi
+ const fetchComments = async (questionId) => {
+  try {
+    const res = await axios.get(
+      `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=question&content_id=${questionId}`
+    );
+    setComments(res.data.comments);
+    setVisibleCommentCount(5); // Reset lại số lượng hiển thị mỗi khi click vào câu hỏi khác
+  } catch (error) {
+    console.error("Lỗi khi lấy comment:", error);
+  }
+};
+const fetchAnswerComments = async (answerId) => {
+  try {
+    const res = await axios.get(
+      `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=answer&content_id=${answerId}`
+    );
+    setAnswerComments((prev) => ({
+      ...prev,
+      [answerId]: res.data.comments,
+    }));
+  } catch (error) {
+    console.error("Lỗi khi lấy comment câu trả lời:", error);
+  }
+};
+
+  
+  const handleOpenComment = (questionId) => {
+    const isSame = showCommentInputId === questionId;
+    setShowCommentInputId(isSame ? null : questionId);
+    if (!isSame) {
+      fetchComments(questionId);
+    }
+  };
+    // Sử dụng useEffect để gọi handleOpenComment khi vào trang
 
   const handleSubmitComment = async (contentId, type) => {
-    const comment =
-      type === "question"
+    try {
+      const isQuestion = type === "question";
+  
+      // Lấy nội dung comment phù hợp
+      const comment = isQuestion
         ? questionCommentText.trim()
         : answerCommentText[contentId]?.trim();
   
-    if (!comment) return;
+      if (!comment) {
+        alert("❗ Vui lòng nhập nội dung bình luận");
+        return;
+      }
   
-    try {
-      const token = getToken();
-      const res = await fetch("/api/comments/", {
+      const token = getToken(); // Nếu cần xác thực
+  
+      const response = await fetch("http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,23 +169,31 @@ function StudentForumQuestionDetail() {
           content: comment,
         }),
       });
+      
+      if (!response.ok) {
+        const errText = await response.json();  // Đọc phản hồi dạng JSON
+        console.error("❌ Server error:", errText);
+        throw new Error("Không gửi được bình luận");
+      }      
   
-      if (!res.ok) throw new Error("Gửi thất bại");
-  
-      // Reset text sau khi gửi
-      if (type === "question") {
+      // Reset UI
+      if (isQuestion) {
         setQuestionCommentText("");
+        setShowCommentInputId(null);
       } else {
-        setAnswerCommentText((prev) => ({ ...prev, [contentId]: "" }));
+        setAnswerCommentText((prev) => ({
+          ...prev,
+          [contentId]: "",
+        }));
         setActiveAnswerId(null);
       }
   
+      alert("✅ Bình luận đã được gửi thành công!");
     } catch (err) {
-      alert("❌ Lỗi khi gửi bình luận");
-      console.error(err);
+      console.error("Lỗi gửi bình luận:", err);
+      alert("⚠️ Có lỗi xảy ra khi gửi bình luận.");
     }
-  };   
-
+  };  
   // Xử lý vote
   const handleVote = (action, type = "question", contentId = null) => {
     if (!userId) return;
@@ -499,39 +556,61 @@ function StudentForumQuestionDetail() {
 
             </div>
 
-            {/* Nút thêm bình luận */}
+            {/* Nút Bình luận */}
             <div style={commentButtonContainerStyle}>
-            <button
-              style={commentButtonStyle}
-              onClick={() => {
-                setShowCommentInputId(
-                  question.id === showCommentInputId ? null : question.id
-                );
-                setActiveAnswerId(null); // Đóng comment câu trả lời nếu đang mở
-              }}
-            >
-              💬 Thêm bình luận
-            </button>
-
-            </div>
-
-            {/* Chỉ hiển thị khi đúng ID */}
-            {showCommentInputId === question.id && (
-            <div style={{ marginTop: "10px" }}>
-              <textarea
-                placeholder="Nhập bình luận của bạn..."
-                value={questionCommentText}
-                onChange={(e) => setQuestionCommentText(e.target.value)}
-                style={commentTextareaStyle}
-              />
               <button
-                style={commentButtonSendStyle}
-                onClick={() => handleSubmitComment(question.id)}
+                style={commentButtonStyle}
+                onClick={() => handleOpenComment(question.id)}
               >
-                Gửi bình luận
+                💬 Xem bình luận
               </button>
             </div>
-          )}
+
+            {showCommentInputId === question.id && (
+              <div style={{ marginTop: "10px" }}>
+                {/* Hiển thị các comment (giới hạn số lượng) */}
+                {comments.slice(0, visibleCommentCount).map((c) => (
+                  <div key={c.id} style={{ marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
+                      <span style={{ fontSize: "12px", color: "#666" }}>⏰ {c.created_at}</span>
+                    </div>
+                    <div style={{ marginLeft: "10px" }}>{c.content}</div>
+                  </div>
+                ))}
+
+                {/* Nút hiển thị thêm nếu còn bình luận chưa hiển thị */}
+                {visibleCommentCount < comments.length && (
+                  <button
+                    style={{
+                      marginBottom: "10px",
+                      color: "#007bff",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontStyle: "italic"
+                    }}
+                    onClick={() => setVisibleCommentCount(prev => prev + 5)}
+                  >
+                    Hiển thị thêm bình luận...
+                  </button>
+                )}
+
+                {/* Khung nhập bình luận */}
+                <textarea
+                  placeholder="Nhập bình luận của bạn..."
+                  value={questionCommentText}
+                  onChange={(e) => setQuestionCommentText(e.target.value)}
+                  style={commentTextareaStyle}
+                />
+                <button
+                  style={commentButtonSendStyle}
+                  onClick={() => handleSubmitComment(question.id, "question")}
+                >
+                  Gửi bình luận
+                </button>
+              </div>
+            )}
 
           </div>
         </div>
@@ -644,21 +723,65 @@ function StudentForumQuestionDetail() {
 
               {/* Bình luận cho từng câu */}
               <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={() => {
-                  setActiveAnswerId(
-                    activeAnswerId === ans.id ? null : ans.id
-                  );
-                  setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
-                }}
-                style={commentButtonStyle}
-              >
-                💬 Thêm bình luận
-              </button>
-
+                <button
+                  onClick={() => {
+                    const isSame = activeAnswerId === ans.id;
+                    setActiveAnswerId(isSame ? null : ans.id);
+                    setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
+                    if (!isSame) {
+                      fetchAnswerComments(ans.id);
+                      setVisibleAnswerComments({ ...visibleAnswerComments, [ans.id]: 5 });
+                    }
+                  }}
+                  style={commentButtonStyle}
+                >
+                  💬 Xem bình luận
+                </button>
 
                 {activeAnswerId === ans.id && (
                   <div style={{ marginTop: "10px" }}>
+                    {/* Hiển thị các comment */}
+                    {(answerComments[ans.id] || []).slice(0, visibleAnswerComments[ans.id] || 5).map((c) => (
+                      <div
+                        key={c.id}
+                        style={{
+                          marginBottom: "10px",
+                          borderBottom: "1px solid #ddd",
+                          paddingBottom: "5px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                          <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
+                          <span style={{ fontSize: "12px", color: "#666" }}>⏰ {c.created_at}</span>
+                        </div>
+                        <div style={{ marginLeft: "10px" }}>{c.content}</div>
+                      </div>
+                    ))}
+
+                    {/* Nút hiển thị thêm bình luận */}
+                    {answerComments[ans.id] &&
+                      visibleAnswerComments[ans.id] < answerComments[ans.id].length && (
+                        <button
+                          style={{
+                            marginBottom: "10px",
+                            color: "#007bff",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontStyle: "italic",
+                          }}
+                          onClick={() =>
+                            setVisibleAnswerComments((prev) => ({
+                              ...prev,
+                              [ans.id]: prev[ans.id] + 5,
+                            }))
+                          }
+                        >
+                          Hiển thị thêm bình luận...
+                        </button>
+                      )}
+
+                    {/* Khung nhập bình luận */}
                     <textarea
                       placeholder="Nhập bình luận của bạn..."
                       value={answerCommentText[ans.id] || ""}
@@ -669,14 +792,13 @@ function StudentForumQuestionDetail() {
                     />
                     <button
                       style={commentButtonSendStyle}
-                      onClick={() => handleSubmitComment(ans.id)}
+                      onClick={() => handleSubmitComment(ans.id, "answer")}
                     >
                       Gửi bình luận
                     </button>
                   </div>
                 )}
               </div>
-
             </div>
           </div>
         </li>
@@ -882,6 +1004,7 @@ const commentButtonStyle = {
   borderRadius: "4px",
   fontWeight: "bold",
   cursor: "pointer",
+  width: "375px",
 };
 
 const commentTextareaStyle = {

@@ -14,6 +14,7 @@ from api.views.student.student_forum.student_question.student_showquestion impor
 from api.views.student.student_forum.student_question.student_askquestion import StudentAskQuestionView
 from api.views.student.student_forum.student_question.student_detailquestion import StudentDetailQuestionView
 from api.views.student.student_forum.student_question.student_ansquestion import StudentAnsQuestionView
+from api.views.student.student_forum.student_question.student_comment import StudentCommentView
 from api.views.student.student_forum.student_unanswer import StudentUnanswerView
 from api.views.student.student_forum.student_tag import StudentTagView
 from api.views.student.student_forum.student_save import StudentSaveView
@@ -39,6 +40,7 @@ urlpatterns = [
     path('student/student_forum/student_question/student_detailquestion/<int:question_id>/', StudentDetailQuestionView.as_view(), name='student_detailquestion_id'),
     path('student/student_forum/student_question/student_ansquestion/', StudentAnsQuestionView.as_view(), name='student_ansquestion'),
     path('student/student_forum/student_question/student_ansquestion/<int:answer_id>/', StudentAnsQuestionView.as_view()),
+    path('student/student_forum/student_question/student_comment/', StudentCommentView.as_view(), name='student_comment'),
     path('student/student_forum/student_unanswer/', StudentUnanswerView.as_view(), name='student_unanswer'),
     path('student/student_forum/student_tag/', StudentTagView.as_view(), name='student_tag'),
     path('student/student_forum/student_save/', StudentSaveView.as_view(), name='student_save'),
