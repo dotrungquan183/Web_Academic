@@ -17,6 +17,10 @@ function StudentForumQuestionDetail() {
   const [editContent, setEditContent] = useState(""); // Nội dung sửa
   const token = localStorage.getItem("token");
   const answerInputRef = useRef(null);
+  const [showCommentInputId, setShowCommentInputId] = useState(null);
+  const [questionCommentText, setQuestionCommentText] = useState("");
+  const [answerCommentText, setAnswerCommentText] = useState({});
+  const [activeAnswerId, setActiveAnswerId] = useState(null);
   // Lấy thông tin người dùng từ token
   useEffect(() => {
     const token = getToken();
@@ -93,6 +97,45 @@ function StudentForumQuestionDetail() {
       setUserVoteQuestion(storedVote ? parseInt(storedVote, 10) : 0);
     }
   }, [id, userId]);
+
+  const handleSubmitComment = async (contentId, type) => {
+    const comment =
+      type === "question"
+        ? questionCommentText.trim()
+        : answerCommentText[contentId]?.trim();
+  
+    if (!comment) return;
+  
+    try {
+      const token = getToken();
+      const res = await fetch("/api/comments/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content_id: contentId,
+          type_comment: type,
+          content: comment,
+        }),
+      });
+  
+      if (!res.ok) throw new Error("Gửi thất bại");
+  
+      // Reset text sau khi gửi
+      if (type === "question") {
+        setQuestionCommentText("");
+      } else {
+        setAnswerCommentText((prev) => ({ ...prev, [contentId]: "" }));
+        setActiveAnswerId(null);
+      }
+  
+    } catch (err) {
+      alert("❌ Lỗi khi gửi bình luận");
+      console.error(err);
+    }
+  };   
 
   // Xử lý vote
   const handleVote = (action, type = "question", contentId = null) => {
@@ -458,177 +501,232 @@ function StudentForumQuestionDetail() {
 
             {/* Nút thêm bình luận */}
             <div style={commentButtonContainerStyle}>
-              <button style={commentButtonStyle}>💬 Thêm bình luận</button>
+            <button
+              style={commentButtonStyle}
+              onClick={() => {
+                setShowCommentInputId(
+                  question.id === showCommentInputId ? null : question.id
+                );
+                setActiveAnswerId(null); // Đóng comment câu trả lời nếu đang mở
+              }}
+            >
+              💬 Thêm bình luận
+            </button>
+
             </div>
+
+            {/* Chỉ hiển thị khi đúng ID */}
+            {showCommentInputId === question.id && (
+            <div style={{ marginTop: "10px" }}>
+              <textarea
+                placeholder="Nhập bình luận của bạn..."
+                value={questionCommentText}
+                onChange={(e) => setQuestionCommentText(e.target.value)}
+                style={commentTextareaStyle}
+              />
+              <button
+                style={commentButtonSendStyle}
+                onClick={() => handleSubmitComment(question.id)}
+              >
+                Gửi bình luận
+              </button>
+            </div>
+          )}
+
           </div>
         </div>
       </div>
 
 
       <div style={answerContainer}>
-        <label style={answerCountLabel}>
-          Tổng số câu trả lời: {answers.length}
-        </label>
+  <label style={answerCountLabel}>
+    Tổng số câu trả lời: {answers.length}
+  </label>
 
-        {answers.length > 0 ? (
-          <ul>
-            {answers.map((ans) => (
-              <li key={ans.id} style={answerItemStyle}>
-                <div style={singleAnswerBox}>
-                  <p><strong>{ans.username}</strong></p>
-                  <p>{ans.content}</p>
+  {answers.length > 0 ? (
+    <ul>
+      {answers.map((ans) => (
+        <li key={ans.id} style={answerItemStyle}>
+          <div style={singleAnswerBox}>
+            <p><strong>{ans.username}</strong></p>
+            <p>{ans.content}</p>
 
-                  <div style={metaContainerStyle}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <button
-                        onClick={() => handleVote("like", "answer", ans.id)}
-                        style={{
-                          ...voteButton,
-                          backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
-                          color: ans.userVote === 1 ? "#fff" : "#000",
-                        }}
-                      >
-                        👍
-                        <span style={{
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          color: ans.userVote === 1 ? '#fff' : '#003366'
-                        }}>
-                          {ans.like}
-                        </span>
-                      </button>
+            {/* Vote section */}
+            <div style={metaContainerStyle}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  onClick={() => handleVote("like", "answer", ans.id)}
+                  style={{
+                    ...voteButton,
+                    backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
+                    color: ans.userVote === 1 ? "#fff" : "#000",
+                  }}
+                >
+                  👍
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: ans.userVote === 1 ? '#fff' : '#003366'
+                  }}>
+                    {ans.like}
+                  </span>
+                </button>
 
-                      <button
-                        onClick={() => handleVote("dislike", "answer", ans.id)}
-                        style={{
-                          ...voteButton,
-                          backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
-                          color: ans.userVote === -1 ? "#fff" : "#000",
-                        }}
-                      >
-                        👎
-                        <span style={{
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          color: ans.userVote === -1 ? '#fff' : '#003366'
-                        }}>
-                          {ans.dislike}
-                        </span>
-                      </button>
+                <button
+                  onClick={() => handleVote("dislike", "answer", ans.id)}
+                  style={{
+                    ...voteButton,
+                    backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
+                    color: ans.userVote === -1 ? "#fff" : "#000",
+                  }}
+                >
+                  👎
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: ans.userVote === -1 ? '#fff' : '#003366'
+                  }}>
+                    {ans.dislike}
+                  </span>
+                </button>
 
-                      <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
-                    </div>
+                <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
+              </div>
 
-                    <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
-                  </div>
+              <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
+            </div>
 
-                  {/* Khung chia sẻ, chỉnh sửa, theo dõi, bình luận riêng cho từng câu trả lời */}
-                  <div style={{ ...containerSelectStyle, marginTop: '10px' }}>
-                    <div style={topRowStyle}>
-                      <div style={buttonGroupStyle}>
-                        <button style={actionButtonStyle}>↗️ Chia sẻ</button>
-                        <button
-                          style={actionButtonStyle}
-                          onClick={() => {
-                            try {
-                              const token = getToken();
-                              if (!token) {
-                                alert("❌ Bạn chưa đăng nhập!");
-                                return;
-                              }
-
-                              const decoded = jwtDecode(token);
-                              const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-                              // Kiểm tra quyền chỉnh sửa câu trả lời
-                              if (ans.user_id !== currentUserId) {
-                                alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
-                                return;
-                              }
-
-                              // Chỉnh sửa câu trả lời, cập nhật state
-                              handleEditAnswer(ans);  // Hàm này có thể cần cập nhật nội dung câu trả lời trong state
-                              scrollToAnswerInput();  // Cuộn trang đến phần chỉnh sửa câu trả lời
-
-                            } catch (error) {
-                              console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
-                              alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
-                            }
-                          }}
-                        >
-                          ✏️ Chỉnh sửa
-                        </button>
-
-                        <button style={actionButtonStyle}>👁️ Theo dõi</button>
-                      </div>
-                      <span>
-                        {(() => {
-                          const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);
-
-                          if (secondsAgo < 60) {
-                            return "Vừa xong";
-                          }
-
-                          return `Đã chỉnh sửa ${ans.timeAgo || getTimeAgo(ans.created_at)}`;
-                        })()}
-                      </span>
-                    </div>
-
-                    <div style={commentButtonContainerStyle}>
-                      <button style={commentButtonStyle}>💬 Thêm bình luận</button>
-                    </div>
-                  </div>
-
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Chưa có câu trả lời nào.</p>
-        )}
-
-      </div>
-
-        {/* Khung nhập hoặc chỉnh sửa câu trả lời */}
-        <div ref={answerInputRef} style={answerInputContainer}>
-          <label htmlFor="answer" style={answerCountLabel}>
-            {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
-          </label>
-
-          <textarea
-            id="answer"
-            value={isEditing ? editContent : newAnswer}
-            onChange={(e) =>
-              isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
-            }
-            style={textAreaStyle}
-            placeholder="Nhập câu trả lời tại đây..."
-          />
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              {isEditing ? (
-                <>
-                  <button style={submitButtonStyle} onClick={submitEditedAnswer}>
-                    ✅ Lưu chỉnh sửa
-                  </button>
+            {/* Các nút hành động */}
+            <div style={{ ...containerSelectStyle, marginTop: '10px' }}>
+              <div style={topRowStyle}>
+                <div style={buttonGroupStyle}>
+                  <button style={actionButtonStyle}>↗️ Chia sẻ</button>
                   <button
-                    style={{ ...submitButtonStyle, backgroundColor: "#999" }}
+                    style={actionButtonStyle}
                     onClick={() => {
-                      setIsEditing(null);
-                      setEditContent("");
+                      try {
+                        const token = getToken();
+                        if (!token) {
+                          alert("❌ Bạn chưa đăng nhập!");
+                          return;
+                        }
+
+                        const decoded = jwtDecode(token);
+                        const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
+                        if (ans.user_id !== currentUserId) {
+                          alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
+                          return;
+                        }
+
+                        handleEditAnswer(ans);
+                        scrollToAnswerInput();
+
+                      } catch (error) {
+                        console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
+                        alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
+                      }
                     }}
                   >
-                    ❌ Hủy
+                    ✏️ Chỉnh sửa
                   </button>
-                </>
-              ) : (
-                <button style={submitButtonStyle} onClick={handlePostAnswer}>
-                  ➕ Đăng câu trả lời
-                </button>
-              )}
+                  <button style={actionButtonStyle}>👁️ Theo dõi</button>
+                </div>
+
+                <span>
+                  {(() => {
+                    const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);
+                    if (secondsAgo < 60) return "Vừa xong";
+                    return `Đã chỉnh sửa ${ans.timeAgo || getTimeAgo(ans.created_at)}`;
+                  })()}
+                </span>
+              </div>
+
+              {/* Bình luận cho từng câu */}
+              <div style={{ marginTop: "10px" }}>
+              <button
+                onClick={() => {
+                  setActiveAnswerId(
+                    activeAnswerId === ans.id ? null : ans.id
+                  );
+                  setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
+                }}
+                style={commentButtonStyle}
+              >
+                💬 Thêm bình luận
+              </button>
+
+
+                {activeAnswerId === ans.id && (
+                  <div style={{ marginTop: "10px" }}>
+                    <textarea
+                      placeholder="Nhập bình luận của bạn..."
+                      value={answerCommentText[ans.id] || ""}
+                      onChange={(e) =>
+                        setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
+                      }
+                      style={commentTextareaStyle}
+                    />
+                    <button
+                      style={commentButtonSendStyle}
+                      onClick={() => handleSubmitComment(ans.id)}
+                    >
+                      Gửi bình luận
+                    </button>
+                  </div>
+                )}
+              </div>
+
             </div>
-        </div>
-      </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p>Chưa có câu trả lời nào.</p>
+  )}
+
+  {/* Khung nhập hoặc chỉnh sửa câu trả lời */}
+  <div ref={answerInputRef} style={answerInputContainer}>
+    <label htmlFor="answer" style={answerCountLabel}>
+      {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
+    </label>
+
+    <textarea
+      id="answer"
+      value={isEditing ? editContent : newAnswer}
+      onChange={(e) =>
+        isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
+      }
+      style={textAreaStyle}
+      placeholder="Nhập câu trả lời tại đây..."
+    />
+
+    <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+      {isEditing ? (
+        <>
+          <button style={submitButtonStyle} onClick={submitEditedAnswer}>
+            ✅ Lưu chỉnh sửa
+          </button>
+          <button
+            style={{ ...submitButtonStyle, backgroundColor: "#999" }}
+            onClick={() => {
+              setIsEditing(null);
+              setEditContent("");
+            }}
+          >
+            ❌ Hủy
+          </button>
+        </>
+      ) : (
+        <button style={submitButtonStyle} onClick={handlePostAnswer}>
+          ➕ Đăng câu trả lời
+        </button>
+      )}
+    </div>
+  </div>
+</div>
+</div>
     </StudentForumLayout>
   );
 }
@@ -779,10 +877,34 @@ const commentButtonContainerStyle = {
 const commentButtonStyle = {
   backgroundColor: "#e0e0e0",
   color: "#003366",
-  border: "1px solid #ccc",
+  border: "1px solid #003366",
   padding: "8px 126px",
   borderRadius: "4px",
   fontWeight: "bold",
   cursor: "pointer",
 };
+
+const commentTextareaStyle = {
+  width: "98%",
+  padding: "8px",
+  borderRadius: "6px",
+  border: "1px solid #003366",
+  fontSize: "14px",
+  resize: "vertical",
+  height: "100px", // ✅ Chiều cao lớn hơn
+};
+
+
+const commentButtonSendStyle = {
+  marginTop: "6px",
+  padding: "6px 11px",
+  backgroundColor: "#003366",
+  color: "white",
+  border: "none",
+  borderRadius: "4px",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "bold",
+};
+
 export default StudentForumQuestionDetail;

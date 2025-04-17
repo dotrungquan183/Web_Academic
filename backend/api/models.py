@@ -154,3 +154,21 @@ class View(models.Model):
     class Meta:
         unique_together = ('user', 'question', 'view_date')
         db_table = 'views'  # Đặt tên bảng là 'views'
+
+class Comment(models.Model):
+    TYPE_CHOICES = (
+        ('question', 'Question'),
+        ('answer', 'Answer'),
+    )
+
+    type_comment = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    content_id = models.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.type_comment} - {self.content[:30]}"
+
+    class Meta:
+        db_table = 'comments'
