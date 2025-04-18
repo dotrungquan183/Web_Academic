@@ -936,9 +936,10 @@ const handleDeleteAnswer = (answerId) => {
                 style={commentButtonStyle}
                 onClick={() => handleOpenComment(question.id)}
               >
-                💬 Xem bình luận
+                💬 {showCommentInputId === question.id ? "Ẩn bình luận" : "Xem bình luận"}
               </button>
             </div>
+
 
             {showCommentInputId === question.id && (
               <div style={{ marginTop: "10px" }}>
@@ -1133,20 +1134,21 @@ const handleDeleteAnswer = (answerId) => {
 
               {/* Bình luận cho từng câu */}
               <div style={{ marginTop: "10px" }}>
-                <button
-                  onClick={() => {
-                    const isSame = activeAnswerId === ans.id;
-                    setActiveAnswerId(isSame ? null : ans.id);
-                    setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
-                    if (!isSame) {
-                      fetchAnswerComments(ans.id);
-                      setVisibleAnswerComments({ ...visibleAnswerComments, [ans.id]: 5 });
-                    }
-                  }}
-                  style={commentButtonStyle}
-                >
-                  💬 Xem bình luận
-                </button>
+              <button
+                onClick={() => {
+                  const isSame = activeAnswerId === ans.id;
+                  setActiveAnswerId(isSame ? null : ans.id);
+                  setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
+                  if (!isSame) {
+                    fetchAnswerComments(ans.id);
+                    setVisibleAnswerComments({ ...visibleAnswerComments, [ans.id]: 5 });
+                  }
+                }}
+                style={commentButtonStyle}
+              >
+                💬 {activeAnswerId === ans.id ? "Ẩn bình luận" : "Xem bình luận"}
+              </button>
+
 
                 {activeAnswerId === ans.id && (
                   <div style={{ marginTop: "10px" }}>
