@@ -107,18 +107,27 @@ function StudentForumQuestionDetail() {
       setUserVoteQuestion(storedVote ? parseInt(storedVote, 10) : 0);
     }
   }, [id, userId]);
-// Lấy comment của câu hỏi
- const fetchComments = async (questionId) => {
-  try {
-    const res = await axios.get(
-      `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=question&content_id=${questionId}`
-    );
-    setComments(res.data.comments);
-    setVisibleCommentCount(5); // Reset lại số lượng hiển thị mỗi khi click vào câu hỏi khác
-  } catch (error) {
-    console.error("Lỗi khi lấy comment:", error);
-  }
-};
+  const fetchComments = async (questionId) => {
+    try {
+      const res = await axios.get(
+        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=question&content_id=${questionId}`
+      );
+  
+      setComments(prev => ({
+        ...prev,
+        [questionId]: res.data.comments
+      }));
+  
+      setVisibleCommentCount(prev => ({
+        ...prev,
+        [questionId]: 5 // Khởi tạo 5 comment đầu tiên cho question đó
+      }));
+    } catch (error) {
+      console.error("Lỗi khi lấy comment:", error);
+    }
+  };
+  
+  
 // Lấy comment cho câu trả lời
 const fetchAnswerComments = async (answerId) => {
   try {
@@ -177,13 +186,12 @@ const handleDeleteAnswer = (answerId) => {
       fetchComments(questionId);
     }
   };
-    // Sử dụng useEffect để gọi handleOpenComment khi vào trang
+  // Sử dụng useEffect để gọi handleOpenComment khi vào trang
 
   const handleSubmitComment = async (contentId, type) => {
     try {
       const isQuestion = type === "question";
   
-      // Lấy nội dung comment phù hợp
       const comment = isQuestion
         ? questionCommentText.trim()
         : answerCommentText[contentId]?.trim();
@@ -193,7 +201,7 @@ const handleDeleteAnswer = (answerId) => {
         return;
       }
   
-      const token = getToken(); // Nếu cần xác thực
+      const token = getToken();
   
       const response = await fetch("http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/", {
         method: "POST",
@@ -207,23 +215,27 @@ const handleDeleteAnswer = (answerId) => {
           content: comment,
         }),
       });
-      
+  
       if (!response.ok) {
-        const errText = await response.json();  // Đọc phản hồi dạng JSON
+        const errText = await response.json();
         console.error("❌ Server error:", errText);
         throw new Error("Không gửi được bình luận");
-      }      
+      }
   
-      // Reset UI
+      // 👇 Reset input nhưng KHÔNG đóng lại comment box
       if (isQuestion) {
         setQuestionCommentText("");
-        setShowCommentInputId(null);
+  
+        // ✅ Fetch lại danh sách comment mới nhất
+        fetchComments(contentId);
       } else {
         setAnswerCommentText((prev) => ({
           ...prev,
           [contentId]: "",
         }));
-        setActiveAnswerId(null);
+  
+        // ✅ Fetch lại comment câu trả lời nếu bạn có hàm fetch riêng
+        fetchAnswerComments(contentId);
       }
   
       alert("✅ Bình luận đã được gửi thành công!");
@@ -231,7 +243,332 @@ const handleDeleteAnswer = (answerId) => {
       console.error("Lỗi gửi bình luận:", err);
       alert("⚠️ Có lỗi xảy ra khi gửi bình luận.");
     }
+  };
+  
+  
+  const handleEditCommentAnswer = (answerId, commentId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+  
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+  
+    const commentList = answerComments[answerId] || [];
+    console.log("📌 Danh sách comment của answerId =", answerId);
+    console.table(commentList);
+  
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
+      return;
+    }
+  
+    console.log("🧩 Full comment object:", comment);
+  
+    // 🧠 Lấy user ID từ comment
+    const commentUserId =
+      typeof comment.user_id !== "undefined"
+        ? comment.user_id
+        : typeof comment.user === "object" && comment.user !== null
+        ? comment.user.id
+        : comment.user ?? null;
+  
+    console.log("👤 currentUserId:", currentUserId);
+    console.log("✏️ commentUserId:", commentUserId);
+  
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền chỉnh sửa bình luận này!");
+      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
+      return;
+    }
+  
+    const newContent = prompt("📝 Nhập nội dung mới cho bình luận:", comment.content);
+    if (newContent === null || newContent.trim() === "") {
+      alert("❌ Nội dung không hợp lệ!");
+      return;
+    }
+  
+    handleSubmitEditCommentAnswer(commentId, newContent, answerId);
+  };   
+  
+  
+  const handleSubmitEditCommentAnswer = async (commentId, newContent, answerId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Không có token xác thực");
+      console.error("handleSubmitEditComment: Missing token");
+      return;
+    }
+  
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content: newContent }),
+        }
+      );
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+        console.error("handleSubmitEditComment: Server returned error", {
+          status: response.status,
+          body: result,
+        });
+        return;
+      }
+  
+      alert("✅ Bình luận đã được cập nhật!");
+      console.log("handleSubmitEditComment: Cập nhật thành công", result);
+  
+      // ✅ Reload lại danh sách comment sau khi sửa
+      await fetchAnswerComments(answerId);
+    } catch (error) {
+      alert("❌ Có lỗi xảy ra khi gửi request.");
+      console.error("handleSubmitEditComment: Lỗi khi gọi API", error);
+    }
   };  
+  
+  const handleDeleteCommentAnswer = (answerId, commentId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+  
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+  
+    const commentList = answerComments[answerId] || [];
+    console.log("📌 Danh sách comment của answerId =", answerId);
+    console.table(commentList);
+  
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
+      return;
+    }
+  
+    console.log("🧩 Full comment object:", comment);
+  
+    // 🧠 Lấy user ID từ comment
+    const commentUserId =
+      typeof comment.user_id !== "undefined"
+        ? comment.user_id
+        : typeof comment.user === "object" && comment.user !== null
+        ? comment.user.id
+        : comment.user ?? null;
+  
+    console.log("👤 currentUserId:", currentUserId);
+    console.log("✏️ commentUserId:", commentUserId);
+  
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền xoá bình luận này!");
+      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
+      return;
+    }
+  
+    if (window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
+      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (res.ok) {
+            // Cập nhật lại danh sách comment nếu cần
+            setAnswerComments((prev) => {
+              const updated = { ...prev };
+              updated[answerId] = updated[answerId].filter((c) => c.id !== commentId);
+              return updated;
+            });
+            alert("✅ Đã xoá bình luận thành công!");
+          } else {
+            alert("❌ Không thể xoá bình luận này.");
+          }
+        })
+        .catch((error) => console.error("❌ Lỗi khi xoá bình luận:", error));
+    }
+  };  
+
+  const handleEditCommentQuestion = (questionId, commentId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+  
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+  
+    const rawData = comments[questionId];
+  
+    let commentList = [];
+  
+    // ✅ Nếu là 1 comment object → chuyển thành array
+    if (rawData && !Array.isArray(rawData) && typeof rawData === "object") {
+      commentList = [rawData];
+    } else if (Array.isArray(rawData)) {
+      commentList = rawData;
+    }
+  
+    console.log("📌 Danh sách comment của questionId =", questionId);
+    console.table(commentList);
+  
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
+      return;
+    }
+  
+    console.log("🧩 Full comment object:", comment);
+  
+    const commentUserId =
+      typeof comment.user_id !== "undefined"
+        ? comment.user_id
+        : typeof comment.user === "object" && comment.user !== null
+        ? comment.user.id
+        : comment.user ?? null;
+  
+    console.log("👤 currentUserId:", currentUserId);
+    console.log("✏️ commentUserId:", commentUserId);
+  
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền chỉnh sửa bình luận này!");
+      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
+      return;
+    }
+  
+    const newContent = prompt("📝 Nhập nội dung mới cho bình luận:", comment.content);
+    if (newContent === null || newContent.trim() === "") {
+      alert("❌ Nội dung không hợp lệ!");
+      return;
+    }
+  
+    handleSubmitEditCommentQuestion(commentId, newContent, questionId);
+  };  
+
+  const handleSubmitEditCommentQuestion = async (commentId, newContent, questionId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Không có token xác thực");
+      console.error("handleSubmitEditCommentQuestion: Missing token");
+      return;
+    }
+  
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content: newContent }),
+        }
+      );
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+        console.error("handleSubmitEditCommentQuestion: Server returned error", {
+          status: response.status,
+          body: result,
+        });
+        return;
+      }
+  
+      alert("✅ Bình luận đã được cập nhật!");
+      console.log("handleSubmitEditCommentQuestion: Cập nhật thành công", result);
+  
+      // ✅ Reload lại danh sách comment của câu hỏi sau khi sửa
+      await fetchComments(questionId);
+    } catch (error) {
+      alert("❌ Có lỗi xảy ra khi gửi request.");
+      console.error("handleSubmitEditCommentQuestion: Lỗi khi gọi API", error);
+    }
+  };
+  
+  const handleDeleteCommentQuestion = (questionId, commentId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+  
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+  
+    const commentList = comments[questionId] || [];
+    console.log("📌 Danh sách comment của questionId =", questionId);
+    console.table(commentList);
+  
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
+      return;
+    }
+  
+    console.log("🧩 Full comment object:", comment);
+  
+    const commentUserId =
+      typeof comment.user_id !== "undefined"
+        ? comment.user_id
+        : typeof comment.user === "object" && comment.user !== null
+        ? comment.user.id
+        : comment.user ?? null;
+  
+    console.log("👤 currentUserId:", currentUserId);
+    console.log("🗑️ commentUserId:", commentUserId);
+  
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền xoá bình luận này!");
+      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
+      return;
+    }
+  
+    if (window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
+      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (res.ok) {
+            // Cập nhật lại danh sách comment
+            setComments((prev) => {
+              const updated = { ...prev };
+              updated[questionId] = updated[questionId].filter((c) => c.id !== commentId);
+              return updated;
+            });
+            alert("✅ Đã xoá bình luận thành công!");
+          } else {
+            alert("❌ Không thể xoá bình luận này.");
+          }
+        })
+        .catch((error) => console.error("❌ Lỗi khi xoá bình luận:", error));
+    }
+  };
+  
   // Xử lý vote
   const handleVote = (action, type = "question", contentId = null) => {
     if (!userId) return;
@@ -509,18 +846,7 @@ const handleDeleteAnswer = (answerId) => {
       alert("Đã xảy ra lỗi khi cập nhật. Kiểm tra kết nối hoặc thử lại sau.");
     }
   };
-  
-  const handleEditComment = (commentId) => {
-    console.log("Edit comment with ID:", commentId);
-    // Logic để chỉnh sửa comment
-  };
-  
-  const handleDeleteComment = (commentId) => {
-    console.log("Delete comment with ID:", commentId);
-    // Logic để xóa comment
-  };
-  
-  
+
   const scrollToAnswerInput = () => {
     if (answerInputRef.current) {
       answerInputRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -617,32 +943,48 @@ const handleDeleteAnswer = (answerId) => {
             {showCommentInputId === question.id && (
               <div style={{ marginTop: "10px" }}>
                 {/* Hiển thị các comment (giới hạn số lượng) */}
-                {comments.slice(0, visibleCommentCount).map((c) => (
+                {(comments[question.id] || []).slice(0, visibleCommentCount[question.id] || 0).map((c) => (
                   <div key={c.id} style={{ marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>
                     <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
                       <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
-                      <span style={{ fontSize: "12px", color: "#666" }}>⏰ {c.created_at}</span>
+                      <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
+
+                      <FaEdit 
+                        style={{ marginRight: "8px", cursor: "pointer" }} 
+                        onClick={() => handleEditCommentQuestion(question.id, c.id)} 
+                      />
+                      <FaTrash 
+                        style={{ cursor: "pointer", color: "#003366" }} 
+                        onClick={() => handleDeleteCommentQuestion(question.id, c.id)} 
+                      />
                     </div>
                     <div style={{ marginLeft: "10px" }}>{c.content}</div>
                   </div>
                 ))}
 
-                {/* Nút hiển thị thêm nếu còn bình luận chưa hiển thị */}
-                {visibleCommentCount < comments.length && (
-                  <button
-                    style={{
-                      marginBottom: "10px",
-                      color: "#007bff",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontStyle: "italic"
-                    }}
-                    onClick={() => setVisibleCommentCount(prev => prev + 5)}
-                  >
-                    Hiển thị thêm bình luận...
-                  </button>
+                {/* Nút "Hiển thị thêm bình luận" nếu còn bình luận chưa hiển thị */}
+                {comments[question.id] &&
+                  visibleCommentCount[question.id] < comments[question.id].length && (
+                    <button
+                      style={{
+                        marginBottom: "10px",
+                        color: "#007bff",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontStyle: "italic"
+                      }}
+                      onClick={() =>
+                        setVisibleCommentCount(prev => ({
+                          ...prev,
+                          [question.id]: (prev[question.id] || 0) + 5
+                        }))
+                      }
+                    >
+                      Hiển thị thêm bình luận...
+                    </button>
                 )}
+
 
                 {/* Khung nhập bình luận */}
                 <textarea
@@ -822,14 +1164,13 @@ const handleDeleteAnswer = (answerId) => {
                           <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
                           <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
                           
-                          {/* Thêm icon chỉnh sửa và xóa */}
                           <FaEdit 
                             style={{ marginRight: "8px", cursor: "pointer" }} 
-                            onClick={() => handleEditComment(c.id)} // Hàm xử lý chỉnh sửa comment
+                            onClick={() => handleEditCommentAnswer(ans.id, c.id)} 
                           />
                           <FaTrash 
                             style={{ cursor: "pointer", color: "#003366" }} 
-                            onClick={() => handleDeleteComment(c.id)} // Hàm xử lý xóa comment
+                            onClick={() => handleDeleteCommentAnswer(ans.id, c.id)} // Hàm xử lý xóa comment
                           />
                         </div>
                         <div style={{ marginLeft: "10px" }}>{c.content}</div>

@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from api.views.auth.authHelper import get_authenticated_user
 from api.models import Comment
 from django.contrib.auth.models import User
+from django.utils import timezone
 import json
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -57,6 +58,7 @@ class StudentCommentView(View):
             data = [
                 {
                     "id": c.id,
+                    "user_id": c.user.id,
                     "username": c.user.username,
                     "content": c.content,
                     "created_at": c.created_at.strftime("%d/%m/%Y %H:%M"),
@@ -70,3 +72,65 @@ class StudentCommentView(View):
             print("Error on GET:", str(e))
             return JsonResponse({"error": str(e)}, status=500)
 
+    def put(self, request, comment_id=None, *args, **kwargs):
+        # Giả sử get_authenticated_user trả về một tuple gồm user và error_response
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response  # Trả về phản hồi lỗi nếu có
+
+        try:
+            # Phân tích dữ liệu JSON từ request body
+            data = json.loads(request.body)
+            new_content = data.get("content")
+            if not new_content:
+                return JsonResponse({"error": "Missing 'content'"}, status=400)
+
+            # Lấy comment từ database
+            comment = Comment.objects.get(id=comment_id)
+
+            # Kiểm tra quyền sở hữu bình luận
+            if comment.user.id != user.id:  # So sánh ID người dùng
+                return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
+
+            # Cập nhật nội dung bình luận và trường created_at thành thời gian hiện tại
+            comment.content = new_content
+            comment.created_at = timezone.now()  # Cập nhật created_at với thời gian hiện tại
+            comment.save()
+
+            return JsonResponse({"message": "Comment updated successfully."}, status=200)
+
+        except Comment.DoesNotExist:
+            return JsonResponse({"error": "Comment not found."}, status=404)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON."}, status=400)
+
+        except Exception as e:
+            # Nếu có lỗi bất thường nào khác
+            return JsonResponse({"error": str(e)}, status=500)
+        
+    def delete(self, request, comment_id, *args, **kwargs):
+        # Lấy thông tin người dùng đã xác thực
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response  # Trả về phản hồi lỗi nếu có
+
+        try:
+            # Tìm bình luận theo comment_id
+            comment = Comment.objects.get(id=comment_id)
+
+            # Kiểm tra quyền sở hữu bình luận
+            if comment.user.id != user.id:  # So sánh ID người dùng
+                return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
+
+            # Xóa bình luận
+            comment.delete()
+
+            return JsonResponse({"message": "Comment deleted successfully."}, status=200)
+
+        except Comment.DoesNotExist:
+            return JsonResponse({"error": "Comment not found."}, status=404)
+
+        except Exception as e:
+            # Nếu có lỗi bất thường nào khác
+            return JsonResponse({"error": str(e)}, status=500)
