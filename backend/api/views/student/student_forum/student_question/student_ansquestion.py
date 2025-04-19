@@ -47,31 +47,34 @@ class StudentAnsQuestionView(View):
         )
 
         return JsonResponse({'message': 'Success', 'id': answer.id}, status=201)
-    
+
     def delete(self, request, answer_id=None, *args, **kwargs):
-        # Lấy user từ token JWT
-        user, error_response = get_authenticated_user(request)  # user là instance của User (django.contrib.auth.models.User)
+        # 1. Lấy user từ JWT
+        user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
 
-        # Kiểm tra ID câu trả lời
+        # 2. Kiểm tra answer_id có được truyền vào không
         if not answer_id:
             return JsonResponse({'error': 'Thiếu ID của câu trả lời'}, status=400)
 
         try:
-            # Lấy câu trả lời từ DB
+            # 3. Lấy object Answer
             answer = get_object_or_404(Answer, id=answer_id)
 
-            # Debug: In ra thông tin user và câu trả lời
-            print(f"user.id: {getattr(user, 'id', 'N/A')}")
-            print(f"answer.user.user.id: {getattr(answer.user.user, 'id', 'N/A')}")  # Truy cập đúng qua answer.user.user.id
+            # 4. Lấy đối tượng UserInformation tương ứng với user hiện tại
+            user_info = get_object_or_404(UserInformation, user=user)
 
-            # Kiểm tra quyền: chỉ người tạo câu trả lời mới có quyền xoá
-            if answer.user.user.id != user.id:  # Dùng answer.user.user.id để lấy id của User
+            # 5. Kiểm tra quyền: chỉ người tạo mới được xoá
+            if answer.user != user_info:
                 return JsonResponse({'error': '❌ Bạn không có quyền xoá câu trả lời này'}, status=403)
 
-            # Xoá câu trả lời
+            # 6. Xoá tất cả votes liên quan đến câu trả lời này
+            Vote.objects.filter(vote_for='answer', content_id=answer.id).delete()
+
+            # 7. Xoá câu trả lời
             answer.delete()
+
             return JsonResponse({'message': '✅ Đã xoá câu trả lời thành công!'}, status=200)
 
         except Exception as e:
