@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback} from "react";
 import { useNavigate } from "react-router-dom";
 import StudentForumLayout from "../../Layout";
 import { jwtDecode } from 'jwt-decode';
@@ -7,52 +7,59 @@ import { getToken } from '../../../../../auth/authHelper';
 function StudentForumQuestion() {
   const [data, setData] = useState(null);
   const [votesMap, setVotesMap] = useState({});
-  const [answersMap, setAnswersMap] = useState({}); // ✅ NEW
-  const [timeFilter, setTimeFilter] = useState("Newest");
-  const [bountyFilter, setBountyFilter] = useState("Bountied");
-  const [interestFilter, setInterestFilter] = useState("Trending");
-  const [qualityFilter, setQualityFilter] = useState("Interesting");
+  const [answersMap, setAnswersMap] = useState({});
+  const [timeFilter, setTimeFilter] = useState("");
+  const [bountyFilter, setBountyFilter] = useState("");
+  const [interestFilter, setInterestFilter] = useState("");
+  const [qualityFilter, setQualityFilter] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Fetch danh sách câu hỏi
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
-      .then((response) => response.json())
-      .then(async (data) => {
-        const formattedData = Array.isArray(data) ? data : data ? [data] : [];
-        setData(formattedData);
+  const fetchQuestions = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
 
-        const votesResults = {};
-        const answersResults = {}; // ✅ NEW
+      if (timeFilter) params.append("time", timeFilter);
+      if (bountyFilter) params.append("bounty", bountyFilter);
+      if (interestFilter) params.append("interest", interestFilter);
+      if (qualityFilter) params.append("quality", qualityFilter);
 
-        // Lấy chi tiết từng câu hỏi để lấy điểm bỏ phiếu và số câu trả lời
-        await Promise.all(formattedData.map(async (q) => {
-          try {
-            const res = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`);
-            const detail = await res.json();
+      const response = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/?${params.toString()}`);
+      const result = await response.json();
+      const formattedData = Array.isArray(result) ? result : result ? [result] : [];
+      setData(formattedData);
 
-            if (detail.total_vote_score !== undefined) {
-              votesResults[q.id] = detail.total_vote_score;
-            }
+      const votesResults = {};
+      const answersResults = {};
 
-            if (detail.total_answers !== undefined) { // Đảm bảo lấy đúng số câu trả lời từ backend
-              answersResults[q.id] = detail.total_answers; // Lưu số lượng câu trả lời cho câu hỏi
-            }
+      await Promise.all(formattedData.map(async (q) => {
+        try {
+          const res = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`);
+          const detail = await res.json();
 
-          } catch (err) {
-            console.error(`Error fetching detail for question ${q.id}:`, err);
+          if (detail.total_vote_score !== undefined) {
+            votesResults[q.id] = detail.total_vote_score;
           }
-        }));
 
-        // Cập nhật các map
-        setVotesMap(votesResults);
-        setAnswersMap(answersResults); // ✅ NEW
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setData([]);
-      });
-  }, []);
+          if (detail.total_answers !== undefined) {
+            answersResults[q.id] = detail.total_answers;
+          }
+        } catch (err) {
+          console.error(`Error fetching detail for question ${q.id}:`, err);
+        }
+      }));
+
+      setVotesMap(votesResults);
+      setAnswersMap(answersResults);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setData([]);
+    }
+  }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
+
+  // ✅ useEffect không còn warning nữa
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]);
 
   return (
     <StudentForumLayout>
@@ -73,20 +80,24 @@ function StudentForumQuestion() {
           <div style={filterContainerStyle}>
             <div style={filterBoxStyle}>
               <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} style={dropdownStyle}>
+                <option value="All">All</option>
                 <option value="Newest">Newest</option>
                 <option value="Week">Week</option>
                 <option value="Month">Month</option>
               </select>
               <select value={bountyFilter} onChange={(e) => setBountyFilter(e.target.value)} style={dropdownStyle}>
+                <option value="All">All</option>
                 <option value="Bountied">Bountied</option>
               </select>
               <select value={interestFilter} onChange={(e) => setInterestFilter(e.target.value)} style={dropdownStyle}>
+                <option value="All">All</option>
                 <option value="Trending">Trending</option>
                 <option value="Hot">Hot</option>
                 <option value="Frequent">Frequent</option>
                 <option value="Active">Active</option>
               </select>
               <select value={qualityFilter} onChange={(e) => setQualityFilter(e.target.value)} style={dropdownStyle}>
+                <option value="All">All</option>
                 <option value="Interesting">Interesting</option>
                 <option value="Score">Score</option>
               </select>
@@ -147,7 +158,7 @@ function StudentForumQuestion() {
                   <span>👤 {question.username}</span>
                   <span>👀 {question.views || 0}</span>
                   <span>👍 {votesMap[question.id] ?? 0}</span>
-                  <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span> {/* ✅ SHOW COUNT */}
+                  <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
                   <span>
                     🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
                     {new Date(question.created_at).toLocaleTimeString([], {

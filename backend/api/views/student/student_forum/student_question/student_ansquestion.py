@@ -62,17 +62,15 @@ class StudentAnsQuestionView(View):
             # 3. Lấy object Answer
             answer = get_object_or_404(Answer, id=answer_id)
 
-            # 4. Lấy đối tượng UserInformation tương ứng với user hiện tại
-            user_info = get_object_or_404(UserInformation, user=user)
-
-            # 5. Kiểm tra quyền: chỉ người tạo mới được xoá
-            if answer.user != user_info:
+            # 4. Kiểm tra quyền: chỉ người tạo mới được xoá
+            # So sánh user.id với answer.user.user_id (do answer.user là FK đến UserInformation)
+            if answer.user.user_id != user.id:  # Sử dụng user_id của UserInformation
                 return JsonResponse({'error': '❌ Bạn không có quyền xoá câu trả lời này'}, status=403)
 
-            # 6. Xoá tất cả votes liên quan đến câu trả lời này
+            # 5. Xoá tất cả votes liên quan đến câu trả lời này
             Vote.objects.filter(vote_for='answer', content_id=answer.id).delete()
 
-            # 7. Xoá câu trả lời
+            # 6. Xoá câu trả lời
             answer.delete()
 
             return JsonResponse({'message': '✅ Đã xoá câu trả lời thành công!'}, status=200)
@@ -81,8 +79,6 @@ class StudentAnsQuestionView(View):
             print("❌ Exception khi xoá câu trả lời:")
             traceback.print_exc()
             return JsonResponse({'error': f'❌ Lỗi khi xoá: {str(e)}'}, status=500)
-
-
         
     def get(self, request, *args, **kwargs):
         question_id = request.GET.get('question_id')

@@ -150,35 +150,79 @@ const handleDeleteAnswer = (answerId) => {
     return;
   }
 
-  const decoded = jwtDecode(token);
-  const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+  if (!window.confirm("💾 Lưu thay đổi?")) return;
 
-  const answer = answers.find(a => a.id === answerId);
-  if (answer.user_id !== currentUserId) {
-    alert("❌ Bạn không có quyền xoá câu trả lời này!");
+  fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answerId}/`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then(async (res) => {
+      if (res.ok) {
+        alert("✅ Đã xoá câu trả lời thành công!");
+      } else {
+        const data = await res.json();
+        if (res.status === 403) {
+          alert("❌ Bạn không có quyền xoá câu trả lời này!");
+        } else {
+          alert(`❌ Lỗi: ${data.error || "Không thể xoá câu trả lời này."}`);
+        }
+      }
+
+      // Reload trang sau khi xử lý
+      window.location.reload();
+    })
+    .catch((error) => {
+      console.error("❌ Lỗi khi xoá câu trả lời:", error);
+      alert("❌ Đã xảy ra lỗi khi xoá.");
+      window.location.reload();
+    });
+};
+  
+const handleDeleteQuestion = (questionId) => {
+  const token = getToken();
+  if (!token) {
+    alert("❌ Bạn chưa đăng nhập!");
     return;
   }
 
-  if (window.confirm("Bạn có chắc muốn xoá câu trả lời này?")) {
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answerId}/`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (res.ok) {
-          setAnswers((prev) => prev.filter((ans) => ans.id !== answerId));
-          alert("✅ Đã xoá câu trả lời thành công!");
+  if (!window.confirm("💾 Lưu thay đổi?")) return;
+
+  fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/${questionId}/`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then(async (res) => {
+      if (res.ok) {
+        alert("✅ Đã xoá câu hỏi thành công!");
+        
+        // Chuyển hướng về trang câu hỏi
+        window.location.href = "http://localhost:3000/studentforum/question"; // Địa chỉ trang muốn chuyển đến
+      } else {
+        const data = await res.json();
+        if (res.status === 403) {
+          alert("❌ Bạn không có quyền xoá câu hỏi này!");
         } else {
-          alert("❌ Không thể xoá câu trả lời này.");
+          alert(`❌ Lỗi: ${data.error || "Không thể xoá câu hỏi này."}`);
         }
-      })
-      .catch((error) => console.error("❌ Lỗi khi xoá câu trả lời:", error));
-  }
+      }
+
+      // Không cần reload lại trang ở đây vì đã chuyển hướng
+      //window.location.reload();
+    })
+    .catch((error) => {
+      console.error("❌ Lỗi khi xoá câu hỏi:", error);
+      alert("❌ Đã xảy ra lỗi khi xoá.");
+      //window.location.reload();  // Có thể không cần thiết nữa
+    });
 };
-  
+
+
   const handleOpenComment = (questionId) => {
     const isSame = showCommentInputId === questionId;
     setShowCommentInputId(isSame ? null : questionId);
@@ -847,6 +891,11 @@ const handleDeleteAnswer = (answerId) => {
     }
   };
 
+  const handleMarkAsCorrect = (answerId) => {
+    // Gửi request tới backend hoặc cập nhật state tại đây
+    console.log("Đánh dấu là đúng:", answerId);
+  };
+
   const scrollToAnswerInput = () => {
     if (answerInputRef.current) {
       answerInputRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -858,6 +907,27 @@ const handleDeleteAnswer = (answerId) => {
     <StudentForumLayout>
       <div style={containerStyle}>
       <div style={questionContainerStyle}>
+         {/* Nút xoá ở góc phải trên */}
+        <button
+          onClick={() => handleDeleteQuestion(question.id)}
+          style={{
+            position: "absolute",
+            top: "35px",
+            right: "20px",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px",
+            borderRadius: "4px",
+            transition: "background-color 0.2s",
+            fontSize: "1em",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          title="Xoá câu hỏi"
+        >
+          <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} />
+        </button>
         <div style={questionContentStyle}>
           <h2>{question.title}</h2>
           <div style={metaContainerStyle}>
@@ -1038,6 +1108,28 @@ const handleDeleteAnswer = (answerId) => {
           >
             <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} /> {/* Thêm màu #003366 cho icon */}
           </button>
+          {/* Checkbox đánh dấu là đúng, thẳng hàng dưới nút xoá */}
+            <div
+              style={{
+                position: "absolute",
+                top: "55px", // khoảng cách từ trên xuống dưới nút xoá
+                right: "10px",
+              }}
+            >
+              <label style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: "8px" }}>
+                <input
+                  type="checkbox"
+                  checked={ans.is_correct}
+                  onChange={() => handleMarkAsCorrect(ans.id)}
+                  style={{
+                    width: "25px",
+                    height: "25px",
+                    accentColor: "#003366",
+                    cursor: "pointer",
+                  }}
+                />
+              </label>
+            </div>
             <p><strong>{ans.username}</strong></p>
             <p>{ans.content}</p>
 
@@ -1294,6 +1386,7 @@ const questionContainerStyle = {
   border: "1px solid #ccc",
   display: "flex",
   marginBottom: "20px",
+  position: "relative",
 };
 
 const voteButton = {

@@ -2,22 +2,26 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Prefetch, Sum
-from api.models import Question, QuestionTagMap, View, UserInformation
+from api.models import Question, QuestionTagMap, View, UserInformation, Vote, Answer, Comment
 from django.utils import timezone
 from django.contrib.auth.models import User
+from api.views.auth.authHelper import get_authenticated_user
 import logging
 from datetime import timedelta
-from django.db.models import Count
+from django.db.models import Count, Sum, F, Q, Prefetch
+
 
 logger = logging.getLogger(__name__)
 
 class StudentShowQuestionView(APIView):
     def get(self, request):
-        # Lấy filter từ query params
-        time_filter = request.GET.get("time", None)
-        bounty_filter = request.GET.get("bounty", None)
-        interest_filter = request.GET.get("interest", None)
-        quality_filter = request.GET.get("quality", None)
+        # Get filter params
+        time_filter = request.GET.get("time")
+        bounty_filter = request.GET.get("bounty")
+        interest_filter = request.GET.get("interest")
+        quality_filter = request.GET.get("quality")
+
+        now = timezone.now()
 
         questions = Question.objects.select_related("user").prefetch_related(
             Prefetch(
@@ -27,42 +31,51 @@ class StudentShowQuestionView(APIView):
         )
 
         # --- TIME FILTER ---
-        if time_filter == "Week":
-            start_date = timezone.now() - timedelta(days=7)
-            questions = questions.filter(created_at__gte=start_date)
+        if time_filter == "Newest":
+            questions = questions.filter(created_at__gte=now - timedelta(hours=24))
+        elif time_filter == "Week":
+            questions = questions.filter(created_at__gte=now - timedelta(days=7))
         elif time_filter == "Month":
-            start_date = timezone.now() - timedelta(days=30)
-            questions = questions.filter(created_at__gte=start_date)
-        # Mặc định: newest -> không lọc thời gian
+            questions = questions.filter(created_at__gte=now - timedelta(days=30))
+                # "All" hoặc None → không filter
 
         # --- BOUNTY FILTER ---
         if bounty_filter == "Bountied":
             questions = questions.filter(bounty_amount__gt=0)
 
-        # --- INTEREST FILTER (ví dụ: nhiều lượt xem) ---
+        # --- INTEREST FILTER ---
         if interest_filter == "Trending":
-            questions = questions.annotate(view_count=Sum('view__view_count')).order_by('-view_count')
+            recent_period = now - timedelta(days=3)
+            questions = questions.annotate(
+                recent_views=Sum('view__view_count', filter=Q(view__viewed_at__gte=recent_period))
+            ).order_by('-recent_views')
         elif interest_filter == "Hot":
-            questions = questions.annotate(num_answers=Count('answer')).order_by('-num_answers')
+            recent_period = now - timedelta(days=3)
+            questions = questions.annotate(
+                hotness=Count('answer', filter=Q(answer__created_at__gte=recent_period)) +
+                        Sum('vote__score', filter=Q(vote__created_at__gte=recent_period))
+            ).order_by('-hotness')
         elif interest_filter == "Frequent":
-            questions = questions.order_by('-id')  # giả định câu hỏi mới = hỏi thường xuyên
+            questions = questions.annotate(freq=Count('title')).order_by('-freq')
         elif interest_filter == "Active":
-            questions = questions.order_by('-created_at')  # hoặc thêm trường last_active_at nếu có
+            questions = questions.order_by('-updated_at')  # cần có trường updated_at hoặc tương tự
 
         # --- QUALITY FILTER ---
         if quality_filter == "Interesting":
-            questions = questions.annotate(view_count=Sum('view__view_count')).order_by('-view_count')
+            questions = questions.annotate(
+                quality_score=F('view__view_count') + F('vote__score')
+            ).order_by('-quality_score')
         elif quality_filter == "Score":
             questions = questions.annotate(score=Sum('vote__score')).order_by('-score')
 
+        # --- RESPONSE ---
         question_list = []
-
         for question in questions:
             tags = [qt.tag.tag_name for qt in question.questiontagmap_set.all()]
             total_views = View.objects.filter(question_id=question.id).aggregate(
                 total_views=Sum('view_count')
             )["total_views"] or 0
-            username = question.user.username
+
             try:
                 user_info = UserInformation.objects.get(user=question.user)
                 avatar = user_info.avatar
@@ -77,7 +90,7 @@ class StudentShowQuestionView(APIView):
                 "bounty_amount": question.bounty_amount,
                 "tags": tags,
                 "views": total_views,
-                "username": username,
+                "username": question.user.username,
                 "avatar": avatar,
                 "user_id": question.user.id
             })
@@ -118,3 +131,45 @@ class StudentShowQuestionView(APIView):
             view.save()
 
         return Response({"message": "Đã ghi nhận lượt xem"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, question_id, *args, **kwargs):
+        # Lấy thông tin người dùng đã xác thực
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response  # Trả về phản hồi lỗi nếu có
+
+        try:
+            # Tìm câu hỏi theo question_id
+            question = Question.objects.get(id=question_id)
+
+            # Kiểm tra quyền sở hữu câu hỏi
+            if question.user.id != user.id:  # So sánh ID người dùng
+                return Response({"error": "Bạn không có quyền xoá câu hỏi này!"}, status=status.HTTP_403_FORBIDDEN)
+
+            # Bắt đầu xóa các dữ liệu liên quan
+            # Xóa tất cả các lượt bình chọn (votes) liên quan đến câu hỏi
+            Vote.objects.filter(vote_for='question', content_id=question_id).delete()
+
+            # Xóa tất cả các lượt xem (views) liên quan đến câu hỏi
+            View.objects.filter(question=question).delete()
+
+            # Xóa tất cả các bình luận (comments) liên quan đến câu hỏi
+            Comment.objects.filter(type_comment='question', content_id=question_id).delete()
+
+            # Xóa các thẻ (tags) liên quan đến câu hỏi
+            QuestionTagMap.objects.filter(question=question).delete()
+
+            # Xóa tất cả các câu trả lời (answers) liên quan đến câu hỏi
+            Answer.objects.filter(question=question).delete()
+
+            # Xóa câu hỏi
+            question.delete()
+
+            return Response({"message": "Đã xoá câu hỏi và tất cả các liên quan thành công!"}, status=status.HTTP_200_OK)
+
+        except Question.DoesNotExist:
+            return Response({"error": "Câu hỏi không tồn tại."}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            # Nếu có lỗi bất thường nào khác
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
