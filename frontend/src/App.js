@@ -17,6 +17,7 @@ import RegistrationTab from "./components/normal_users/Tabs/RegistrationTab";
 import ContactTab from "./components/normal_users/Tabs/ContactTab";
 
 import StudentMenu from "./components/student/StudentMenu";
+import StudentFooter from "./components/student/StudentFooter";
 import StudentHomeTab from "./components/student/Tabs/StudentHome/StudentHomeTab";
 import StudentHome1 from "./components/student/Tabs/StudentHome/StudentHome1Tab";
 import StudentHome2 from "./components/student/Tabs/StudentHome/StudentHome2Tab";
@@ -66,6 +67,7 @@ function StudentLayout({ children }) {
     <>
       <StudentMenu />
       {children}
+      <StudentFooter />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaCalculator, FaSearch, FaHome, FaBook, FaChalkboardTeacher } from "react-icons/fa"; 
+import { FaSearch, FaHome, FaBook, FaChalkboardTeacher } from "react-icons/fa"; 
 import "./menu.css";
 
 function Menu() {
@@ -7,11 +7,13 @@ function Menu() {
     <div>
       {/* Header */}
       <h1 className="header-title">
-        <FaCalculator className="header-icon" />
-        <span className="header-text black">TOÁN </span>
-        <span className="header-text black">HỌC </span>
-        <span className="header-text blue">SINH </span>
-        <span className="header-text blue">VIÊN </span>
+        <div className="header">
+        <img src="/geometry.png" class="header-icon-math" alt="Calculator" />
+          <span className="header-text black">Toán </span>
+          <span className="header-text black">Học </span>
+          <span className="header-text blue">Sinh </span>
+          <span className="header-text blue">Viên </span>
+        </div>
 
         {/* 🔎 Thanh tìm kiếm */}
         <div className="search-bar">

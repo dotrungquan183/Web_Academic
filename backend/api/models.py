@@ -1,13 +1,31 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import timedelta
 import datetime
 
 class Course(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
+    total_duration = models.DurationField(default=timedelta())
 
-    def __str__(self):
-        return self.title 
+    class Meta:
+        db_table = 'course'
+
+class Chapter(models.Model):
+    course = models.ForeignKey(Course, related_name="chapters", on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'chapter'
+
+class Lesson(models.Model):
+    chapter = models.ForeignKey(Chapter, related_name="lessons", on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    duration = models.DurationField()
+    video = models.FileField(upload_to='videos/')
+
+    class Meta:
+        db_table = 'lesson'
 
 class OTP(models.Model):
     user = models.ForeignKey("UserInformation", on_delete=models.CASCADE)

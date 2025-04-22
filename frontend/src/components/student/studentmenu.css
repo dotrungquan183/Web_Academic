@@ -170,6 +170,15 @@ nav {
     font-size: 24px;
   }
   
+  .header-icon-math {
+    margin-right: 10px;
+    margin-bottom: -5px;
+    width: 50px;         /* hoặc bất kỳ size phù hợp */
+    height: auto;        /* giữ đúng tỉ lệ ảnh */
+    display: inline-block;
+    vertical-align: -5px;
+  }
+
   /* ✅ Nút đăng ký */
   .register-button {
     padding: 10px 15px;
@@ -237,10 +246,12 @@ nav {
   /* 🎨 Giữ màu chữ */
   .header-text.black {
     color: white;
+    margin-bottom: -20px;
   }
   
   .header-text.blue {
     color: white; /* Bắt buộc giữ màu xanh */
+    margin-top: -20px;
   }
   
   /*Chỉnh vị trí của icons và profile*/

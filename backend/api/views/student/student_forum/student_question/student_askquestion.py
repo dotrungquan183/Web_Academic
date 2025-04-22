@@ -4,7 +4,7 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from api.views.auth.authHelper import get_authenticated_user
-from api.models import Question, QuestionTag, QuestionTagMap
+from api.models import Question, QuestionTag, QuestionTagMap, Answer
 from django.utils.timezone import now
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -62,6 +62,7 @@ class StudentAskQuestionView(View):
             content = data.get("content") or data.get("description")
             tags = data.get("tags")
             bounty_amount = data.get("bounty_amount", 0)
+            accepted_answer_id = data.get("accepted_answer_id")  # ✅ lấy từ request
 
             if not title or not content or not tags:
                 return JsonResponse({"error": "Vui lòng điền đầy đủ thông tin!"}, status=400)
@@ -74,11 +75,19 @@ class StudentAskQuestionView(View):
             if question.user != user:
                 return JsonResponse({"error": "Bạn không có quyền chỉnh sửa câu hỏi của người khác!"}, status=403)
 
+            # Nếu có `accepted_answer_id` thì kiểm tra hợp lệ
+            if accepted_answer_id:
+                try:
+                    answer = Answer.objects.get(id=accepted_answer_id, question=question)
+                    question.accepted_answer_id = answer.id  # ✅ Gán nếu đúng
+                except Answer.DoesNotExist:
+                    return JsonResponse({"error": "Câu trả lời không hợp lệ hoặc không thuộc câu hỏi này!"}, status=400)
+
             # Cập nhật thông tin câu hỏi
             question.title = title
             question.content = content
             question.bounty_amount = bounty_amount
-            question.created_at = now()  # ✅ cập nhật thời gian hiện tại
+            question.created_at = now()
             question.save()
 
             # Cập nhật tag
@@ -97,3 +106,33 @@ class StudentAskQuestionView(View):
             return JsonResponse({"error": "Dữ liệu không hợp lệ!"}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
+    def get(self, request, question_id, *args, **kwargs):
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response
+
+        try:
+            question = Question.objects.get(id=question_id)
+
+            # Kiểm tra quyền người dùng nếu cần:
+            if question.user != user:
+                return JsonResponse({"error": "Bạn không có quyền xem câu hỏi này!"}, status=403)
+
+            # Lấy tags của câu hỏi
+            tags = list(
+                QuestionTagMap.objects.filter(question=question)
+                .values_list('tag__tag_name', flat=True)
+            )
+            return JsonResponse({
+                "id": question.id,
+                "title": question.title,
+                "content": question.content,
+                "bounty_amount": float(question.bounty_amount or 0),
+                "accepted_answer_id": question.accepted_answer_id,
+                "created_at": question.created_at.isoformat(),
+                "tags": tags,
+            }, status=200)
+
+        except Question.DoesNotExist:
+            return JsonResponse({"error": "Câu hỏi không tồn tại!"}, status=404)

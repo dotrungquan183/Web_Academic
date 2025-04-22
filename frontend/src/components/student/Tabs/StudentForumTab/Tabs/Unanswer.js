@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import StudentForumLayout from "../Layout";
 
-function StudentUnanswerQuestion() {
+function StudentTagQuestion() {
   const [data, setData] = useState(null);
   const [timeFilter, setTimeFilter] = useState("Newest");
   const [bountyFilter, setBountyFilter] = useState("Bountied");
@@ -203,4 +203,4 @@ const questionItemStyle = {
   lineHeight: "1.5",
 };
 
-export default StudentUnanswerQuestion;
+export default StudentTagQuestion;

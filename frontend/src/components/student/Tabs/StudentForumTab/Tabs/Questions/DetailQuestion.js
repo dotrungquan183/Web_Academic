@@ -31,6 +31,8 @@ function StudentForumQuestionDetail() {
   const [answerComments, setAnswerComments] = useState({});
   const [visibleAnswerComments, setVisibleAnswerComments] = useState({});
 
+  const [acceptedAnswerId, setAcceptedAnswerId] = useState(null);
+
   // Lấy thông tin người dùng từ token
   useEffect(() => {
     const token = getToken();
@@ -51,13 +53,14 @@ function StudentForumQuestionDetail() {
   useEffect(() => {
     // Lấy câu hỏi
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
-      .then((res) => res.json())
-      .then((data) => {
-        const selectedQuestion = data.find((q) => q.id.toString() === id);
-        if (selectedQuestion) {
-          setQuestion(selectedQuestion);
-        }
-      });
+    .then((res) => res.json())
+    .then((data) => {
+      const selectedQuestion = data.find((q) => q.id.toString() === id);
+      if (selectedQuestion) {
+        setQuestion(selectedQuestion);
+        setAcceptedAnswerId(selectedQuestion.accepted_answer_id); // 👈 Thêm dòng này
+      }
+    });
 
     // Lấy câu trả lời
     fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
@@ -891,10 +894,80 @@ const handleDeleteQuestion = (questionId) => {
     }
   };
 
-  const handleMarkAsCorrect = (answerId) => {
-    // Gửi request tới backend hoặc cập nhật state tại đây
-    console.log("Đánh dấu là đúng:", answerId);
+  const handleMarkAsCorrect = async (questionId, answerId, questionOwnerId) => {
+    const token = getToken();
+  
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+  
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id;
+  
+    if (currentUserId !== questionOwnerId) {
+      alert("❌ Bạn không có quyền đánh dấu câu trả lời đúng!");
+      return;
+    }
+  
+    // ✅ Cập nhật trước để checkbox phản hồi ngay
+    const previousAcceptedId = acceptedAnswerId;
+    setAcceptedAnswerId(answerId);
+  
+    try {
+      const getQuestionRes = await fetch(
+        `http://localhost:8000/api/student/student_forum/student_question/student_askquestion/${questionId}/`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (!getQuestionRes.ok) {
+        throw new Error("Không thể lấy thông tin câu hỏi.");
+      }
+  
+      const questionData = await getQuestionRes.json();
+  
+      const putRes = await fetch(
+        `http://localhost:8000/api/student/student_forum/student_question/student_askquestion/${questionId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: questionData.title,
+            content: questionData.content,
+            tags: questionData.tags,
+            bounty_amount: questionData.bounty_amount,
+            accepted_answer_id: answerId,
+          }),
+        }
+      );
+  
+      const putResult = await putRes.json();
+  
+      if (putRes.ok) {
+        alert("✅ Đã đánh dấu câu trả lời là đúng!");
+      } else {
+        // ❌ Rollback lại nếu lỗi
+        setAcceptedAnswerId(previousAcceptedId);
+        alert(
+          `❌ Lỗi: ${putResult.error || "Không thể đánh dấu câu trả lời này."}`
+        );
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi đánh dấu câu trả lời đúng:", error);
+      // ❌ Rollback lại nếu lỗi
+      setAcceptedAnswerId(previousAcceptedId);
+      alert("❌ Đã xảy ra lỗi.");
+    }
   };
+  
 
   const scrollToAnswerInput = () => {
     if (answerInputRef.current) {
@@ -1078,49 +1151,50 @@ const handleDeleteQuestion = (questionId) => {
 
 
       <div style={answerContainer}>
-  <label style={answerCountLabel}>
-    Tổng số câu trả lời: {answers.length}
-  </label>
+        <label style={answerCountLabel}>
+          Tổng số câu trả lời: {answers.length}
+        </label>
 
-  {answers.length > 0 ? (
-    <ul>
-      {answers.map((ans) => (
-        <li key={ans.id} style={answerItemStyle}>
-          <div style={{ ...singleAnswerBox, position: "relative" }}>
-          {/* Nút xoá ở góc phải trên */}
-          <button
-            onClick={() => handleDeleteAnswer(ans.id)}
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
-              borderRadius: "4px",
-              transition: "background-color 0.2s",
-              fontSize: "1em",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-            title="Xoá câu trả lời"
-          >
-            <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} /> {/* Thêm màu #003366 cho icon */}
-          </button>
-          {/* Checkbox đánh dấu là đúng, thẳng hàng dưới nút xoá */}
-            <div
-              style={{
-                position: "absolute",
-                top: "55px", // khoảng cách từ trên xuống dưới nút xoá
-                right: "10px",
-              }}
-            >
-              <label style={{ display: "flex", alignItems: "center", cursor: "pointer", gap: "8px" }}>
+        {answers.length > 0 ? (
+          <ul>
+            {answers.map((ans) => (
+              <li key={ans.id} style={answerItemStyle}>
+                <div style={{ ...singleAnswerBox, position: "relative" }}>
+                {/* Nút xoá ở góc phải trên */}
+                <button
+                  onClick={() => handleDeleteAnswer(ans.id)}
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "4px",
+                    borderRadius: "4px",
+                    transition: "background-color 0.2s",
+                    fontSize: "1em",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  title="Xoá câu trả lời"
+                >
+                  <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} /> {/* Thêm màu #003366 cho icon */}
+                </button>
+                {/* Checkbox đánh dấu là đúng */}
+                <div
+                style={{
+                  position: "absolute",
+                  top: "55px", // khoảng cách từ trên xuống dưới nút xoá
+                  right: "10px",
+                }}
+                >
                 <input
                   type="checkbox"
-                  checked={ans.is_correct}
-                  onChange={() => handleMarkAsCorrect(ans.id)}
+                  checked={acceptedAnswerId === ans.id}
+                  onChange={() =>
+                    handleMarkAsCorrect(question.id, ans.id, question.user_id)
+                  }
                   style={{
                     width: "25px",
                     height: "25px",
@@ -1128,240 +1202,240 @@ const handleDeleteQuestion = (questionId) => {
                     cursor: "pointer",
                   }}
                 />
-              </label>
-            </div>
-            <p><strong>{ans.username}</strong></p>
-            <p>{ans.content}</p>
-
-            {/* Vote section */}
-            <div style={metaContainerStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button
-                  onClick={() => handleVote("like", "answer", ans.id)}
-                  style={{
-                    ...voteButton,
-                    backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
-                    color: ans.userVote === 1 ? "#fff" : "#000",
-                  }}
-                >
-                  👍
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: ans.userVote === 1 ? '#fff' : '#003366'
-                  }}>
-                    {ans.like}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleVote("dislike", "answer", ans.id)}
-                  style={{
-                    ...voteButton,
-                    backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
-                    color: ans.userVote === -1 ? "#fff" : "#000",
-                  }}
-                >
-                  👎
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: ans.userVote === -1 ? '#fff' : '#003366'
-                  }}>
-                    {ans.dislike}
-                  </span>
-                </button>
-
-                <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
-              </div>
-
-              <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
-            </div>
-
-            {/* Các nút hành động */}
-            <div style={{ ...containerSelectStyle, marginTop: '10px' }}>
-              <div style={topRowStyle}>
-                <div style={buttonGroupStyle}>
-                  <button style={actionButtonStyle}>↗️ Chia sẻ</button>
-                  <button
-                    style={actionButtonStyle}
-                    onClick={() => {
-                      try {
-                        const token = getToken();
-                        if (!token) {
-                          alert("❌ Bạn chưa đăng nhập!");
-                          return;
-                        }
-
-                        const decoded = jwtDecode(token);
-                        const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-                        if (ans.user_id !== currentUserId) {
-                          alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
-                          return;
-                        }
-
-                        handleEditAnswer(ans);
-                        scrollToAnswerInput();
-
-                      } catch (error) {
-                        console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
-                        alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
-                      }
-                    }}
-                  >
-                    ✏️ Chỉnh sửa
-                  </button>
-                  <button style={actionButtonStyle}>👁️ Theo dõi</button>
+                  
                 </div>
+                  <p><strong>{ans.username}</strong></p>
+                  <p>{ans.content}</p>
 
-                <span>
-                  {(() => {
-                    const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);
-                    if (secondsAgo < 60) return "Vừa xong";
-                    return `Đã chỉnh sửa ${ans.timeAgo || getTimeAgo(ans.created_at)}`;
-                  })()}
-                </span>
-              </div>
-
-              {/* Bình luận cho từng câu */}
-              <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={() => {
-                  const isSame = activeAnswerId === ans.id;
-                  setActiveAnswerId(isSame ? null : ans.id);
-                  setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
-                  if (!isSame) {
-                    fetchAnswerComments(ans.id);
-                    setVisibleAnswerComments({ ...visibleAnswerComments, [ans.id]: 5 });
-                  }
-                }}
-                style={commentButtonStyle}
-              >
-                💬 {activeAnswerId === ans.id ? "Ẩn bình luận" : "Xem bình luận"}
-              </button>
-
-
-                {activeAnswerId === ans.id && (
-                  <div style={{ marginTop: "10px" }}>
-                    {/* Hiển thị các comment */}
-                    {(answerComments[ans.id] || []).slice(0, visibleAnswerComments[ans.id] || 5).map((c) => (
-                      <div
-                        key={c.id}
+                  {/* Vote section */}
+                  <div style={metaContainerStyle}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <button
+                        onClick={() => handleVote("like", "answer", ans.id)}
                         style={{
-                          marginBottom: "10px",
-                          borderBottom: "1px solid #ddd",
-                          paddingBottom: "5px",
+                          ...voteButton,
+                          backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
+                          color: ans.userVote === 1 ? "#fff" : "#000",
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                          <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
-                          <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
-                          
-                          <FaEdit 
-                            style={{ marginRight: "8px", cursor: "pointer" }} 
-                            onClick={() => handleEditCommentAnswer(ans.id, c.id)} 
-                          />
-                          <FaTrash 
-                            style={{ cursor: "pointer", color: "#003366" }} 
-                            onClick={() => handleDeleteCommentAnswer(ans.id, c.id)} // Hàm xử lý xóa comment
-                          />
-                        </div>
-                        <div style={{ marginLeft: "10px" }}>{c.content}</div>
-                      </div>
-                    ))}
+                        👍
+                        <span style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: ans.userVote === 1 ? '#fff' : '#003366'
+                        }}>
+                          {ans.like}
+                        </span>
+                      </button>
 
-                    {/* Nút hiển thị thêm bình luận */}
-                    {answerComments[ans.id] &&
-                      visibleAnswerComments[ans.id] < answerComments[ans.id].length && (
-                        <button
-                          style={{
-                            marginBottom: "10px",
-                            color: "#007bff",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            fontStyle: "italic",
-                          }}
-                          onClick={() =>
-                            setVisibleAnswerComments((prev) => ({
-                              ...prev,
-                              [ans.id]: prev[ans.id] + 5,
-                            }))
-                          }
-                        >
-                          Hiển thị thêm bình luận...
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleVote("dislike", "answer", ans.id)}
+                        style={{
+                          ...voteButton,
+                          backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
+                          color: ans.userVote === -1 ? "#fff" : "#000",
+                        }}
+                      >
+                        👎
+                        <span style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: ans.userVote === -1 ? '#fff' : '#003366'
+                        }}>
+                          {ans.dislike}
+                        </span>
+                      </button>
 
-                    {/* Khung nhập bình luận */}
-                    <textarea
-                      placeholder="Nhập bình luận của bạn..."
-                      value={answerCommentText[ans.id] || ""}
-                      onChange={(e) =>
-                        setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
-                      }
-                      style={commentTextareaStyle}
-                    />
-                    <button
-                      style={commentButtonSendStyle}
-                      onClick={() => handleSubmitComment(ans.id, "answer")}
-                    >
-                      Gửi bình luận
-                    </button>
+                      <span>📊 <strong>Vote:</strong> {ans.totalVote}</span>
+                    </div>
+
+                    <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
                   </div>
-                )}
-              </div>
+
+                  {/* Các nút hành động */}
+                  <div style={{ ...containerSelectStyle, marginTop: '10px' }}>
+                    <div style={topRowStyle}>
+                      <div style={buttonGroupStyle}>
+                        <button style={actionButtonStyle}>↗️ Chia sẻ</button>
+                        <button
+                          style={actionButtonStyle}
+                          onClick={() => {
+                            try {
+                              const token = getToken();
+                              if (!token) {
+                                alert("❌ Bạn chưa đăng nhập!");
+                                return;
+                              }
+
+                              const decoded = jwtDecode(token);
+                              const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
+                              if (ans.user_id !== currentUserId) {
+                                alert("❌ Bạn không có quyền chỉnh sửa câu trả lời này!");
+                                return;
+                              }
+
+                              handleEditAnswer(ans);
+                              scrollToAnswerInput();
+
+                            } catch (error) {
+                              console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
+                              alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
+                            }
+                          }}
+                        >
+                          ✏️ Chỉnh sửa
+                        </button>
+                        <button style={actionButtonStyle}>👁️ Theo dõi</button>
+                      </div>
+
+                      <span>
+                        {(() => {
+                          const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);
+                          if (secondsAgo < 60) return "Vừa xong";
+                          return `Đã chỉnh sửa ${ans.timeAgo || getTimeAgo(ans.created_at)}`;
+                        })()}
+                      </span>
+                    </div>
+
+                    {/* Bình luận cho từng câu */}
+                    <div style={{ marginTop: "10px" }}>
+                    <button
+                      onClick={() => {
+                        const isSame = activeAnswerId === ans.id;
+                        setActiveAnswerId(isSame ? null : ans.id);
+                        setShowCommentInputId(null); // Đóng comment câu hỏi nếu đang mở
+                        if (!isSame) {
+                          fetchAnswerComments(ans.id);
+                          setVisibleAnswerComments({ ...visibleAnswerComments, [ans.id]: 5 });
+                        }
+                      }}
+                      style={commentButtonStyle}
+                    >
+                      💬 {activeAnswerId === ans.id ? "Ẩn bình luận" : "Xem bình luận"}
+                    </button>
+
+
+                      {activeAnswerId === ans.id && (
+                        <div style={{ marginTop: "10px" }}>
+                          {/* Hiển thị các comment */}
+                          {(answerComments[ans.id] || []).slice(0, visibleAnswerComments[ans.id] || 5).map((c) => (
+                            <div
+                              key={c.id}
+                              style={{
+                                marginBottom: "10px",
+                                borderBottom: "1px solid #ddd",
+                                paddingBottom: "5px",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                                <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
+                                <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
+                                
+                                <FaEdit 
+                                  style={{ marginRight: "8px", cursor: "pointer" }} 
+                                  onClick={() => handleEditCommentAnswer(ans.id, c.id)} 
+                                />
+                                <FaTrash 
+                                  style={{ cursor: "pointer", color: "#003366" }} 
+                                  onClick={() => handleDeleteCommentAnswer(ans.id, c.id)} // Hàm xử lý xóa comment
+                                />
+                              </div>
+                              <div style={{ marginLeft: "10px" }}>{c.content}</div>
+                            </div>
+                          ))}
+
+                          {/* Nút hiển thị thêm bình luận */}
+                          {answerComments[ans.id] &&
+                            visibleAnswerComments[ans.id] < answerComments[ans.id].length && (
+                              <button
+                                style={{
+                                  marginBottom: "10px",
+                                  color: "#007bff",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  fontStyle: "italic",
+                                }}
+                                onClick={() =>
+                                  setVisibleAnswerComments((prev) => ({
+                                    ...prev,
+                                    [ans.id]: prev[ans.id] + 5,
+                                  }))
+                                }
+                              >
+                                Hiển thị thêm bình luận...
+                              </button>
+                            )}
+
+                          {/* Khung nhập bình luận */}
+                          <textarea
+                            placeholder="Nhập bình luận của bạn..."
+                            value={answerCommentText[ans.id] || ""}
+                            onChange={(e) =>
+                              setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
+                            }
+                            style={commentTextareaStyle}
+                          />
+                          <button
+                            style={commentButtonSendStyle}
+                            onClick={() => handleSubmitComment(ans.id, "answer")}
+                          >
+                            Gửi bình luận
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Chưa có câu trả lời nào.</p>
+        )}
+
+          {/* Khung nhập hoặc chỉnh sửa câu trả lời */}
+          <div ref={answerInputRef} style={answerInputContainer}>
+            <label htmlFor="answer" style={answerCountLabel}>
+              {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
+            </label>
+
+            <textarea
+              id="answer"
+              value={isEditing ? editContent : newAnswer}
+              onChange={(e) =>
+                isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
+              }
+              style={textAreaStyle}
+              placeholder="Nhập câu trả lời tại đây..."
+            />
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              {isEditing ? (
+                <>
+                  <button style={submitButtonStyle} onClick={submitEditedAnswer}>
+                    ✅ Lưu chỉnh sửa
+                  </button>
+                  <button
+                    style={{ ...submitButtonStyle, backgroundColor: "#999" }}
+                    onClick={() => {
+                      setIsEditing(null);
+                      setEditContent("");
+                    }}
+                  >
+                    ❌ Hủy
+                  </button>
+                </>
+              ) : (
+                <button style={submitButtonStyle} onClick={handlePostAnswer}>
+                  ➕ Đăng câu trả lời
+                </button>
+              )}
             </div>
           </div>
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p>Chưa có câu trả lời nào.</p>
-  )}
-
-  {/* Khung nhập hoặc chỉnh sửa câu trả lời */}
-  <div ref={answerInputRef} style={answerInputContainer}>
-    <label htmlFor="answer" style={answerCountLabel}>
-      {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
-    </label>
-
-    <textarea
-      id="answer"
-      value={isEditing ? editContent : newAnswer}
-      onChange={(e) =>
-        isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
-      }
-      style={textAreaStyle}
-      placeholder="Nhập câu trả lời tại đây..."
-    />
-
-    <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-      {isEditing ? (
-        <>
-          <button style={submitButtonStyle} onClick={submitEditedAnswer}>
-            ✅ Lưu chỉnh sửa
-          </button>
-          <button
-            style={{ ...submitButtonStyle, backgroundColor: "#999" }}
-            onClick={() => {
-              setIsEditing(null);
-              setEditContent("");
-            }}
-          >
-            ❌ Hủy
-          </button>
-        </>
-      ) : (
-        <button style={submitButtonStyle} onClick={handlePostAnswer}>
-          ➕ Đăng câu trả lời
-        </button>
-      )}
-    </div>
-  </div>
-</div>
-</div>
+        </div>
+      </div>
     </StudentForumLayout>
   );
 }

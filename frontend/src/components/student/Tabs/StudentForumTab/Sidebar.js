@@ -5,47 +5,56 @@ import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
 function Sidebar() {
   const location = useLocation();
 
+  const isQuestionPath = location.pathname.startsWith("/studentforum/question");
+  const isUnansweredTab = location.pathname.startsWith("/studentforum/unanswer");
+  const isQuestionTab = isQuestionPath && !isUnansweredTab;
+  const isTagTab = location.pathname.startsWith("/studentforum/tag");
+  const isSaveTab = location.pathname.startsWith("/studentforum/save");
+
   return (
     <div style={styles.sidebar}>
       <Link to="/studentforum/question" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname.startsWith("/studentforum/question") ? "#003366" : "transparent", // Kiểm tra xem URL có bắt đầu với "/studentforum/question"
-            color: location.pathname.startsWith("/studentforum/question") ? "white" : "#003366", // Nếu đúng, đổi màu chữ
+            backgroundColor: isQuestionTab ? "#003366" : "transparent",
+            color: isQuestionTab ? "white" : "#003366",
           }}
         >
           <FiHelpCircle style={styles.icon} /> Câu hỏi
         </button>
       </Link>
+
       <Link to="/studentforum/unanswer" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/unanswer" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/unanswer" ? "white" : "#003366",
+            backgroundColor: isUnansweredTab ? "#003366" : "transparent",
+            color: isUnansweredTab ? "white" : "#003366",
           }}
         >
           <FiXCircle style={styles.icon} /> Chưa trả lời
         </button>
       </Link>
+
       <Link to="/studentforum/tag" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/tag" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/tag" ? "white" : "#003366",
+            backgroundColor: isTagTab ? "#003366" : "transparent",
+            color: isTagTab ? "white" : "#003366",
           }}
         >
           <FiTag style={styles.icon} /> Thẻ
         </button>
       </Link>
+
       <Link to="/studentforum/save" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: location.pathname === "/studentforum/save" ? "#003366" : "transparent",
-            color: location.pathname === "/studentforum/save" ? "white" : "#003366",
+            backgroundColor: isSaveTab ? "#003366" : "transparent",
+            color: isSaveTab ? "white" : "#003366",
           }}
         >
           <FiSave style={styles.icon} /> Lưu trữ

@@ -41,13 +41,15 @@ function StudentMenu() {
   return (
     <div className="menu-container">
       <div className="header">
-        <h1 className="header-title">
-          <FaCalculator className="header-icon" />
-          <span className="header-text black">TOÁN </span>
-          <span className="header-text black">HỌC </span>
-          <span className="header-text blue">SINH </span>
-          <span className="header-text blue">VIÊN </span>
-        </h1>
+      <h1 className="header-title" style={{ marginBottom: "23px", fontSize: "28px"}}>
+        <div className="header">
+          <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
+          <span className="header-text black">Toán </span>
+          <span className="header-text black">Học </span>
+          <span className="header-text blue">Sinh </span>
+          <span className="header-text blue">Viên </span>
+        </div>
+      </h1>
       </div>
 
       <div className="search-bar-container">
