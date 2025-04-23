@@ -5,7 +5,8 @@ import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 function StudentForumQuestionDetail() {
   const { id } = useParams();
@@ -32,6 +33,47 @@ function StudentForumQuestionDetail() {
   const [visibleAnswerComments, setVisibleAnswerComments] = useState({});
 
   const [acceptedAnswerId, setAcceptedAnswerId] = useState(null);
+  const [relatedQuestions, setRelatedQuestions] = useState([]);
+  const [hotQuestions, setHotQuestions] = useState([]);
+  
+  
+  useEffect(() => {
+      fetch("http://localhost:8000/api/student/student_forum/student_question/student_hotquestion/")
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to fetch hot questions");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Fetched hot questions:", data);
+          setHotQuestions(data);
+        })
+        .catch((err) => {
+          console.error("Error fetching hot questions:", err);
+        });
+  }, []);
+  
+
+  useEffect(() => {
+    console.log("Current questionId:", id);
+    if (!id) return;
+  
+    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_relatedquestion/${id}/`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch related questions");
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log("Fetched related questions:", data);  // Kiểm tra xem API có trả về dữ liệu đúng không
+        setRelatedQuestions(data);
+      })
+      .catch(err => {
+        console.error("Error fetching related questions:", err);
+      });
+  }, [id]);  
 
   // Lấy thông tin người dùng từ token
   useEffect(() => {
@@ -976,8 +1018,11 @@ const handleDeleteQuestion = (questionId) => {
   };
   if (!question) return <p>Đang tải dữ liệu...</p>;
 
+  console.log(relatedQuestions);
+
   return (
     <StudentForumLayout>
+      <div style={layoutStyle}>
       <div style={containerStyle}>
       <div style={questionContainerStyle}>
          {/* Nút xoá ở góc phải trên */}
@@ -1035,7 +1080,7 @@ const handleDeleteQuestion = (questionId) => {
           <p>{question.content}</p>
 
           {/* Thông tin thêm về câu hỏi */}
-          <div style={containerSelectStyle}>
+          <div style={containerQuestionSelectStyle}>
             <div style={topRowStyle}>
               <div style={buttonGroupStyle}>
                 <button style={actionButtonStyle}>↗️ Chia sẻ</button>
@@ -1253,7 +1298,7 @@ const handleDeleteQuestion = (questionId) => {
                   </div>
 
                   {/* Các nút hành động */}
-                  <div style={{ ...containerSelectStyle, marginTop: '10px' }}>
+                  <div style={{ ...containerAnswerSelectStyle, marginTop: '10px' }}>
                     <div style={topRowStyle}>
                       <div style={buttonGroupStyle}>
                         <button style={actionButtonStyle}>↗️ Chia sẻ</button>
@@ -1436,6 +1481,50 @@ const handleDeleteQuestion = (questionId) => {
           </div>
         </div>
       </div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={sidebarStyleRelatedQuestion}>
+          <h3 style={{ color: "#003366", display: "flex", alignItems: "center", gap: "8px" }}>
+            <FaLink />
+            Câu hỏi liên quan
+          </h3>
+            {relatedQuestions.length > 0 ? (
+              <ul style={{ listStylePosition: "inside", paddingLeft: "0", color: "#003366" }}>
+                  {relatedQuestions.map((question) => (
+                    <li key={question.id} style={{ marginBottom: "10px", color: "#003366" }}>
+                      <Link
+                        to={`/studentforum/question/${question.id}`}
+                        style={{ textDecoration: "none", color: "#003366" }}
+                      >
+                        {question.title}
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+              ) : (
+                <p>Không có câu hỏi nào liên quan</p>
+              )}
+          </div>
+
+          <div style={sidebarStyleHotQuestion}>
+            <h3 style={{ color: "#003366", display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaFire />
+              Quan tâm nhất
+            </h3>
+            <ul style={{ listStylePosition: "inside", paddingLeft: "0", color: "#003366" }}>
+              {hotQuestions.map((question, index) => (
+                <li key={index} style={{ marginBottom: "10px", color: "#003366" }}>
+                  <Link
+                    to={`/studentforum/question/${question.id}`}
+                    style={{ textDecoration: "none", color: "#003366" }}
+                  >
+                    {question.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
     </StudentForumLayout>
   );
 }
@@ -1448,8 +1537,8 @@ const containerStyle = {
   border: "1px solid #ddd",
   marginBottom: "30px",
   marginTop: "15px",
-  marginLeft: "160px",
-  width: "1020px",
+  marginLeft: "-70px",
+  width: "850px",
   color: "#003366",
 };
 
@@ -1492,6 +1581,7 @@ const answerContainer = {
   borderRadius: "8px",
   border: "1px solid #ccc",
   marginBottom: "20px",
+  width: "96.2%",
 };
 
 const answerCountLabel = {
@@ -1511,7 +1601,7 @@ const singleAnswerBox = {
   borderRadius: "6px",
   padding: "10px 100px",
   backgroundColor: "#f0f8ff",
-  width: "120%",
+  width: "103%",
   maxWidth: "985px",
   boxSizing: "border-box",
   marginLeft: "-4%", // DỊCH TRÁI
@@ -1523,10 +1613,12 @@ const answerInputContainer = {
   padding: "15px",
   borderRadius: "8px",
   border: "1px solid #ccc",
+  width: "94%",
+  marginLeft: "9px",
 };
 
 const textAreaStyle = {
-  width: "97.5%",
+  width: "97%",
   height: "200px",
   borderRadius: "6px",
   border: "2px solid #003366",
@@ -1548,12 +1640,22 @@ const submitButtonStyle = {
   display: "block",
   marginTop:"15px",
 };
-const containerSelectStyle = {
+const containerQuestionSelectStyle = {
   border: "1px solid #ccc",
   borderRadius: "8px",
   padding: "16px",
   marginTop: "20px",
   backgroundColor: "#f9f9f9",
+  width: "94%",
+  marginLeft: "9px",
+};
+const containerAnswerSelectStyle = {
+  border: "1px solid #ccc",
+  borderRadius: "8px",
+  padding: "16px",
+  marginTop: "20px",
+  backgroundColor: "#f9f9f9",
+  width: "100%",
 };
 
 const topRowStyle = {
@@ -1616,6 +1718,37 @@ const commentButtonSendStyle = {
   cursor: "pointer",
   fontSize: "14px",
   fontWeight: "bold",
+};
+
+const sidebarStyleRelatedQuestion = {
+  backgroundColor: "#ffffff",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  marginTop: "15px",
+  width: "260px",
+  height: "fit-content",
+  color: "#333333",
+  marginLeft: "6px",
+};
+
+const sidebarStyleHotQuestion = {
+  backgroundColor: "#ffffff",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  marginTop: "30px",
+  width: "260px",
+  height: "fit-content",
+  color: "#333333",
+  marginLeft: "6px",
+};
+
+const layoutStyle = {
+  display: "flex",
+  flexDirection: "row",
+  gap: "20px",
+  marginLeft: "160px",
 };
 
 export default StudentForumQuestionDetail;

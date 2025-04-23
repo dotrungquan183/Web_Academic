@@ -18,6 +18,8 @@ from api.views.student.student_forum.student_question.student_comment import Stu
 from api.views.student.student_forum.student_unanswer import StudentUnanswerView
 from api.views.student.student_forum.student_tag import StudentTagView
 from api.views.student.student_forum.student_save import StudentSaveView
+from api.views.student.student_forum.student_question.student_relatedquestion import StudentRelatedQuestionView
+from api.views.student.student_forum.student_question.student_hotquestion import StudentHotQuestionView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -49,5 +51,7 @@ urlpatterns = [
     path('student/student_forum/student_save/', StudentSaveView.as_view(), name='student_save'),
     path('student/student_support/student_support/', StudentSupportView.as_view(), name='student_support'),
     path("student/student_forum/student_question/<int:question_id>/", StudentAskQuestionView.as_view()),
+    path('student/student_forum/student_question/student_relatedquestion/<int:question_id>/', StudentRelatedQuestionView.as_view(), name='student_related_questions'),
+    path('student/student_forum/student_question/student_hotquestion/', StudentHotQuestionView.as_view(), name='student_hot_questions'),
 ]
 
