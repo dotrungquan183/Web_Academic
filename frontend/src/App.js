@@ -42,7 +42,6 @@ import TeacherHome1 from "./components/teacher/Tabs/TeacherHome/TeacherHome1Tab"
 import TeacherHome2 from "./components/teacher/Tabs/TeacherHome/TeacherHome2Tab";
 import TeacherHome3 from "./components/teacher/Tabs/TeacherHome/TeacherHome3Tab";
 import TeacherIntroTab from "./components/teacher/Tabs/TeacherIntroTab";
-import TeacherCoursesTab from "./components/teacher/Tabs/TeacherCoursesTab";
 import TeacherDocsTab from "./components/teacher/Tabs/TeacherDocsTab"
 import TeacherForumTab from "./components/teacher/Tabs/TeacherForumTab/Menu"
 import TeacherForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Question"
@@ -52,7 +51,10 @@ import TeacherForumSave from "./components/teacher/Tabs/TeacherForumTab/Tabs/Sav
 import TeacherSupportTab from "./components/teacher/Tabs/TeacherSupportTab"
 import TeacherHomeworkTab from "./components/teacher/Tabs/TeacherHomeworkTab"
 import TeacherContactTab from "./components/teacher/Tabs/TeacherContactTab";
-
+import TeacherListCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/ListCourses"; 
+import TeacherAddCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/AddCourses";
+import TeacherPost from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Post";
+import TeacherRoadmap from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Roadmap";
 function NormalUserLayout({ children }) {
   return (
     <>
@@ -177,7 +179,10 @@ function App() {
         <Route path="/teacherhome2" element={<TeacherLayout><TeacherHome2 /></TeacherLayout>} />
         <Route path="/teacherhome3" element={<TeacherLayout><TeacherHome3 /></TeacherLayout>} />
         <Route path="/teacherintro" element={<TeacherLayout><TeacherIntroTab /></TeacherLayout>} />
-        <Route path="/teachercourses" element={<TeacherLayout><TeacherCoursesTab /></TeacherLayout>} />
+        <Route path="/teachercourses/listcourses" element={<TeacherLayout><TeacherListCourses /></TeacherLayout>} />
+        <Route path="/teachercourses/listcourses/addcourses" element={<TeacherLayout><TeacherAddCourses /></TeacherLayout>} />
+        <Route path="/teachercourses/post" element={<TeacherLayout><TeacherPost /></TeacherLayout>} />
+        <Route path="/teachercourses/roadmap" element={<TeacherLayout><TeacherRoadmap /></TeacherLayout>} />
         <Route path="/teacherdocs" element={<TeacherLayout><TeacherDocsTab /></TeacherLayout>} />
         <Route path="/teacherforum" element={<TeacherLayout><TeacherForumTab /></TeacherLayout>} />
         <Route path="/teachersupport" element={<TeacherLayout><TeacherSupportTab /></TeacherLayout>} />

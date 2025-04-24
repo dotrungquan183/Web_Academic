@@ -141,7 +141,7 @@ function TeacherMenu() {
           <Link to="/teacherintro">GIỚI THIỆU</Link>
         </li>
         <li>
-          <Link to="/teachercourses">KHÓA HỌC</Link>
+          <Link to="/teachercourses/listcourses">KHÓA HỌC</Link>
         </li>
         <li>
           <Link to="/teacherdocs">TÀI LIỆU HỌC TẬP</Link>
