@@ -3,30 +3,27 @@ import { useNavigate } from "react-router-dom";
 import TeacherCoursesLayout from "../../Layout";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../../../../auth/authHelper";
+import { FaBookOpen, FaFire } from "react-icons/fa";
+
+const sampleCourses = [
+  { id: 1, title: "HTML/CSS Pro", type: "pro", price: 12.99, teacher: "John Doe", students: 1200, duration: "10h" },
+  { id: 2, title: "JavaScript Pro", type: "pro", price: 14.99, teacher: "Jane Smith", students: 900, duration: "12h" },
+  { id: 3, title: "Sass Language", type: "pro", price: 9.99, teacher: "Alice Lee", students: 800, duration: "8h" },
+  { id: 4, title: "Foundational Knowledge", type: "free", teacher: "Team Dev", duration: "5h" },
+  { id: 5, title: "C++ Programming", type: "free", teacher: "Học viện Code", duration: "6h" },
+  { id: 6, title: "HTML/CSS From Zero", type: "free", teacher: "FrontEnd.vn", duration: "7h" },
+  { id: 7, title: "Responsive Web Design", type: "free", teacher: "DevTips", duration: "4h" }
+];
 
 const TeacherListCourses = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
-  const [user, setUser] = useState(null);
 
-  // Fake data để test (sẽ dùng API thật sau)
-  const sampleCourses = [
-    { id: 1, title: "HTML/CSS Pro", type: "pro", price: 12.99, teacher: "John Doe", students: 1200, duration: "10h" },
-    { id: 2, title: "JavaScript Pro", type: "pro", price: 14.99, teacher: "Jane Smith", students: 900, duration: "12h" },
-    { id: 3, title: "Sass Language", type: "pro", price: 9.99, teacher: "Alice Lee", students: 800, duration: "8h" },
-    { id: 4, title: "Foundational Knowledge", type: "free", teacher: "Team Dev", duration: "5h" },
-    { id: 5, title: "C++ Programming", type: "free", teacher: "Học viện Code", duration: "6h" },
-    { id: 6, title: "HTML/CSS From Zero", type: "free", teacher: "FrontEnd.vn", duration: "7h" },
-    { id: 7, title: "Responsive Web Design", type: "free", teacher: "DevTips", duration: "4h" }
-  ];
-
-  // Lấy user từ token
   const fetchUserFromToken = useCallback(() => {
     const token = getToken();
     if (token) {
       try {
-        const decoded = jwtDecode(token);
-        setUser(decoded);
+        jwtDecode(token);
       } catch (error) {
         console.error("Invalid token:", error);
         navigate("/login");
@@ -38,7 +35,7 @@ const TeacherListCourses = () => {
 
   useEffect(() => {
     fetchUserFromToken();
-    setCourses(sampleCourses); // Nếu dùng API thì replace dòng này bằng API call
+    setCourses(sampleCourses);
   }, [fetchUserFromToken]);
 
   const proCourses = courses.filter(course => course.type === "pro");
@@ -46,8 +43,7 @@ const TeacherListCourses = () => {
 
   return (
     <TeacherCoursesLayout>
-      <div style={styles.outerWrapper}>
-        {/* Nội dung chính */}
+      <div style={styles.layoutStyle}>
         <div style={styles.containerStyle}>
           <h2 style={{ textAlign: "center", textTransform: "uppercase" }}>PRO COURSES</h2>
           <div style={styles.gridStyle}>
@@ -83,11 +79,12 @@ const TeacherListCourses = () => {
           </div>
         </div>
 
-        {/* Sidebar phải chứa 2 sidebar */}
         <div style={styles.sidebarWrapper}>
-          {/* Sidebar trái */}
           <div style={styles.sidebarStyleRelatedQuestion}>
-            <h3>Khóa học liên quan</h3>
+            <h3 style={styles.sidebarTitle}>
+              <FaBookOpen style={styles.iconStyle} />
+              Khóa học liên quan
+            </h3>
             <ul>
               <li>HTML/CSS cơ bản</li>
               <li>Javascript nâng cao</li>
@@ -95,9 +92,11 @@ const TeacherListCourses = () => {
             </ul>
           </div>
 
-          {/* Sidebar phải */}
           <div style={styles.sidebarStyleHotQuestion}>
-            <h3>Khóa học nổi bật</h3>
+            <h3 style={styles.sidebarTitle}>
+              <FaFire style={styles.iconStyle} />
+              Khóa học nổi bật
+            </h3>
             <ul>
               <li>Docker cơ bản</li>
               <li>CI/CD Jenkins</li>
@@ -111,29 +110,36 @@ const TeacherListCourses = () => {
 };
 
 const styles = {
-  outerWrapper: {
+  layoutStyle: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "center",
+    gap: "20px",
+    marginLeft: "160px",
     alignItems: "flex-start",
-    padding: "20px",
   },
   containerStyle: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#ffffff",
     padding: "15px",
     borderRadius: "8px",
     border: "1px solid #ddd",
     marginBottom: "30px",
     marginTop: "15px",
-    marginRight: "10px",  // Đảm bảo có khoảng cách giữa container và sidebar
+    marginLeft: "-70px",
     width: "850px",
     color: "#003366",
-    marginLeft: "70px",
   },
   sidebarWrapper: {
+    width: "260px",
+    flexShrink: 0,
+  },
+  sidebarTitle: {
     display: "flex",
-    flexDirection: "column",  // Sắp xếp các sidebar theo chiều dọc
-    alignItems: "flex-start",
+    alignItems: "center",
+    fontSize: "18px",
+    fontWeight: "bold",
+    marginBottom: "10px",
+    gap: "8px", // thêm khoảng cách giữa icon và chữ
+    color: "#003366",
   },
   sidebarStyleRelatedQuestion: {
     backgroundColor: "#ffffff",
@@ -141,19 +147,17 @@ const styles = {
     borderRadius: "8px",
     border: "1px solid #ddd",
     marginTop: "15px",
-    width: "200px",
-    height: "fit-content",
-    color: "#333333",
+    color: "#003366",
+    width: "260px",
   },
   sidebarStyleHotQuestion: {
     backgroundColor: "#ffffff",
     padding: "15px",
     borderRadius: "8px",
     border: "1px solid #ddd",
-    marginTop: "15px",  // Đảm bảo sidebar thứ hai nằm dưới sidebar thứ nhất
-    width: "200px",
-    height: "fit-content",
-    color: "#333333",
+    marginTop: "30px",
+    color: "#003366",
+    width: "260px",
   },
   gridStyle: {
     display: "grid",
@@ -188,6 +192,10 @@ const styles = {
     border: "1px solid #ccc",
     backgroundColor: "#f0f0f0",
     color: "#333",
+  },
+  iconStyle: {
+    fontSize: "20px",
+    color: "#007bff",
   },
   freeCourseInfo: {
     fontSize: "14px",
