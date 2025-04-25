@@ -3,29 +3,81 @@ from django.contrib.auth.models import User
 from datetime import timedelta
 import datetime
 
+from django.db import models
+from datetime import timedelta
+
 class Course(models.Model):
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    total_duration = models.DurationField(default=timedelta())
+    LEVEL_CHOICES = [
+        ('easy', 'Dễ'),
+        ('medium', 'Trung bình'),
+        ('hard', 'Khó'),
+    ]
+
+    title = models.CharField(max_length=255, verbose_name="Tên khóa học")
+    student_count = models.PositiveIntegerField(default=0, verbose_name="Số người học")
+    fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Lệ phí")
+    video_count = models.PositiveIntegerField(default=0, verbose_name="Số video")
+    total_duration = models.DurationField(default=timedelta(), verbose_name="Tổng thời lượng")
+    level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default='easy', verbose_name="Trình độ")
+    intro_video = models.FileField(upload_to='intro_videos/', null=True, blank=True, verbose_name="Video giới thiệu")
+    thumbnail = models.ImageField(upload_to='course_thumbnails/', null=True, blank=True, verbose_name="Ảnh khóa học")
 
     class Meta:
         db_table = 'course'
 
+    def __str__(self):
+        return self.title
+
+
 class Chapter(models.Model):
     course = models.ForeignKey(Course, related_name="chapters", on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, verbose_name="Tên chương")
+    lesson_count = models.PositiveIntegerField(default=0, verbose_name="Số bài học")
 
     class Meta:
         db_table = 'chapter'
 
+    def __str__(self):
+        return self.title
+
+
 class Lesson(models.Model):
     chapter = models.ForeignKey(Chapter, related_name="lessons", on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
-    duration = models.DurationField()
-    video = models.FileField(upload_to='videos/')
+    title = models.CharField(max_length=255, verbose_name="Tên bài học")
+    video = models.URLField(verbose_name="Link video")
+    duration = models.DurationField(verbose_name="Thời lượng")
+    document_link = models.URLField(null=True, blank=True, verbose_name="Link tài liệu")
+    exercise = models.OneToOneField('Exercise', null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Bài tập")
 
     class Meta:
         db_table = 'lesson'
+
+    def __str__(self):
+        return self.title
+
+
+class Exercise(models.Model):
+    total_questions = models.PositiveIntegerField(default=0, verbose_name="Tổng số câu hỏi")
+
+    class Meta:
+        db_table = 'exercise'
+
+    def __str__(self):
+        return f"Bài tập #{self.id}"
+
+
+class MultipleChoiceQuestion(models.Model):
+    exercise = models.ForeignKey(Exercise, related_name="questions", on_delete=models.CASCADE)
+    content = models.TextField(verbose_name="Nội dung")
+    choices = models.JSONField(verbose_name="Các đáp án")  # Ví dụ: {"A": "Đáp án A", "B": "Đáp án B", ...}
+    correct_answer = models.CharField(max_length=1, verbose_name="Đáp án đúng")  # Ví dụ: "A"
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=1.0, verbose_name="Điểm")
+
+    class Meta:
+        db_table = 'multiple_choice_question'
+
+    def __str__(self):
+        return self.content
 
 class OTP(models.Model):
     user = models.ForeignKey("UserInformation", on_delete=models.CASCADE)
