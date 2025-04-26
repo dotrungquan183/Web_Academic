@@ -6,6 +6,10 @@ import datetime
 from django.db import models
 from datetime import timedelta
 
+from django.db import models
+from django.contrib.auth.models import User
+from datetime import timedelta
+
 class Course(models.Model):
     LEVEL_CHOICES = [
         ('easy', 'Dễ'),
@@ -21,6 +25,10 @@ class Course(models.Model):
     level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default='easy', verbose_name="Trình độ")
     intro_video = models.FileField(upload_to='intro_videos/', null=True, blank=True, verbose_name="Video giới thiệu")
     thumbnail = models.ImageField(upload_to='course_thumbnails/', null=True, blank=True, verbose_name="Ảnh khóa học")
+    tags = models.CharField(max_length=255, blank=True, verbose_name="Thẻ (tags)")
+    qr_code = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh QR")  # Trường QR code
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Người dùng")
+    intro = models.TextField(blank=True, verbose_name="Giới thiệu khóa học")  # Trường intro chứa đoạn văn giới thiệu
 
     class Meta:
         db_table = 'course'

@@ -45,6 +45,16 @@ const TeacherListCourses = () => {
     <TeacherCoursesLayout>
       <div style={styles.layoutStyle}>
         <div style={styles.containerStyle}>
+          <div style={styles.headerWithButton}>
+            <h2 style={{ textTransform: "uppercase" }}>DANH SÁCH KHÓA HỌC</h2>
+            <button
+              style={styles.addButton}
+              onClick={() => navigate("/teachercourses/listcourses/addcourses")}
+            >
+              + Thêm khóa học
+            </button>
+          </div>
+
           <h2 style={{ textAlign: "center", textTransform: "uppercase" }}>PRO COURSES</h2>
           <div style={styles.gridStyle}>
             {proCourses.map(course => (
@@ -128,6 +138,22 @@ const styles = {
     width: "850px",
     color: "#003366",
   },
+  headerWithButton: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "10px",
+  },
+  addButton: {
+    padding: "8px 12px",
+    backgroundColor: "#003366",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "15px",
+  },
   sidebarWrapper: {
     width: "260px",
     flexShrink: 0,
@@ -138,7 +164,7 @@ const styles = {
     fontSize: "18px",
     fontWeight: "bold",
     marginBottom: "10px",
-    gap: "8px", // thêm khoảng cách giữa icon và chữ
+    gap: "8px",
     color: "#003366",
   },
   sidebarStyleRelatedQuestion: {
