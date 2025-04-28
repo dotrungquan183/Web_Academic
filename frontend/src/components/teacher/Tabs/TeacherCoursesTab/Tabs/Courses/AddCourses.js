@@ -139,11 +139,19 @@ function TeacherAddCourses() {
     if (formData.introVideo) {
       formDataToSend.append("introVideo", formData.introVideo);
     }
+    console.log("--- CHECK QR CODE ---");
+    console.log("qr_code:", formData.qr_code);
+    console.log("----------------------");
     if (formData.qr_code) {  // 🆕 Thêm QR code
       formDataToSend.append("qr_code", formData.qr_code);
     }
     formDataToSend.append("chapters", JSON.stringify(chapters));
-
+    // 🛑 THÊM Ở ĐÂY: log toàn bộ FormData
+    console.log("--- FORM DATA GỬI LÊN SERVER ---");
+    for (let pair of formDataToSend.entries()) {
+      console.log(pair[0]+ ':', pair[1]);
+    }
+  console.log("--- END FORM DATA ---");
     const isEditing = !!location.state?.course;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
@@ -220,20 +228,23 @@ function TeacherAddCourses() {
                   min="0"  // <-- Cái này tự chặn không cho nhập số âm
                   style={styles.input}
                 />
+
                 {formData.price > 0 && (
                   <div style={styles.inputGroup}>
-                    <label style={{ fontWeight: "bold", color: "#003366" }}>
+                    <label htmlFor="qr_code" style={{ fontWeight: "bold", color: "#003366" }}>
                       Ảnh QR thanh toán:
                     </label>
                     <input
                       type="file"
-                      name="qrImage"
+                      name="qr_code"        // <--- đổi từ "qrImage" thành "qr_code"
+                      id="qr_code"
                       accept="image/*"
                       onChange={handleFormChange}
                       style={styles.input}
                     />
                   </div>
                 )}
+
               </div>
 
               <div style={styles.rightSection}>
