@@ -101,7 +101,7 @@ function TeacherAddCourses() {
     updated[chapterIndex].lessons.push({
       title: "",
       video: null,
-      material: null,
+      document_link: null,
       exercise: null,
     });
     setChapters(updated);
@@ -127,37 +127,69 @@ function TeacherAddCourses() {
       navigate("/login");
       return;
     }
-
+  
     const formDataToSend = new FormData();
     formDataToSend.append("title", formData.title);
     formDataToSend.append("description", formData.description);
     formDataToSend.append("tags", formData.tags);
     formDataToSend.append("price", formData.price);
+  
     if (formData.courseImage) {
       formDataToSend.append("courseImage", formData.courseImage);
     }
     if (formData.introVideo) {
       formDataToSend.append("introVideo", formData.introVideo);
     }
-    console.log("--- CHECK QR CODE ---");
-    console.log("qr_code:", formData.qr_code);
-    console.log("----------------------");
-    if (formData.qr_code) {  // 🆕 Thêm QR code
+    if (formData.qr_code) {
       formDataToSend.append("qr_code", formData.qr_code);
     }
-    formDataToSend.append("chapters", JSON.stringify(chapters));
-    // 🛑 THÊM Ở ĐÂY: log toàn bộ FormData
+  
+    // Tạo chapters và lessons để gửi lên
+    const chaptersWithoutFiles = chapters.map((chapter, chapterIndex) => {
+      const lessons = chapter.lessons.map((lesson, lessonIndex) => {
+        const lessonData = {
+          title: lesson.title || "",
+          video: lesson.video ? `lesson_video_${chapterIndex}_${lessonIndex}` : null,
+          document_link: lesson.document_link ? `lesson_document_link_${chapterIndex}_${lessonIndex}` : null,
+          exercise: lesson.exercise || null,
+        };
+        return lessonData;
+      });
+      return {
+        title: chapter.title || "",
+        lessons,
+      };
+    });
+  
+    // Gửi bản chapters không chứa file
+    formDataToSend.append("chapters", JSON.stringify(chaptersWithoutFiles));
+  
+    // Upload các file video và tài liệu của các bài học
+    chapters.forEach((chapter, chapterIndex) => {
+      chapter.lessons.forEach((lesson, lessonIndex) => {
+        if (lesson.video) {
+          formDataToSend.append(`lesson_video_${chapterIndex}_${lessonIndex}`, lesson.video);
+        }
+        if (lesson.document_link) {
+          formDataToSend.append(`lesson_document_link_${chapterIndex}_${lessonIndex}`, lesson.document_link);
+        }
+      });
+    });
+  
+    // Log dữ liệu gửi lên để kiểm tra
     console.log("--- FORM DATA GỬI LÊN SERVER ---");
     for (let pair of formDataToSend.entries()) {
       console.log(pair[0]+ ':', pair[1]);
     }
-  console.log("--- END FORM DATA ---");
+    console.log("--- END FORM DATA ---");
+  
+    // Kiểm tra xem đây có phải là yêu cầu sửa khóa học không
     const isEditing = !!location.state?.course;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
       ? `http://localhost:8000/api/teacher/courses/${location.state.course.id}/`
       : "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/";
-
+  
     try {
       const response = await fetch(endpoint, {
         method,
@@ -167,9 +199,9 @@ function TeacherAddCourses() {
         body: formDataToSend,
         credentials: 'omit',
       });
-
+  
       const result = await response.json();
-
+  
       if (response.ok) {
         alert(isEditing ? "Cập nhật khóa học thành công!" : "Thêm khóa học mới thành công!");
         navigate("/teachercourses/listcourses");
@@ -181,8 +213,7 @@ function TeacherAddCourses() {
       console.error("Lỗi ngoại lệ:", error);
       alert("Có lỗi xảy ra. Vui lòng thử lại!");
     }
-  };
-
+  };  
   return (
     <TeacherCoursesLayout>
       <div style={styles.outerContainer}>
@@ -359,7 +390,7 @@ function TeacherAddCourses() {
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
-                          onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "material", e.target.files[0])}
+                          onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "document_link", e.target.files[0])}
                           style={styles.input3}
                         />
                         <label><FaClipboardList /> Bài tập:</label>

@@ -50,12 +50,14 @@ class Chapter(models.Model):
         return self.title
 
 
+# models.py
+
 class Lesson(models.Model):
-    chapter = models.ForeignKey(Chapter, related_name="lessons", on_delete=models.CASCADE)
+    chapter = models.ForeignKey('Chapter', related_name="lessons", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Tên bài học")
-    video = models.URLField(verbose_name="Link video")
+    video = models.FileField(upload_to='lesson_videos/', null=True, blank=True, verbose_name="Video bài học")  # 👈 Đổi URLField -> FileField
     duration = models.DurationField(verbose_name="Thời lượng")
-    document_link = models.URLField(null=True, blank=True, verbose_name="Link tài liệu")
+    document_link = models.FileField(upload_to='lesson_documents/', null=True, blank=True, verbose_name="Tài liệu bài học")  # 👈 Thêm FileField cho tài liệu
     exercise = models.OneToOneField('Exercise', null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Bài tập")
 
     class Meta:
