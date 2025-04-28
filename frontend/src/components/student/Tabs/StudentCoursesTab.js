@@ -1,6 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 function StudentCoursesTab() {
+  const [courseData, setCourseData] = useState(null);
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/api/student/student_courses/student_courses/")  // thay đúng API path
+      .then(response => {
+        if (response.data.length > 0) {
+          setCourseData(response.data[0]);  // Lấy khóa học đầu tiên
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching course data:", error);
+      });
+  }, []);
+
+  if (!courseData) {
+    return <div>Đang tải...</div>;
+  }
+
   return (
     <div style={styles.outerContainer}>
       <div style={styles.contentContainer}>
@@ -26,14 +45,10 @@ function StudentCoursesTab() {
           {/* Phải - Video */}
           <div style={styles.videoSection}>
             <div style={styles.videoWrapper}>
-              <iframe
-                src="https://www.youtube.com/embed/uz5LIP85J5Y"
-                title="Video bài học"
-                style={styles.iframe}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+              <video style={styles.video} controls>
+                <source src={courseData.intro_video} type="video/mp4" />
+                Trình duyệt của bạn không hỗ trợ thẻ video.
+              </video>
             </div>
           </div>
 
@@ -44,74 +59,15 @@ function StudentCoursesTab() {
 }
 
 const styles = {
-  outerContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "100vh",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    padding: "20px",
-  },
-  contentContainer: {
-    maxWidth: "1000px",
-    width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    padding: "30px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
-  },
-  title: {
-    textAlign: "center",
-    textTransform: "uppercase",
-    fontWeight: "bold",
-    fontSize: "24px",
-    marginBottom: "20px",
-    color: "#003366",
-  },
-  sectionContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "20px",
-    flexWrap: "wrap", // để responsive
-  },
-  textSection: {
-    flex: "1",
-    minWidth: "300px",
-    backgroundColor: "rgba(220, 220, 220, 0.3)",
-    padding: "20px",
-    borderRadius: "8px",
-  },
-  list: {
-    paddingLeft: "20px",
-    fontSize: "14px",
-    lineHeight: "1.6",
-    color: "#333",
-  },
-  videoSection: {
-    flex: "1",
-    minWidth: "300px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  videoWrapper: {
-    position: "relative",
-    width: "100%",
-    paddingBottom: "56.25%", // Tỷ lệ 16:9
-    height: 0,
-    borderRadius: "8px",
-    overflow: "hidden",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-  },
-  iframe: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    border: "none",
-  },
+  outerContainer: { padding: "20px", backgroundColor: "#f9f9f9" },
+  contentContainer: { maxWidth: "1200px", margin: "auto" },
+  title: { fontSize: "24px", marginBottom: "20px" },
+  sectionContainer: { display: "flex", gap: "20px" },
+  textSection: { flex: 1 },
+  list: { paddingLeft: "20px" },
+  videoSection: { flex: 1 },
+  videoWrapper: { position: "relative", paddingTop: "56.25%", height: 0 },
+  video: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }
 };
 
 export default StudentCoursesTab;

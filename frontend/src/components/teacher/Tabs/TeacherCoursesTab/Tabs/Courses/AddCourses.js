@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaBook, FaPlus, FaFileImage, FaVideo, FaFileAlt, FaClipboardList } from "react-icons/fa";
+import { FaBook, FaPlus, FaVideo, FaFileAlt, FaClipboardList, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import TeacherCoursesLayout from "../../Layout";
@@ -14,9 +14,10 @@ function TeacherAddCourses() {
     title: "",
     description: "",
     tags: "",
-    price: 0,
+    price: "",
     courseImage: null,
     introVideo: null,
+    qr_code: null,  // 🆕 Thêm dòng này
   });
 
   const [chapters, setChapters] = useState([]);
@@ -49,6 +50,7 @@ function TeacherAddCourses() {
         price: course.price || 0,
         courseImage: course.courseImage || null,
         introVideo: course.introVideo || null,
+        qr_code: course.qr_code || null, // 🆕 Thêm dòng này
       });
       setChapters(course.chapters || []);
     }
@@ -56,15 +58,36 @@ function TeacherAddCourses() {
 
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "courseImage" || name === "introVideo") {
+  
+    if (name === "courseImage" || name === "introVideo" || name === "qr_code") {  // 🛠️ Sửa đúng field
       setFormData({ ...formData, [name]: files[0] });
+    } else if (name === "price") {
+      const numericValue = Number(value);
+      if (numericValue >= 0) {
+        setFormData({ ...formData, [name]: numericValue });
+      }
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
+  const handlePriceChange = (e) => {
+    const value = e.target.value;
+    if (value >= 0) {
+      setFormData((prevData) => ({
+        ...prevData,
+        price: value,
+      }));
+    }
+  };
+
   const addChapter = () => {
     setChapters([...chapters, { title: "", lessons: [] }]);
+  };
+
+  const deleteChapter = (chapterIndex) => {
+    const updated = chapters.filter((_, index) => index !== chapterIndex);
+    setChapters(updated);
   };
 
   const handleChapterChange = (index, field, value) => {
@@ -81,6 +104,12 @@ function TeacherAddCourses() {
       material: null,
       exercise: null,
     });
+    setChapters(updated);
+  };
+
+  const deleteLesson = (chapterIndex, lessonIndex) => {
+    const updated = [...chapters];
+    updated[chapterIndex].lessons = updated[chapterIndex].lessons.filter((_, index) => index !== lessonIndex);
     setChapters(updated);
   };
 
@@ -110,13 +139,16 @@ function TeacherAddCourses() {
     if (formData.introVideo) {
       formDataToSend.append("introVideo", formData.introVideo);
     }
+    if (formData.qr_code) {  // 🆕 Thêm QR code
+      formDataToSend.append("qr_code", formData.qr_code);
+    }
     formDataToSend.append("chapters", JSON.stringify(chapters));
 
     const isEditing = !!location.state?.course;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
       ? `http://localhost:8000/api/teacher/courses/${location.state.course.id}/`
-      : "http://localhost:8000/api/teacher/courses/create/";
+      : "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/";
 
     try {
       const response = await fetch(endpoint, {
@@ -125,18 +157,21 @@ function TeacherAddCourses() {
           Authorization: `Bearer ${token}`,
         },
         body: formDataToSend,
+        credentials: 'omit',
       });
 
       const result = await response.json();
+
       if (response.ok) {
         alert(isEditing ? "Cập nhật khóa học thành công!" : "Thêm khóa học mới thành công!");
         navigate("/teachercourses/listcourses");
       } else {
-        alert(`Lỗi: ${result.error || JSON.stringify(result)}`);
+        console.error("Lỗi chi tiết:", result);
+        alert(`Lỗi: ${result.detail || result.error || JSON.stringify(result)}`);
       }
     } catch (error) {
+      console.error("Lỗi ngoại lệ:", error);
       alert("Có lỗi xảy ra. Vui lòng thử lại!");
-      console.error(error);
     }
   };
 
@@ -145,8 +180,7 @@ function TeacherAddCourses() {
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
-            <FaBook size={24} color="#003366" />{" "}
-            {location.state?.course ? "Chỉnh sửa Khóa học" : "Thêm Khóa học"}
+            <FaBook size={24} color="#003366" /> {location.state?.course ? "Chỉnh sửa Khóa học" : "THÊM KHÓA HỌC"}
           </h2>
 
           <form onSubmit={handleSubmit} style={styles.form}>
@@ -182,34 +216,89 @@ function TeacherAddCourses() {
                   name="price"
                   placeholder="Giá khóa học (VND)"
                   value={formData.price}
-                  onChange={handleFormChange}
+                  onChange={handlePriceChange}
+                  min="0"  // <-- Cái này tự chặn không cho nhập số âm
                   style={styles.input}
                 />
+                {formData.price > 0 && (
+                  <div style={styles.inputGroup}>
+                    <label style={{ fontWeight: "bold", color: "#003366" }}>
+                      Ảnh QR thanh toán:
+                    </label>
+                    <input
+                      type="file"
+                      name="qrImage"
+                      accept="image/*"
+                      onChange={handleFormChange}
+                      style={styles.input}
+                    />
+                  </div>
+                )}
               </div>
 
               <div style={styles.rightSection}>
-                <h3 style={styles.stepTitle}>Tài liệu khóa học</h3>
-                <div>
-                  <label>Ảnh khóa học:</label>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Ảnh giới thiệu: &nbsp; </label>
                   <input
                     type="file"
                     name="courseImage"
                     accept="image/*"
                     onChange={handleFormChange}
-                    style={styles.input}
+                    style={styles.input2}
                   />
                 </div>
-                <div>
-                  <label>Video giới thiệu:</label>
+                
+                <div style={styles.inputGroup}>
+                <label style={styles.label}>Video giới thiệu:</label>
                   <input
                     type="file"
                     name="introVideo"
                     accept="video/*"
                     onChange={handleFormChange}
-                    style={styles.input}
+                    style={styles.input2}
                   />
                 </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Tổng số bài học:</label>
+                  <input
+                    type="text"
+                    name="totalLessons"
+                    onChange={handleFormChange}
+                    style={styles.input2}
+                  />
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Thời lượng: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                  <input
+                    type="text"
+                    name="courseDuration"
+                    onChange={handleFormChange}
+                    style={styles.input2}
+                  />
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Trình độ: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;</label>
+                  <select
+                    name="courseLevel"
+                    onChange={handleFormChange}
+                    style={{ 
+                      color: "#003366",  // chỉnh màu chữ của option
+                      padding: "10px",
+                      border: "1px solid #ccc",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <option value="basic">Cơ bản</option>
+                    <option value="intermediate">Trung bình</option>
+                    <option value="advanced">Nâng cao</option>
+                  </select>
+
+                </div>
               </div>
+
             </div>
 
             <hr style={{ margin: "20px 0" }} />
@@ -218,60 +307,73 @@ function TeacherAddCourses() {
               <h3 style={styles.stepTitle}>Chương trình giảng dạy</h3>
               {chapters.map((chapter, chapterIndex) => (
                 <div key={chapterIndex} style={styles.chapter}>
-                  <input
-                    type="text"
-                    placeholder="Tiêu đề chương"
-                    value={chapter.title}
-                    onChange={(e) => handleChapterChange(chapterIndex, "title", e.target.value)}
-                    style={styles.input}
-                  />
-                  <button type="button" onClick={() => addLesson(chapterIndex)} style={styles.addButton}>
-                    <FaPlus /> Thêm Bài học
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <input
+                      type="text"
+                      placeholder="Tiêu đề chương"
+                      value={chapter.title}
+                      onChange={(e) => handleChapterChange(chapterIndex, "title", e.target.value)}
+                      style={styles.input}
+                    />
+                    <FaEdit style={{ cursor: "pointer", color: "#003366"}} />
+                    <FaTrash style={{ cursor: "pointer", color: "#003366" }} onClick={() => deleteChapter(chapterIndex)} />
+                  </div>
 
                   {chapter.lessons.map((lesson, lessonIndex) => (
                     <div key={lessonIndex} style={styles.lesson}>
-                      <input
-                        type="text"
-                        placeholder="Tiêu đề bài học"
-                        value={lesson.title}
-                        onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "title", e.target.value)}
-                        style={styles.input}
-                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <input
+                          type="text"
+                          placeholder="Tiêu đề bài học"
+                          value={lesson.title}
+                          onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "title", e.target.value)}
+                          style={styles.input}
+                        />
+                        <FaEdit style={{ cursor: "pointer", color: "#003366" }} />
+                        <FaTrash
+                          style={{ cursor: "pointer", color: "#003366" }}
+                          onClick={() => deleteLesson(chapterIndex, lessonIndex)}
+                        />
+                      </div>
+
                       <div style={styles.lessonButtonGroup}>
                         <label><FaVideo /> Video bài giảng:</label>
                         <input
                           type="file"
                           accept="video/*"
                           onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "video", e.target.files[0])}
-                          style={styles.input}
+                          style={styles.input3}
                         />
                         <label><FaFileAlt /> Tài liệu bài học:</label>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
                           onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "material", e.target.files[0])}
-                          style={styles.input}
+                          style={styles.input3}
                         />
                         <label><FaClipboardList /> Bài tập:</label>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
                           onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "exercise", e.target.files[0])}
-                          style={styles.input}
+                          style={styles.input3}
                         />
                       </div>
                     </div>
                   ))}
+                  <button type="button" onClick={() => addLesson(chapterIndex)} style={styles.addButton}>
+                    <FaPlus /> Thêm Bài học
+                  </button>
                 </div>
               ))}
+
               <button type="button" onClick={addChapter} style={styles.addButton}>
                 <FaPlus /> Thêm Chương
               </button>
             </div>
 
             <button type="submit" style={styles.button}>
-              {location.state?.course ? "Cập nhật Khóa học" : "Thêm Khóa học"}
+              {location.state?.course ? "Cập nhật Khóa học" : "Thêm khóa học"}
             </button>
           </form>
         </div>
@@ -294,92 +396,109 @@ const styles = {
     boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
     borderRadius: "10px",
   },
+  sectionContainer: {
+    display: "flex",
+    justifyContent: "space-between",
+  },
+  leftSection: {
+    width: "48%",
+  },
+  rightSection: {
+    width: "48%",
+  },
   title: {
-    textAlign: "center",
-    textTransform: "uppercase",
-    fontWeight: "bold",
-    marginBottom: "30px",
+    fontSize: "24px",
+    marginBottom: "20px",
     color: "#003366",
+    textAlign: "center",
   },
   form: {
     display: "flex",
     flexDirection: "column",
   },
-  sectionContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "20px",
-    flexWrap: "wrap",
-  },
-  leftSection: {
-    flex: "1 1 48%",
-    backgroundColor: "rgba(200, 200, 200, 0.3)",
-    padding: "20px",
-    borderRadius: "8px",
-  },
-  rightSection: {
-    flex: "1 1 48%",
-    backgroundColor: "rgba(200, 200, 200, 0.3)",
-    padding: "20px",
-    borderRadius: "8px",
-  },
   input: {
-    width: "97.5%",
-    padding: "12px",
-    border: "1px solid #ccc",
+    width: "100%",
+    padding: "10px",
+    marginBottom: "10px",
     borderRadius: "5px",
-    marginBottom: "12px",
+    border: "1px solid #ccc",
+  },
+
+  input2: {
+    width: "auto",  // Để input không chiếm hết chiều rộng, thay vì 100%
+    padding: "10px",  // Giữ padding như cũ
+    marginBottom: "10px",  // Khoảng cách dưới mỗi input (có thể điều chỉnh nếu cần)
+    borderRadius: "5px",  // Bo góc cho input
+    border: "1px solid #ccc",  // Viền input
+    marginLeft: "10px",  // Khoảng cách giữa label và input (cho line-horizontal)
+  },
+  input3: {
+    width: "97.5%",
+    padding: "10px",
+    marginBottom: "10px",
+    borderRadius: "5px",
+    border: "1px solid #ccc",
   },
   textarea: {
-    width: "97.5%",
-    padding: "12px",
-    border: "1px solid #ccc",
+    width: "100%",
+    padding: "10px",
+    marginBottom: "10px",
     borderRadius: "5px",
-    marginBottom: "12px",
-    minHeight: "120px",
+    border: "1px solid #ccc",
+    minHeight: "100px",
   },
   button: {
-    width: "100%",
     padding: "12px",
     backgroundColor: "#003366",
     color: "white",
     border: "none",
     borderRadius: "5px",
     cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: "bold",
-    textTransform: "uppercase",
     marginTop: "20px",
+    fontWeight: "bold",
+    fontSize: "16px",
   },
   addButton: {
-    margin: "10px 0",
     padding: "10px",
-    backgroundColor: "#28a745",
+    margin: "10px 0",
+    backgroundColor: "#003366",
     color: "white",
     border: "none",
     borderRadius: "5px",
     cursor: "pointer",
   },
+  stepTitle: {
+    fontSize: "20px",
+    marginBottom: "10px",
+    marginTop: "20px",
+    color: "#003366",
+  },
   chapter: {
-    marginBottom: "20px",
-    padding: "15px",
-    backgroundColor: "#f0f8ff",
+    border: "1px solid #ccc",
     borderRadius: "5px",
+    padding: "15px",
+    marginBottom: "15px",
+    backgroundColor: "#f9f9f9",
   },
   lesson: {
     marginTop: "10px",
-    backgroundColor: "#e8f0fe",
     padding: "10px",
+    backgroundColor: "#e9ecef",
     borderRadius: "5px",
   },
   lessonButtonGroup: {
     marginTop: "10px",
   },
-  stepTitle: {
-    fontWeight: "bold",
-    color: "#003366",
-    marginBottom: "15px",
+  inputGroup: {
+    display: "block",  // Để các thành phần trong group nằm trên cùng một dòng
+    alignItems: "center",  // Canh chỉnh cho label và input nằm cùng một chiều cao
+    marginBottom: "6px",  // Khoảng cách giữa các inputGroup (nếu cần)
   },
+  label: {
+    color: "#003366", // Màu chữ xanh đậm
+    fontWeight: "bold",
+    // các style khác nếu cần
+  }
 };
 
 export default TeacherAddCourses;

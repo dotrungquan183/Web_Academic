@@ -26,7 +26,8 @@ class Course(models.Model):
     intro_video = models.FileField(upload_to='intro_videos/', null=True, blank=True, verbose_name="Video giới thiệu")
     thumbnail = models.ImageField(upload_to='course_thumbnails/', null=True, blank=True, verbose_name="Ảnh khóa học")
     tags = models.CharField(max_length=255, blank=True, verbose_name="Thẻ (tags)")
-    qr_code = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh QR")  # Trường QR code
+    # 🆕 Thêm dòng này:
+    qr_code = models.FileField(upload_to='qr_codes/', null=True, blank=True, verbose_name="Mã QR")
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Người dùng")
     intro = models.TextField(blank=True, verbose_name="Giới thiệu khóa học")  # Trường intro chứa đoạn văn giới thiệu
 
