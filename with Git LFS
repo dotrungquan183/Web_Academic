@@ -1,0 +1,35 @@
+[33mcommit 714e02db70846b730620032c4164fff759c0645f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: dotrungquan183 <trungquan1832003@gmail.com>
+Date:   Tue Apr 29 02:15:39 2025 +0700
+
+    Track MP4 files with Git LFS
+
+[33mcommit adf80765b4fa21202d2edfd38b71008b7a6ea475[m
+Author: dotrungquan183 <trungquan1832003@gmail.com>
+Date:   Tue Apr 29 02:15:20 2025 +0700
+
+    Remove large MP4 files
+
+[33mcommit ff87187a8ce5bad3b2ccb7d6b24be3e49c02dc04[m
+Author: dotrungquan183 <trungquan1832003@gmail.com>
+Date:   Tue Apr 29 01:56:15 2025 +0700
+
+    TeacherAddCourses
+
+[33mcommit 26791a2c9c22d4d52831febd00fa2facfe44e540[m
+Author: dotrungquan183 <trungquan1832003@gmail.com>
+Date:   Tue Apr 29 01:45:58 2025 +0700
+
+    AddCourses
+
+[33mcommit 09bb6c54ff84333c8bc055e08b8688d071fd88e1[m
+Author: dotrungquan183 <trungquan1832003@gmail.com>
+Date:   Mon Apr 28 14:46:35 2025 +0700
+
+    AddCourses
+
+[33mcommit 9e65b3e5beb37b5c7bd79d628ebce3019efeb7a4[m
+Author: dotrungquan183 <trungquan1832003@gmail.com>
+Date:   Mon Apr 28 11:58:01 2025 +0700
+
+    TeacherAddCourses
