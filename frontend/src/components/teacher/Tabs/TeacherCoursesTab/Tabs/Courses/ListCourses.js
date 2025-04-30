@@ -53,8 +53,8 @@ const TeacherListCourses = () => {
   }, [fetchUserFromToken]);
 
   // Lọc khóa học có phí và miễn phí
-  const proCourses = courses.filter(course => course.fee > 0); // Khóa học có phí
-  const freeCourses = courses.filter(course => course.fee === 0); // Khóa học miễn phí
+  const proCourses = courses.filter(course => parseFloat(course.fee) > 0); // Khóa học có phí
+  const freeCourses = courses.filter(course => parseFloat(course.fee) === 0); // Khóa học miễn phí
 
   return (
     <TeacherCoursesLayout>

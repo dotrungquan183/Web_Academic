@@ -38,7 +38,10 @@ class CourseListSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'fee', 'teacher', 'students', 'total_duration', 'type']
 
     def get_type(self, obj):
-        return "pro" if obj.fee > 0 else "free"
+        # Sử dụng round để làm tròn giá trị fee nếu cần
+        if round(float(obj.fee), 2) > 0:
+            return "pro"
+        return "free"
 
     def get_teacher(self, obj):
         if obj.user and hasattr(obj.user, 'username'):
