@@ -12,7 +12,7 @@ from datetime import timedelta
 
 class Course(models.Model):
     LEVEL_CHOICES = [
-        ('easy', 'Dễ'),
+        ('basic', 'Dễ'),
         ('medium', 'Trung bình'),
         ('hard', 'Khó'),
     ]
@@ -22,7 +22,7 @@ class Course(models.Model):
     fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Lệ phí")
     video_count = models.PositiveIntegerField(default=0, verbose_name="Số video")
     total_duration = models.DurationField(default=timedelta(), verbose_name="Tổng thời lượng")
-    level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default='easy', verbose_name="Trình độ")
+    level = models.CharField(max_length=30, choices=LEVEL_CHOICES, default='basic', verbose_name="Trình độ")
     intro_video = models.FileField(upload_to='intro_videos/', null=True, blank=True, verbose_name="Video giới thiệu")
     thumbnail = models.ImageField(upload_to='course_thumbnails/', null=True, blank=True, verbose_name="Ảnh khóa học")
     tags = models.CharField(max_length=255, blank=True, verbose_name="Thẻ (tags)")

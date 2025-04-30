@@ -8,6 +8,7 @@ import json
 import os
 from moviepy import VideoFileClip
 from django.core.files.storage import FileSystemStorage
+from api.serializers import CourseListSerializer
 
 class TeacherAddCoursesView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -24,13 +25,14 @@ class TeacherAddCoursesView(APIView):
         intro_video = request.FILES.get('introVideo')
         thumbnail = request.FILES.get('courseImage')
         qr_code = request.FILES.get('qr_code')
+        level = request.data.get('courseLevel', '')
         chapters_data = request.data.get('chapters')
 
         if not title:
             return Response({'error': 'Tiêu đề khóa học là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Tạo khóa học mới
+            # Create the course
             course = Course.objects.create(
                 title=title,
                 intro=description,
@@ -40,9 +42,13 @@ class TeacherAddCoursesView(APIView):
                 thumbnail=thumbnail,
                 qr_code=qr_code,
                 user=user,
+                level=level
             )
 
-            # Chỉ khi tạo khóa học thành công mới tiếp tục xử lý chapters và lessons
+            # Initialize video count and total duration
+            total_duration = timedelta()
+            video_count = 0
+
             if chapters_data:
                 if isinstance(chapters_data, str):
                     chapters_data = json.loads(chapters_data)
@@ -56,32 +62,36 @@ class TeacherAddCoursesView(APIView):
 
                     for lesson_data in chapter_data.get('lessons', []):
                         video_file = request.FILES.get(lesson_data['video'])
-                        # Lấy thời gian video
                         video_duration = self.get_video_duration(video_file)
 
-                        # Kiểm tra nếu có tài liệu bài học
-                        document_file = request.FILES.get(lesson_data.get('document_link'))
+                        # Update total_duration and video_count
+                        total_duration += video_duration
+                        if video_file:
+                            video_count += 1
 
-                        # Tạo thư mục để lưu tài liệu nếu chưa tồn tại
-                        document_storage_path = os.path.join('image', 'lesson_documents')  # Đổi đường dẫn lưu tài liệu
+                        document_file = request.FILES.get(lesson_data.get('document_link'))
+                        document_storage_path = os.path.join('image', 'lesson_documents')
                         if not os.path.exists(document_storage_path):
                             os.makedirs(document_storage_path)
 
-                        # Lưu tài liệu vào thư mục lesson_documents
                         if document_file:
                             fs = FileSystemStorage(location=document_storage_path)
                             document_file_name = fs.save(document_file.name, document_file)
-                            document_file_url = fs.url(document_file_name)
                         else:
-                            document_file_url = None
+                            document_file_name = None
 
                         Lesson.objects.create(
                             chapter=chapter,
                             title=lesson_data['title'],
                             video=video_file,
-                            duration=video_duration,  # Gán thời gian video vào duration
-                            document_link=f'lesson_documents/{document_file_name}' if document_file else None  # Lưu URL tài liệu
+                            duration=video_duration,
+                            document_link=f'lesson_documents/{document_file_name}' if document_file else None
                         )
+
+            # Update the course's total duration and video count
+            course.total_duration = total_duration
+            course.video_count = video_count
+            course.save()
 
             return Response({'message': 'Khóa học được tạo thành công.', 'course_id': course.id}, status=status.HTTP_201_CREATED)
 
@@ -105,36 +115,31 @@ class TeacherAddCoursesView(APIView):
         intro_video = request.FILES.get('introVideo')
         thumbnail = request.FILES.get('courseImage')
         qr_code = request.FILES.get('qr_code')
+        level = request.data.get('courseLevel', course.level)
         chapters_data = request.data.get('chapters')
 
-        if title:
-            course.title = title
-        if description:
-            course.intro = description
-        if tags is not None:
-            course.tags = tags
-        if price is not None:
-            course.fee = price
-        if intro_video:
-            course.intro_video = intro_video
-        if thumbnail:
-            course.thumbnail = thumbnail
-        if qr_code:
-            course.qr_code = qr_code
-
-        # Cập nhật khóa học trong cơ sở dữ liệu
+        if title: course.title = title
+        if description: course.intro = description
+        if tags is not None: course.tags = tags
+        if price is not None: course.fee = price
+        if intro_video: course.intro_video = intro_video
+        if thumbnail: course.thumbnail = thumbnail
+        if qr_code: course.qr_code = qr_code
+        course.level = level
         course.save()
 
         try:
-            # Chỉ khi cập nhật khóa học thành công mới tiếp tục xử lý chapters và lessons
+            # Initialize video count and total duration
+            total_duration = timedelta()
+            video_count = 0
+
             if chapters_data:
                 if isinstance(chapters_data, str):
                     chapters_data = json.loads(chapters_data)
 
-                # Xóa hết chapter + lesson cũ
+                # Delete existing chapters and lessons
                 course.chapters.all().delete()
 
-                # Tạo mới lại chapters và lessons
                 for chapter_data in chapters_data:
                     chapter = Chapter.objects.create(
                         course=course,
@@ -144,61 +149,70 @@ class TeacherAddCoursesView(APIView):
 
                     for lesson_data in chapter_data.get('lessons', []):
                         video_file = request.FILES.get(lesson_data['video'])
-                        # Lấy thời gian video
                         video_duration = self.get_video_duration(video_file)
 
-                        # Kiểm tra nếu có tài liệu bài học
-                        document_file = request.FILES.get(lesson_data.get('document_link'))
+                        # Update total_duration and video_count
+                        total_duration += video_duration
+                        if video_file:
+                            video_count += 1
 
-                        # Tạo thư mục để lưu tài liệu nếu chưa tồn tại
-                        document_storage_path = os.path.join('image', 'lesson_documents')  # Đổi đường dẫn lưu tài liệu
+                        document_file = request.FILES.get(lesson_data.get('document_link'))
+                        document_storage_path = os.path.join('image', 'lesson_documents')
                         if not os.path.exists(document_storage_path):
                             os.makedirs(document_storage_path)
 
-                        # Lưu tài liệu vào thư mục lesson_documents
                         if document_file:
                             fs = FileSystemStorage(location=document_storage_path)
                             document_file_name = fs.save(document_file.name, document_file)
-                            document_file_url = fs.url(document_file_name)
                         else:
-                            document_file_url = None
+                            document_file_name = None
 
                         Lesson.objects.create(
                             chapter=chapter,
                             title=lesson_data['title'],
                             video=video_file,
-                            duration=video_duration,  # Gán thời gian video vào duration
-                            document_link=f'lesson_documents/{document_file_name}' if document_file else None  # Lưu URL tài liệu
+                            duration=video_duration,
+                            document_link=f'lesson_documents/{document_file_name}' if document_file else None
                         )
+
+            # Update the course's total duration and video count
+            course.total_duration = total_duration
+            course.video_count = video_count
+            course.save()
 
             return Response({'message': 'Cập nhật khóa học thành công.'}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Nếu có lỗi trong quá trình cập nhật chapters và lessons thì xóa khóa học đã lưu để tránh lỗi
             course.delete()
             return Response({'error': 'Có lỗi xảy ra khi cập nhật khóa học.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    def get(self, request):
+        user, error_response = get_authenticated_user(request)
+        if error_response:
+            return error_response
+
+        courses = Course.objects.filter(user=user)
+
+        serializer = CourseListSerializer(courses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def get_video_duration(self, video_file):
-        """
-        Lấy thời gian video từ file video.
-        """
         if not video_file:
             return timedelta()
 
-        video_path = f'/tmp/{video_file.name}'  # Đường dẫn tạm thời để lưu file video
+        video_path = f'/tmp/{video_file.name}'
         with open(video_path, 'wb') as f:
             for chunk in video_file.chunks():
                 f.write(chunk)
 
         try:
-            # Sử dụng moviepy để lấy thời gian video
             clip = VideoFileClip(video_path)
-            duration = clip.duration  # Thời gian video tính bằng giây
-            return timedelta(seconds=duration)
+            duration_seconds = int(clip.duration)
+            return timedelta(seconds=duration_seconds)
         except Exception as e:
-            return timedelta()  # Nếu có lỗi thì trả về timedelta() (0 giây)
+            print(f"Error reading video: {e}")
+            return timedelta()
         finally:
-            # Đảm bảo xóa file video sau khi lấy thời gian xong và giải phóng tài nguyên
             try:
                 os.remove(video_path)
             except Exception as e:

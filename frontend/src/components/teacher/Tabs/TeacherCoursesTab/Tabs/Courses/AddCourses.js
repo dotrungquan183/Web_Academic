@@ -17,7 +17,8 @@ function TeacherAddCourses() {
     price: "",
     courseImage: null,
     introVideo: null,
-    qr_code: null,  // 🆕 Thêm dòng này
+    qr_code: null,
+    courseLevel: "basic",
   });
 
   const [chapters, setChapters] = useState([]);
@@ -133,7 +134,7 @@ function TeacherAddCourses() {
     formDataToSend.append("description", formData.description);
     formDataToSend.append("tags", formData.tags);
     formDataToSend.append("price", formData.price);
-  
+    formDataToSend.append("courseLevel", formData.courseLevel);
     if (formData.courseImage) {
       formDataToSend.append("courseImage", formData.courseImage);
     }
@@ -334,8 +335,8 @@ function TeacherAddCourses() {
                     }}
                   >
                     <option value="basic">Cơ bản</option>
-                    <option value="intermediate">Trung bình</option>
-                    <option value="advanced">Nâng cao</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="hard">Nâng cao</option>
                   </select>
 
                 </div>

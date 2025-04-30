@@ -5,25 +5,16 @@ import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../../../../auth/authHelper";
 import { FaBookOpen, FaFire } from "react-icons/fa";
 
-const sampleCourses = [
-  { id: 1, title: "HTML/CSS Pro", type: "pro", price: 12.99, teacher: "John Doe", students: 1200, duration: "10h" },
-  { id: 2, title: "JavaScript Pro", type: "pro", price: 14.99, teacher: "Jane Smith", students: 900, duration: "12h" },
-  { id: 3, title: "Sass Language", type: "pro", price: 9.99, teacher: "Alice Lee", students: 800, duration: "8h" },
-  { id: 4, title: "Foundational Knowledge", type: "free", teacher: "Team Dev", duration: "5h" },
-  { id: 5, title: "C++ Programming", type: "free", teacher: "Học viện Code", duration: "6h" },
-  { id: 6, title: "HTML/CSS From Zero", type: "free", teacher: "FrontEnd.vn", duration: "7h" },
-  { id: 7, title: "Responsive Web Design", type: "free", teacher: "DevTips", duration: "4h" }
-];
-
 const TeacherListCourses = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
 
+  // Hàm kiểm tra token người dùng
   const fetchUserFromToken = useCallback(() => {
     const token = getToken();
     if (token) {
       try {
-        jwtDecode(token);
+        jwtDecode(token);  // Giải mã token để kiểm tra tính hợp lệ
       } catch (error) {
         console.error("Invalid token:", error);
         navigate("/login");
@@ -34,12 +25,36 @@ const TeacherListCourses = () => {
   }, [navigate]);
 
   useEffect(() => {
-    fetchUserFromToken();
-    setCourses(sampleCourses);
+    fetchUserFromToken(); // Kiểm tra token khi component render
+
+    // Hàm lấy danh sách khóa học
+    const fetchCourses = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch(
+          "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Truyền token vào header
+            },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch courses");
+
+        const data = await response.json();
+        setCourses(data); // Lưu danh sách khóa học vào state
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
   }, [fetchUserFromToken]);
 
-  const proCourses = courses.filter(course => course.type === "pro");
-  const freeCourses = courses.filter(course => course.type === "free");
+  // Lọc khóa học có phí và miễn phí
+  const proCourses = courses.filter(course => course.fee > 0); // Khóa học có phí
+  const freeCourses = courses.filter(course => course.fee === 0); // Khóa học miễn phí
 
   return (
     <TeacherCoursesLayout>
@@ -55,40 +70,51 @@ const TeacherListCourses = () => {
             </button>
           </div>
 
+          {/* Hiển thị khóa học có phí */}
           <h2 style={{ textAlign: "center", textTransform: "uppercase" }}>PRO COURSES</h2>
           <div style={styles.gridStyle}>
-            {proCourses.map(course => (
-              <div
-                key={course.id}
-                style={{
-                  ...styles.courseCard,
-                  background: course.title.includes("HTML")
-                    ? "linear-gradient(to right, #00bcd4, #2196f3)"
-                    : course.title.includes("JavaScript")
-                    ? "linear-gradient(to right, #ff9800, #ffeb3b)"
-                    : "linear-gradient(to right, #e91e63, #f06292)",
-                }}
-              >
-                <h3 style={styles.courseTitle}>{course.title}</h3>
-                <p style={styles.coursePrice}>${course.price}</p>
-                <p style={styles.courseInfo}>
-                  {course.teacher} • {course.students} students • {course.duration}
-                </p>
-              </div>
-            ))}
+            {proCourses.length > 0 ? (
+              proCourses.map(course => (
+                <div
+                  key={course.id}
+                  style={{
+                    ...styles.courseCard,
+                    background: course.title.includes("HTML")
+                      ? "linear-gradient(to right, #00bcd4, #2196f3)"
+                      : course.title.includes("JavaScript")
+                      ? "linear-gradient(to right, #ff9800, #ffeb3b)"
+                      : "linear-gradient(to right, #e91e63, #f06292)",
+                  }}
+                >
+                  <h3 style={styles.courseTitle}>{course.title}</h3>
+                  <p style={styles.coursePrice}>${course.fee}</p>
+                  <p style={styles.courseInfo}>
+                    {course.teacher} • {course.students} students • {course.total_duration}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p>No paid courses available.</p>
+            )}
           </div>
 
+          {/* Hiển thị khóa học miễn phí */}
           <h2 style={{ textAlign: "center", textTransform: "uppercase", marginTop: "20px" }}>FREE COURSES</h2>
           <div style={styles.gridStyle}>
-            {freeCourses.map(course => (
-              <div key={course.id} style={styles.freeCourseCard}>
-                <h3 style={styles.courseTitle}>{course.title}</h3>
-                <p style={styles.freeCourseInfo}>Free • {course.teacher} • {course.duration}</p>
-              </div>
-            ))}
+            {freeCourses.length > 0 ? (
+              freeCourses.map(course => (
+                <div key={course.id} style={styles.freeCourseCard}>
+                  <h3 style={styles.courseTitle}>{course.title}</h3>
+                  <p style={styles.freeCourseInfo}>Free • {course.teacher} • {course.total_duration}</p>
+                </div>
+              ))
+            ) : (
+              <p>No free courses available.</p>
+            )}
           </div>
         </div>
 
+        {/* Sidebar */}
         <div style={styles.sidebarWrapper}>
           <div style={styles.sidebarStyleRelatedQuestion}>
             <h3 style={styles.sidebarTitle}>
