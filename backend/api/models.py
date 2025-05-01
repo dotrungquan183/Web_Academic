@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import timedelta
-
+from django.utils import timezone
 class Course(models.Model):
     LEVEL_CHOICES = [
         ('basic', 'Dễ'),
@@ -26,10 +26,10 @@ class Course(models.Model):
     intro_video = models.FileField(upload_to='intro_videos/', null=True, blank=True, verbose_name="Video giới thiệu")
     thumbnail = models.ImageField(upload_to='course_thumbnails/', null=True, blank=True, verbose_name="Ảnh khóa học")
     tags = models.CharField(max_length=255, blank=True, verbose_name="Thẻ (tags)")
-    # 🆕 Thêm dòng này:
     qr_code = models.FileField(upload_to='qr_codes/', null=True, blank=True, verbose_name="Mã QR")
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Người dùng")
-    intro = models.TextField(blank=True, verbose_name="Giới thiệu khóa học")  # Trường intro chứa đoạn văn giới thiệu
+    intro = models.TextField(blank=True, verbose_name="Giới thiệu khóa học")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian tạo")  # Thêm default=timezone.now
 
     class Meta:
         db_table = 'course'
@@ -42,23 +42,21 @@ class Chapter(models.Model):
     course = models.ForeignKey(Course, related_name="chapters", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Tên chương")
     lesson_count = models.PositiveIntegerField(default=0, verbose_name="Số bài học")
-
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian tạo")  # Thêm default=timezone.now
     class Meta:
         db_table = 'chapter'
 
     def __str__(self):
         return self.title
 
-
-# models.py
-
 class Lesson(models.Model):
     chapter = models.ForeignKey('Chapter', related_name="lessons", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Tên bài học")
-    video = models.FileField(upload_to='lesson_videos/', null=True, blank=True, verbose_name="Video bài học")  # 👈 Đổi URLField -> FileField
+    video = models.FileField(upload_to='lesson_videos/', null=True, blank=True, verbose_name="Video bài học")
     duration = models.DurationField(verbose_name="Thời lượng")
-    document_link = models.FileField(upload_to='lesson_documents/', null=True, blank=True, verbose_name="Tài liệu bài học")  # 👈 Thêm FileField cho tài liệu
+    document_link = models.FileField(upload_to='lesson_documents/', null=True, blank=True, verbose_name="Tài liệu bài học")
     exercise = models.OneToOneField('Exercise', null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Bài tập")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian tạo")  # Thêm default=timezone.now
 
     class Meta:
         db_table = 'lesson'

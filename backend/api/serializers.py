@@ -32,18 +32,22 @@ class CourseListSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     teacher = serializers.SerializerMethodField()
     students = serializers.IntegerField(source='student_count', default=0)
+    thumbnail = serializers.ImageField()
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'fee', 'teacher', 'students', 'total_duration', 'type']
+        fields = [
+            'id', 'title', 'fee', 'teacher', 'students',
+            'total_duration', 'type', 'video_count', 'thumbnail', 'created_at'
+        ]
 
     def get_type(self, obj):
-        # Sử dụng round để làm tròn giá trị fee nếu cần
-        if round(float(obj.fee), 2) > 0:
-            return "pro"
-        return "free"
+        return "pro" if round(float(obj.fee), 2) > 0 else "free"
 
     def get_teacher(self, obj):
-        if obj.user and hasattr(obj.user, 'username'):
-            return obj.user.username
-        return "Unknown"
+        return obj.user.username if obj.user and hasattr(obj.user, 'username') else "Unknown"
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = '__all__'

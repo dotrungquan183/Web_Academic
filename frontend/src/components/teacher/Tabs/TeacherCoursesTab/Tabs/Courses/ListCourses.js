@@ -3,18 +3,53 @@ import { useNavigate } from "react-router-dom";
 import TeacherCoursesLayout from "../../Layout";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../../../../auth/authHelper";
-import { FaBookOpen, FaFire } from "react-icons/fa";
+import { FaBookOpen, FaFire, FaUserTie, FaUsers, FaClock } from "react-icons/fa";
+import axios from 'axios';
 
 const TeacherListCourses = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [visibleProCount, setVisibleProCount] = useState(6);
+  const [visibleFreeCount, setVisibleFreeCount] = useState(6);
+  const [latestCourses, setLatestCourses] = useState([]);
+  const [hotCourses, setHotCourses] = useState([]);
 
-  // Hàm kiểm tra token người dùng
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/teacher/teacher_courses/teacher_bestcourses/')
+      .then(response => {
+        setHotCourses(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching hot courses:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    const fetchLatestCourses = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch("http://localhost:8000/api/teacher/teacher_courses/teacher_lastestcourses/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch latest courses");
+        const data = await response.json();
+        setLatestCourses(data);
+      } catch (error) {
+        console.error("Error fetching latest courses:", error);
+      }
+    };
+
+    fetchLatestCourses();
+  }, []);
+
   const fetchUserFromToken = useCallback(() => {
     const token = getToken();
     if (token) {
       try {
-        jwtDecode(token);  // Giải mã token để kiểm tra tính hợp lệ
+        jwtDecode(token);
       } catch (error) {
         console.error("Invalid token:", error);
         navigate("/login");
@@ -25,9 +60,8 @@ const TeacherListCourses = () => {
   }, [navigate]);
 
   useEffect(() => {
-    fetchUserFromToken(); // Kiểm tra token khi component render
+    fetchUserFromToken();
 
-    // Hàm lấy danh sách khóa học
     const fetchCourses = async () => {
       try {
         const token = getToken();
@@ -35,15 +69,14 @@ const TeacherListCourses = () => {
           "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/",
           {
             headers: {
-              Authorization: `Bearer ${token}`, // Truyền token vào header
+              Authorization: `Bearer ${token}`,
             },
           }
         );
 
         if (!response.ok) throw new Error("Failed to fetch courses");
-
         const data = await response.json();
-        setCourses(data); // Lưu danh sách khóa học vào state
+        setCourses(data);
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
@@ -52,9 +85,8 @@ const TeacherListCourses = () => {
     fetchCourses();
   }, [fetchUserFromToken]);
 
-  // Lọc khóa học có phí và miễn phí
-  const proCourses = courses.filter(course => parseFloat(course.fee) > 0); // Khóa học có phí
-  const freeCourses = courses.filter(course => parseFloat(course.fee) === 0); // Khóa học miễn phí
+  const proCourses = courses.filter(course => parseFloat(course.fee) > 0);
+  const freeCourses = courses.filter(course => parseFloat(course.fee) === 0);
 
   return (
     <TeacherCoursesLayout>
@@ -70,73 +102,162 @@ const TeacherListCourses = () => {
             </button>
           </div>
 
-          {/* Hiển thị khóa học có phí */}
+          {/* PRO COURSES */}
           <h2 style={{ textAlign: "center", textTransform: "uppercase" }}>PRO COURSES</h2>
           <div style={styles.gridStyle}>
-            {proCourses.length > 0 ? (
-              proCourses.map(course => (
-                <div
-                  key={course.id}
-                  style={{
-                    ...styles.courseCard,
-                    background: course.title.includes("HTML")
-                      ? "linear-gradient(to right, #00bcd4, #2196f3)"
-                      : course.title.includes("JavaScript")
-                      ? "linear-gradient(to right, #ff9800, #ffeb3b)"
-                      : "linear-gradient(to right, #e91e63, #f06292)",
-                  }}
-                >
-                  <h3 style={styles.courseTitle}>{course.title}</h3>
-                  <p style={styles.coursePrice}>${course.fee}</p>
-                  <p style={styles.courseInfo}>
-                    {course.teacher} • {course.students} students • {course.total_duration}
-                  </p>
+            {proCourses.slice(0, visibleProCount).map(course => {
+              const imageUrl = course.thumbnail?.startsWith("http")
+                ? course.thumbnail
+                : `http://localhost:8000${course.thumbnail}`;
+              return (
+                  <div
+                    key={course.id}
+                    style={{
+                      ...styles.courseCard,
+                      background: course.id % 2 === 0
+                        ? "linear-gradient(to right, #0d47a1, #003366)"
+                        : "white",
+                      color: course.id % 2 === 0
+                        ? "white"
+                        : "#003366",
+                      cursor: "pointer", // thêm hiệu ứng chuột
+                    }}
+                    onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                  >
+                  <div style={styles.courseImageWrapper}>
+                    <img
+                      src={imageUrl}
+                      alt={course.title}
+                      style={styles.courseImage}
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  </div>
+                  <div style={styles.courseInfoWrapper}>
+                    <h3 style={styles.courseTitle}>{course.title}</h3>
+                    <p style={styles.coursePrice}>${course.fee}</p>
+                    <p style={styles.courseInfo}>
+                      <FaUserTie style={{ marginRight: "4px" }} /> {course.teacher}
+                      <span style={{ marginLeft: "12px" }}>🎬 {course.video_count} video</span>
+                      <FaClock style={{ margin: "0 6px 0 12px" }} /> {course.total_duration}
+                    </p>
+                  </div>
                 </div>
-              ))
-            ) : (
-              <p>No paid courses available.</p>
-            )}
+              );
+            })}
           </div>
+          {proCourses.length > 6 && (
+            <div style={{ textAlign: "center", marginTop: "10px" }}>
+              <p
+                style={{
+                  color: "#007bff",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontStyle: "italic",
+                }}
+                onClick={() =>
+                  setVisibleProCount(
+                    visibleProCount === proCourses.length ? 6 : proCourses.length
+                  )
+                }
+              >
+                {visibleProCount === proCourses.length ? "Ẩn bớt" : "Xem thêm khóa học..."}
+              </p>
+            </div>
+          )}
 
-          {/* Hiển thị khóa học miễn phí */}
-          <h2 style={{ textAlign: "center", textTransform: "uppercase", marginTop: "20px" }}>FREE COURSES</h2>
+          {/* FREE COURSES */}
+          <h2 style={{ textAlign: "center", textTransform: "uppercase", marginTop: "20px" }}>
+            FREE COURSES
+          </h2>
           <div style={styles.gridStyle}>
-            {freeCourses.length > 0 ? (
-              freeCourses.map(course => (
-                <div key={course.id} style={styles.freeCourseCard}>
-                  <h3 style={styles.courseTitle}>{course.title}</h3>
-                  <p style={styles.freeCourseInfo}>Free • {course.teacher} • {course.total_duration}</p>
-                </div>
-              ))
-            ) : (
-              <p>No free courses available.</p>
-            )}
+            {freeCourses.slice(0, visibleFreeCount).map(course => {
+              const imageUrl = course.thumbnail?.startsWith("http")
+                ? course.thumbnail
+                : `http://localhost:8000${course.thumbnail}`;
+                return (
+                  <div
+                    key={course.id}
+                    style={{
+                      ...styles.courseCard,
+                      background: course.id % 2 === 0
+                        ? "linear-gradient(to right, #0d47a1, #003366)"
+                        : "white",
+                      color: course.id % 2 === 0
+                        ? "white"
+                        : "#003366",
+                      cursor: "pointer", // thêm hiệu ứng chuột
+                    }}
+                    onClick={() => navigate(`/teachercourses/teacher_listcourses/${course.id}`)}
+                  >
+                    <div style={styles.courseImageWrapper}>
+                      <img
+                        src={imageUrl}
+                        alt={course.title}
+                        style={styles.courseImage}
+                        onError={(e) => (e.target.style.display = "none")}
+                      />
+                    </div>
+                    <div style={styles.courseInfoWrapper}>
+                      <h3 style={styles.courseTitle}>{course.title}</h3>
+                      <p style={styles.courseInfo}>
+                        <div style={{ display: "inline-flex", alignItems: "center" }}>
+                          <FaUsers style={{ marginRight: "4px" }} /> {course.students} students
+                          <span style={{ marginLeft: "12px" }}>
+                            🎬 {course.video_count} video
+                          </span>
+                          <FaClock style={{ marginRight: "4px", marginLeft: "12px" }} />
+                          {course.total_duration}
+                        </div>
+                      </p>
+                    </div>
+                  </div>
+                );
+            })}
           </div>
+          {freeCourses.length > 6 && (
+            <div style={{ textAlign: "center", marginTop: "10px" }}>
+              <p
+                style={{
+                  color: "#007bff",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontStyle: "italic",
+                }}
+                onClick={() =>
+                  setVisibleFreeCount(
+                    visibleFreeCount === freeCourses.length ? 6 : freeCourses.length
+                  )
+                }
+              >
+                {visibleFreeCount === freeCourses.length ? "Ẩn bớt" : "Xem thêm khóa học..."}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Sidebar */}
+        {/* SIDEBAR */}
         <div style={styles.sidebarWrapper}>
           <div style={styles.sidebarStyleRelatedQuestion}>
             <h3 style={styles.sidebarTitle}>
-              <FaBookOpen style={styles.iconStyle} />
-              Khóa học liên quan
+              <FaBookOpen style={styles.iconStyle} /> Khóa học mới nhất
             </h3>
             <ul>
-              <li>HTML/CSS cơ bản</li>
-              <li>Javascript nâng cao</li>
-              <li>Fullstack với MERN</li>
+              {latestCourses.map((course) => (
+                <li key={course.id}>{course.title}</li>
+              ))}
             </ul>
           </div>
 
           <div style={styles.sidebarStyleHotQuestion}>
             <h3 style={styles.sidebarTitle}>
-              <FaFire style={styles.iconStyle} />
-              Khóa học nổi bật
+              <FaFire style={styles.iconStyle} /> Khóa học nổi bật
             </h3>
             <ul>
-              <li>Docker cơ bản</li>
-              <li>CI/CD Jenkins</li>
-              <li>TypeScript chuyên sâu</li>
+              {hotCourses.map(course => (
+                <li key={course.id}>{course.title}</li>
+              ))}
             </ul>
           </div>
         </div>
@@ -152,6 +273,16 @@ const styles = {
     gap: "20px",
     marginLeft: "160px",
     alignItems: "flex-start",
+    loadMoreButton: {
+    backgroundColor: "#4CAF50",
+    color: "white",
+    padding: "10px 16px",
+    fontSize: "14px",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    marginTop: "10px",
+  },
   },
   containerStyle: {
     backgroundColor: "#ffffff",
@@ -218,41 +349,68 @@ const styles = {
     marginTop: "20px",
   },
   courseCard: {
-    padding: "15px",
-    marginBottom: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #003366",
+    backgroundColor: "#003366",
     color: "white",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    textAlign: "left",
+    height: "180px",
+    overflow: "hidden",
+    lineHeight: "1.2",
+  },
+  courseImage: {
+    width: "100%",
+    height: "65px",
+    objectFit: "cover",
+    borderRadius: "6px",
+    marginBottom: "-15px",
   },
   courseTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "white",
+    fontSize: "15px",
+    fontWeight: "bold",
+    marginBottom: "4px",
+    //color: "white",
   },
   coursePrice: {
-    color: "#ffeb3b",
     fontWeight: "bold",
+    fontSize: "14px",
   },
   courseInfo: {
     fontSize: "14px",
-    marginTop: "5px",
+    marginTop: "3px",
+    //color: "white",
   },
   freeCourseCard: {
-    padding: "15px",
-    marginBottom: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    backgroundColor: "#f0f0f0",
-    color: "#333",
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #003366",
+    backgroundColor: "#003366",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    textAlign: "left",
+    height: "180px",
+    overflow: "hidden",
+    lineHeight: "1.2",
+  },
+  freeCourseInfo: {
+    fontSize: "14px",
+    marginTop: "5px",
+    color: "#white",
   },
   iconStyle: {
     fontSize: "20px",
     color: "#007bff",
   },
-  freeCourseInfo: {
-    fontSize: "14px",
-    marginTop: "5px",
-    color: "#777",
+  dotIcon: {
+    fontSize: "6px",
+    margin: "0 6px",
+    verticalAlign: "middle",
+    color: "#999",
   },
 };
 

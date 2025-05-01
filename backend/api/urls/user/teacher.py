@@ -5,8 +5,10 @@ from api.views.teacher.teacher_home.teacher_home2 import TeacherHome2View
 from api.views.teacher.teacher_home.teacher_home3 import TeacherHome3View
 
 from api.views.teacher.teacher_intro import TeacherIntroView
-from api.views.teacher.teacher_courses.teacher_courses import TeacherCoursesView
+from api.views.teacher.teacher_courses.teacher_lastestcourses import TeacherLatestCoursesAPIView
 from api.views.teacher.teacher_courses.teacher_addcourses import TeacherAddCoursesView
+from api.views.teacher.teacher_courses.teacher_bestcourses import TeacherBestCoursesAPIView
+from api.views.teacher.teacher_courses.teacher_detailcourses import TeacherDetailCoursesAPIView
 from api.views.teacher.teacher_docs.teacher_docs import TeacherDocView
 from api.views.teacher.teacher_homework.teacher_homework import TeacherHomeworkView
 from api.views.teacher.teacher_support.teacher_support import TeacherSupportView
@@ -26,8 +28,10 @@ urlpatterns = [
     path('teacher/teacher_home/teacher_home2/', TeacherHome2View.as_view(), name='teacher_home2'),
     path('teacher/teacher_home/teacher_home3/', TeacherHome3View.as_view(), name='teacher_home3'),
     path('teacher/teacher_intro/', TeacherIntroView.as_view(), name='teacher_intro'),
-    path('teacher/teacher_courses/teacher_courses/', TeacherCoursesView.as_view(), name='teacher_courses'),
-    path('teacher/teacher_courses/teacher_addcourses/', TeacherAddCoursesView.as_view(), name='teacher_courses'),
+    path('teacher/teacher_courses/teacher_lastestcourses/', TeacherLatestCoursesAPIView.as_view(), name='teacher_lastestcourses'),
+    path('teacher/teacher_courses/teacher_addcourses/', TeacherAddCoursesView.as_view(), name='teacher_addcourses'),
+    path('teacher/teacher_courses/teacher_bestcourses/', TeacherBestCoursesAPIView.as_view(), name='teacher_bestcourses'),
+    path('teacher/teacher_courses/teacher_detailcourses/<int:pk>/', TeacherDetailCoursesAPIView.as_view(), name='teacher_detailcourses'),
     path('teacher/teacher_docs/teacher_docs/', TeacherDocView.as_view(), name='teacher_docs'),
     path('teacher/teacher_homework/teacher_homework/', TeacherHomeworkView.as_view(), name='teacher_homework'),
     path('teacher/teacher_contact/teacher_contact/', TeacherContactView.as_view(), name='teacher_contact'),

@@ -53,6 +53,7 @@ import TeacherHomeworkTab from "./components/teacher/Tabs/TeacherHomeworkTab"
 import TeacherContactTab from "./components/teacher/Tabs/TeacherContactTab";
 import TeacherListCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/ListCourses"; 
 import TeacherAddCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/AddCourses";
+import TeacherDetailCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/DetailCourses";
 import TeacherPost from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Post";
 import TeacherRoadmap from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Roadmap";
 function NormalUserLayout({ children }) {
@@ -180,6 +181,7 @@ function App() {
         <Route path="/teacherhome3" element={<TeacherLayout><TeacherHome3 /></TeacherLayout>} />
         <Route path="/teacherintro" element={<TeacherLayout><TeacherIntroTab /></TeacherLayout>} />
         <Route path="/teachercourses/listcourses" element={<TeacherLayout><TeacherListCourses /></TeacherLayout>} />
+        <Route path="/teachercourses/listcourses/:courseId" element={<TeacherLayout><TeacherDetailCourses /></TeacherLayout>} />
         <Route path="/teachercourses/listcourses/addcourses" element={<TeacherLayout><TeacherAddCourses /></TeacherLayout>} />
         <Route path="/teachercourses/post" element={<TeacherLayout><TeacherPost /></TeacherLayout>} />
         <Route path="/teachercourses/roadmap" element={<TeacherLayout><TeacherRoadmap /></TeacherLayout>} />
