@@ -23,10 +23,11 @@ class LessonSerializer(serializers.ModelSerializer):
         return str(datetime.timedelta(seconds=total_seconds))
 
 class ChapterSerializer(serializers.ModelSerializer):
-    lessons = LessonSerializer(many=True)
+    lessons = LessonSerializer(many=True, read_only=True)
+
     class Meta:
         model = Chapter
-        fields = ['id', 'title', 'lessons']
+        fields = '__all__' 
 
 class CourseListSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
@@ -48,6 +49,12 @@ class CourseListSerializer(serializers.ModelSerializer):
         return obj.user.username if obj.user and hasattr(obj.user, 'username') else "Unknown"
 
 class CourseSerializer(serializers.ModelSerializer):
+    teacher = serializers.SerializerMethodField()
+    chapters = ChapterSerializer(many=True, read_only=True)
+
     class Meta:
         model = Course
-        fields = '__all__'
+        fields = '__all__'  # Gồm tất cả các trường: title, fee, video_count, user, v.v.
+
+    def get_teacher(self, obj):
+        return obj.user.username if obj.user and hasattr(obj.user, 'username') else "Unknown"

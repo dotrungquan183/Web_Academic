@@ -1,145 +1,325 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import {
-  FaClock,
-  FaGraduationCap,
-  FaLayerGroup,
-  FaPlayCircle,
-  FaTag,
-} from "react-icons/fa";
 import axios from "axios";
+import { getToken } from "../../../../../auth/authHelper";
+import TeacherCoursesLayout from "../../Layout";
+import {
+  FaMoneyBillWave,
+  FaClock,
+  FaUserTie,
+  FaUsers,
+  FaBookOpen,
+  FaFire,
+  FaPlus,
+  FaMinus
+} from "react-icons/fa";
 
 const BASE_URL = "http://localhost:8000";
 
-// ✅ Hàm xử lý chuỗi "HH:mm:ss" thành "hh giờ mm phút"
-function formatDuration(hhmmss) {
-  if (!hhmmss || typeof hhmmss !== "string") return "00 giờ 00 phút";
-  const parts = hhmmss.split(":").map(Number);
-  if (parts.length !== 3 || parts.some(isNaN)) return "00 giờ 00 phút";
-
-  const [hours, minutes] = parts;
-  return `${hours.toString().padStart(2, "0")} giờ ${minutes
-    .toString()
-    .padStart(2, "0")} phút`;
-}
-
-const levelDisplay = {
-  basic: "Cơ bản",
-  medium: "Trung bình",
-  hard: "Khó",
-};
-
-const CoursePreviewMedia = ({ videoSrc, thumbnail }) => {
-  if (videoSrc) {
-    return (
-      <video controls className="w-full rounded-md shadow" preload="metadata">
-        <source src={videoSrc} type="video/mp4" />
-        Trình duyệt của bạn không hỗ trợ phát video.
-      </video>
-    );
-  }
-
-  return (
-    <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-md shadow">
-      {thumbnail ? (
-        <img
-          src={thumbnail}
-          alt="Ảnh khóa học"
-          className="w-full h-full object-cover rounded-md"
-        />
-      ) : (
-        <span className="text-gray-400">Không có ảnh khóa học</span>
-      )}
-    </div>
-  );
-};
-
-function TeacherDetailCourses() {
+const TeacherDetailCourses = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
+  const [latestCourses, setLatestCourses] = useState([]);
+  const [hotCourses, setHotCourses] = useState([]);
+  const [videoURL, setVideoURL] = useState("");
+  const [introVideoURL, setIntroVideoURL] = useState("");
+  const [expandedChapters, setExpandedChapters] = useState({});
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await axios.get(
-          `${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`
-        );
+        const res = await axios.get(`${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`);
+        console.log("Dữ liệu khóa học nhận được:", res.data); // <-- Dòng này giúp kiểm tra dữ liệu
         setCourse(res.data);
+        setIntroVideoURL(`${BASE_URL}${res.data.intro_video}`);
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu khóa học:", error);
       }
     };
-
     fetchCourse();
   }, [courseId]);
 
-  if (!course) return <p>Đang tải dữ liệu...</p>;
+  useEffect(() => {
+    const fetchLatestCourses = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch(`${BASE_URL}/api/teacher/teacher_courses/teacher_lastestcourses/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        setLatestCourses(data);
+      } catch (error) {
+        console.error("Lỗi khi tải khóa học mới nhất:", error);
+      }
+    };
+    fetchLatestCourses();
+  }, []);
 
-  const videoURL = course.intro_video ? `${BASE_URL}${course.intro_video}` : null;
-  const thumbnailURL = course.thumbnail ? `${BASE_URL}${course.thumbnail}` : null;
-  const durationText = formatDuration(course.total_duration);
-  const videoCount = Number(course.video_count) || 0;
-  const studentCount = Number(course.student_count) || 0;
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}/api/teacher/teacher_courses/teacher_bestcourses/`)
+      .then((response) => setHotCourses(response.data))
+      .catch((error) => console.error("Lỗi khi tải khóa học nổi bật:", error));
+  }, []);
+
+  const toggleChapter = (chapterId) => {
+    setExpandedChapters((prev) => ({
+      ...prev,
+      [chapterId]: !prev[chapterId],
+    }));
+  };
+
+  const handleLessonClick = (lesson) => {
+    if (lesson.video) {
+      const fullURL = `${BASE_URL}${lesson.video}`;
+      setVideoURL((prev) => (prev === fullURL ? "" : fullURL)); // toggle video
+    }
+  };
+
+  if (!course) return <div>Đang tải...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 px-4">
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-          <p className="text-gray-600 mb-6">{course.intro}</p>
+    <TeacherCoursesLayout>
+      <div style={styles.pageLayout}>
+        <div style={styles.containerStyle}>
+          <div style={styles.headerWithButton}>
+            <h2 style={{ textTransform: "uppercase" }}>{course.title}</h2>
+          </div>
+          <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              <FaGraduationCap /> {studentCount} người học
+          <div style={styles.courseContentWrapper}>
+            <div style={styles.videoWrapper}>
+              {introVideoURL ? (
+                <video
+                  ref={videoRef}
+                  controls
+                  style={styles.videoStyle}
+                >
+                  <source src={introVideoURL} type="video/mp4" />
+                  Trình duyệt không hỗ trợ video.
+                </video>
+              ) : (
+                <p>Không có video được chọn.</p>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <FaPlayCircle /> {videoCount} video
-            </div>
-            <div className="flex items-center gap-2">
-              <FaClock /> {durationText}
-            </div>
-            <div className="flex items-center gap-2">
-              <FaLayerGroup /> Trình độ: {levelDisplay[course.level] || "Không rõ"}
-            </div>
-            <div className="flex items-center gap-2">
-              <FaTag /> Tags: {course.tags || "Không có"}
+
+            <div style={styles.courseInfo}>
+              <p>{course.description}</p>
+              <div style={styles.additionalInfoWrapper}>
+                <div style={styles.additionalInfoItem}>
+                  <FaMoneyBillWave style={styles.iconStyle} />
+                  <span style={{ fontWeight: "bold" }}>Phí: </span>${course.fee}
+                </div>
+                <div style={styles.additionalInfoItem}>
+                  <FaClock style={styles.iconStyle} />
+                  <span style={{ fontWeight: "bold" }}>Thời gian học: </span>{course.total_duration}
+                </div>
+                <div style={styles.additionalInfoItem}>
+                  <FaUserTie style={styles.iconStyle} />
+                  <span style={{ fontWeight: "bold" }}>Giáo viên: </span>{course.teacher}
+                </div>
+                <div style={styles.additionalInfoItem}>
+                  <FaUsers style={styles.iconStyle} />
+                  <span style={{ fontWeight: "bold" }}>Số học viên: </span>{course.student_count}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-2">Giới thiệu khóa học</h2>
-            <CoursePreviewMedia videoSrc={videoURL} thumbnail={thumbnailURL} />
+          <div style={styles.containerContent}>
+            <h3>Nội dung khóa học</h3>
+            {course.chapters.map((chapter, chapterIndex) => (
+              <div key={chapter.id}>
+                <div
+                  onClick={() => toggleChapter(chapter.id)}
+                  style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    fontWeight: "bold",
+                    marginTop: "10px"
+                  }}
+                >
+                  {expandedChapters[chapter.id] ? <FaMinus /> : <FaPlus />}
+                  <span style={{ marginLeft: "8px" }}>{`${chapterIndex + 1}. ${chapter.title}`}</span>
+                </div>
+
+                {expandedChapters[chapter.id] && (
+                  <ul style={{ listStyle: "none", paddingLeft: "20px" }}>
+                    {chapter.lessons.map((lesson, lessonIndex) => {
+                      const lessonVideoURL = `${BASE_URL}${lesson.video}`;
+                      const isSelected = videoURL === lessonVideoURL;
+
+                      return (
+                        <li
+                          key={lesson.id}
+                          onClick={() => handleLessonClick(lesson)}
+                          style={{
+                            cursor: "pointer",
+                            color: "#1976d2",
+                            padding: "5px 0"
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>{`${chapterIndex + 1}.${lessonIndex + 1} ${lesson.title}`}</span>
+                            <span style={{ fontSize: "14px", color: "#666" }}>{lesson.duration || "--:--"}</span>
+                          </div>
+
+                          {/* Hiển thị video nếu được chọn */}
+                          {isSelected && (
+                            <div style={{ marginTop: "10px" }}>
+                              <video
+                                key={lessonVideoURL}
+                                controls
+                                style={{
+                                  width: "100%",
+                                  borderRadius: "8px"
+                                }}
+                              >
+                                <source src={lessonVideoURL} type="video/mp4" />
+                                Trình duyệt không hỗ trợ video.
+                              </video>
+
+                              {/* Hiển thị tài liệu nếu có */}
+                              {lesson.document_link && (
+                                <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366"}}>
+                                  📄 Tài liệu:{" "}
+                                  <a
+                                    href={`${BASE_URL}${lesson.document_link}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: "#1d4ed8", textDecoration: "underline" }}
+                                  >
+                                    Xem tài liệu
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow p-4 space-y-4">
-          <div className="w-full h-48 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
-            {thumbnailURL ? (
-              <img
-                src={thumbnailURL}
-                alt="Ảnh khóa học"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-gray-400">Không có ảnh</span>
-            )}
+        <div style={styles.sidebarWrapper}>
+          <div style={styles.sidebarBox}>
+            <h3 style={styles.sidebarTitle}>
+              <FaBookOpen style={styles.iconStyle} /> Khóa học mới nhất
+            </h3>
+            <ul>
+              {latestCourses.map((course) => (
+                <li key={course.id}>{course.title}</li>
+              ))}
+            </ul>
           </div>
-
-          <div>
-            <p className="text-lg font-bold text-orange-600">
-              {Number(course.fee) === 0 ? "Miễn phí" : `${course.fee} VND`}
-            </p>
-            <button className="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">
-              Đăng ký học
-            </button>
-          </div>
-          <div className="text-sm text-gray-500">
-            Tạo lúc: {new Date(course.created_at).toLocaleString("vi-VN")}
+          <div style={styles.sidebarBox}>
+            <h3 style={styles.sidebarTitle}>
+              <FaFire style={styles.iconStyle} /> Khóa học nổi bật
+            </h3>
+            <ul>
+              {hotCourses.map((course) => (
+                <li key={course.id}>{course.title}</li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
-    </div>
+    </TeacherCoursesLayout>
   );
-}
+};
+
+const styles = {
+  pageLayout: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "20px",
+    marginLeft: "160px",
+    alignItems: "flex-start",
+  },
+  containerStyle: {
+    backgroundColor: "#ffffff",
+    padding: "15px",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    marginBottom: "30px",
+    marginLeft: "-70px",
+    width: "850px",
+    color: "#003366",
+  },
+  headerWithButton: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "16px",
+  },
+  courseContentWrapper: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "20px",
+    marginBottom: "30px",
+  },
+  videoWrapper: {
+    flex: 2,
+  },
+  videoStyle: {
+    width: "100%",
+    maxHeight: "410px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+  },
+  courseInfo: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+    padding: "20px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  },
+  additionalInfoWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  additionalInfoItem: {
+    display: "flex",
+    alignItems: "center",
+  },
+  iconStyle: {
+    marginRight: "10px",
+    color: "#1976d2",
+  },
+  containerContent: {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+  },
+  sidebarWrapper: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  sidebarBox: {
+    backgroundColor: "#f5f5f5",
+    padding: "16px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  },
+  sidebarTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "10px",
+    fontSize: "18px",
+    color: "#003366", 
+
+  },
+};
 
 export default TeacherDetailCourses;

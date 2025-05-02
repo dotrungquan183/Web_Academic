@@ -1,319 +1,389 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import StudentForumLayout from "../../Layout";
+import TeacherCoursesLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
+import {
+  FaBookOpen,
+  FaFire,
+  FaUserTie,
+  FaUsers,
+  FaClock,
+  FaMoneyBillWave,
+  FaPlayCircle,
+} from "react-icons/fa";
+import axios from "axios";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-function StudentForumQuestionDetail() {
-  const { id } = useParams();
-  const [question, setQuestion] = useState(null);
-  const [answers, setAnswers] = useState([]);
-  const [userVoteQuestion, setUserVoteQuestion] = useState(0);
-  const [userId, setUserId] = useState(null);
-  const [userName, setUserName] = useState("");
-  const [newAnswer, setNewAnswer] = useState("");
+const BASE_URL = "http://localhost:8000";
+
+const TeacherDetailCourses = () => {
+  const { courseId } = useParams();
+  const [course, setCourse] = useState(null);
+  const [latestCourses, setLatestCourses] = useState([]);
+  const [hotCourses, setHotCourses] = useState([]);
+  const [videoURL, setVideoURL] = useState("");
+  const [currentTime, setCurrentTime] = useState(0);
+  const videoRef = useRef(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
+    const fetchCourse = async () => {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUserId(payload.user_id);
-        setUserName(payload.username || "Người dùng ẩn danh");
-      } catch (err) {
-        console.error("Invalid token");
+        const res = await axios.get(
+          `${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`
+        );
+        setCourse(res.data);
+        setVideoURL(`${BASE_URL}${res.data.intro_video}`);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu khóa học:", error);
       }
-    }
+    };
+    fetchCourse();
+  }, [courseId]);
+
+  useEffect(() => {
+    const fetchLatestCourses = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch(
+          `${BASE_URL}/api/teacher/teacher_courses/teacher_lastestcourses/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await response.json();
+        setLatestCourses(data);
+      } catch (error) {
+        console.error("Lỗi khi tải khóa học mới nhất:", error);
+      }
+    };
+    fetchLatestCourses();
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
-      .then((res) => res.json())
-      .then((data) => {
-        const selectedQuestion = data.find((q) => q.id.toString() === id);
-        if (selectedQuestion) {
-          setQuestion(selectedQuestion);
-        }
-      });
-
-    const mockAnswers = [
-      {
-        id: 1,
-        username: "Nguyễn Văn A",
-        content: "Mình nghĩ bạn nên thử dùng useEffect để gọi API nhé!",
-        created_at: new Date().toISOString(),
-        userVote: 0,
-      },
-      {
-        id: 2,
-        username: "Trần Thị B",
-        content: "Bạn có thể thử kiểm tra token bằng thư viện jwt-decode sẽ rõ hơn đó.",
-        created_at: new Date().toISOString(),
-        userVote: 0,
-      },
-    ];
-    setAnswers(mockAnswers);
-  }, [id]);
+    axios
+      .get(`${BASE_URL}/api/teacher/teacher_courses/teacher_bestcourses/`)
+      .then((response) => setHotCourses(response.data))
+      .catch((error) =>
+        console.error("Lỗi khi tải khóa học nổi bật:", error)
+      );
+  }, []);
 
   useEffect(() => {
-    if (userId) {
-      const voteKey = `question_vote_${id}-${userId}`;
-      const storedVote = localStorage.getItem(voteKey);
-      setUserVoteQuestion(storedVote ? parseInt(storedVote, 10) : 0);
+    if (videoRef.current) {
+      videoRef.current.currentTime = currentTime;
     }
-  }, [id, userId]);
+  }, [currentTime]);
 
-  const handleVote = (action, type = "question", contentId = null) => {
-    if (!userId) return;
+  const handleVideoPlay = (e) => {
+    const video = e.target;
+    video.play();
+  };
 
-    const voteKey = `${type}_vote_${contentId}-${userId}`;
-    const currentVote = type === "question" ? userVoteQuestion : answers.find(a => a.id === contentId)?.userVote || 0;
-    const isLike = action === "like";
+  const handleSeek = (e) => {
+    const video = e.target;
+    setCurrentTime(video.currentTime);
+  };
 
-    let newVote = 0;
-    if (currentVote === 1 && isLike) newVote = 0;
-    else if (currentVote === -1 && !isLike) newVote = 0;
-    else newVote = isLike ? 1 : -1;
-
-    const voteData = {
-      vote_type: isLike ? "like" : "dislike",
-      vote_for: type,
-      content_id: contentId,
-    };
-
-    localStorage.setItem(voteKey, newVote.toString());
-
-    if (type === "question") {
-      setUserVoteQuestion(newVote);
+  const handleLessonClick = (lesson) => {
+    if (lesson.video) {
+      setVideoURL(`${BASE_URL}${lesson.video}`);
     } else {
-      setAnswers((prev) =>
-        prev.map((ans) =>
-          ans.id === contentId ? { ...ans, userVote: newVote } : ans
-        )
-      );
+      alert("Bài học này chưa có video.");
     }
-
-    const token = getToken();
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(voteData),
-    }).catch((error) => console.error("Error during vote:", error));
   };
 
-  const handlePostAnswer = () => {
-    if (!newAnswer.trim()) return;
-    const newAns = {
-      id: Date.now(),
-      username: userName,
-      content: newAnswer,
-      created_at: new Date().toISOString(),
-      userVote: 0,
-    };
-    setAnswers(prev => [newAns, ...prev]);
-    setNewAnswer("");
-  };
-
-  if (!question) return <p>Đang tải dữ liệu...</p>;
+  if (!course) return <div>Đang tải...</div>;
 
   return (
-    <StudentForumLayout>
-      <div style={containerStyle}>
-        <div style={questionContainerStyle}>
-          <div style={questionContentStyle}>
-            <h2>{question.title}</h2>
-            <div style={metaContainerStyle}>
-              <div style={{ display: "flex", gap: "4px" }}>
-                <button
-                  onClick={() => handleVote("like", "question", question.id)}
-                  style={{
-                    ...voteButton,
-                    backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
-                    color: userVoteQuestion === 1 ? "#fff" : "#000",
-                  }}
+    <TeacherCoursesLayout>
+      <div style={styles.pageLayout}>
+        {/* MAIN CONTAINER */}
+        <div style={styles.containerStyle}>
+          <div style={styles.headerWithButton}>
+            <h2 style={{ textTransform: "uppercase" }}>{course.title}</h2>
+          </div>
+          <p style={{ fontSize: "18px", marginBottom: "20px" }}>
+            {course.intro}
+          </p>
+          <div style={styles.courseContentWrapper}>
+            {/* LEFT: Video */}
+            <div style={styles.videoWrapper}>
+              {videoURL ? (
+                <video
+                  ref={videoRef}
+                  controls
+                  style={styles.videoStyle}
+                  onPlay={handleVideoPlay}
+                  onSeeked={handleSeek}
                 >
-                  👍
-                </button>
-                <button
-                  onClick={() => handleVote("dislike", "question", question.id)}
-                  style={{
-                    ...voteButton,
-                    backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
-                    color: userVoteQuestion === -1 ? "#fff" : "#000",
-                  }}
-                >
-                  👎
-                </button>
-              </div>
-              <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
-              <span>🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}</span>
+                  <source src={videoURL} type="video/mp4" />
+                  Trình duyệt không hỗ trợ video.
+                </video>
+              ) : (
+                <p>Không có video giới thiệu.</p>
+              )}
             </div>
-            <p>{question.content}</p>
+
+            {/* RIGHT: Course Info */}
+            <div style={styles.courseInfo}>
+              <div style={styles.additionalInfoWrapper}>
+                <div style={styles.additionalInfoItem}>
+                  <FaMoneyBillWave style={styles.iconStyle} />
+                  <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                    Phí:{" "}
+                  </span>
+                  <span style={{ fontSize: "18px", marginLeft: "10px" }}>
+                    ${course.fee}
+                  </span>
+                </div>
+
+                <div style={styles.additionalInfoItem}>
+                  <FaClock style={styles.iconStyle} />
+                  <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                    Thời gian học:{" "}
+                  </span>
+                  <span style={{ fontSize: "18px", marginLeft: "10px" }}>
+                    {course.total_duration}
+                  </span>
+                </div>
+
+                <div style={styles.additionalInfoItem}>
+                  <FaUserTie style={styles.iconStyle} />
+                  <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                    Giáo viên:{" "}
+                  </span>
+                  <span style={{ fontSize: "18px", marginLeft: "10px" }}>
+                    {course.teacher}
+                  </span>
+                </div>
+
+                <div style={styles.additionalInfoItem}>
+                  <FaUsers style={styles.iconStyle} />
+                  <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                    Số học viên:{" "}
+                  </span>
+                  <span style={{ fontSize: "18px", marginLeft: "10px" }}>
+                    {course.student_count}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* COURSE CONTENT */}
+          <div style={styles.containerContent}>
+            <h3 style={{ marginBottom: "16px" }}>Nội dung khóa học</h3>
+            {course.chapters && course.chapters.length > 0 ? (
+              course.chapters.map((chapter, index) => (
+                <Accordion key={chapter.id}>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls={`panel${index}-content`}
+                    id={`panel${index}-header`}
+                  >
+                    <Typography variant="h6">{chapter.title}</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    {chapter.lessons && chapter.lessons.length > 0 ? (
+                      <List>
+                        {chapter.lessons.map((lesson) => (
+                          <div key={lesson.id}>
+                            <ListItem disablePadding>
+                              <ListItemButton
+                                onClick={() => handleLessonClick(lesson)}
+                              >
+                                <FaPlayCircle
+                                  style={{
+                                    marginRight: "10px",
+                                    color: "#1976d2",
+                                  }}
+                                />
+                                <ListItemText primary={lesson.title} />
+                              </ListItemButton>
+                            </ListItem>
+                            <Divider />
+                          </div>
+                        ))}
+                      </List>
+                    ) : (
+                      <Typography variant="body2">
+                        Chưa có bài học nào trong chương này.
+                      </Typography>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
+              ))
+            ) : (
+              <Typography variant="body1">
+                Khóa học chưa có chương nào.
+              </Typography>
+            )}
           </div>
         </div>
 
-        <div style={answerContainer}>
-          <label style={answerCountLabel}>Tổng số câu trả lời: {answers.length}</label>
-          {answers.length > 0 ? (
+        {/* SIDEBAR */}
+        <div style={styles.sidebarWrapper}>
+          <div style={styles.sidebarBox}>
+            <h3 style={styles.sidebarTitle}>
+              <FaBookOpen style={styles.iconStyle} /> Khóa học mới nhất
+            </h3>
             <ul>
-              {answers.map((ans) => (
-                <li key={ans.id} style={answerItemStyle}>
-                  <div style={singleAnswerBox}>
-                    <p><strong>{ans.username}</strong></p>
-                    <p>{ans.content}</p>
-                    <div style={metaContainerStyle}>
-                      <div style={{ display: "flex", gap: "4px" }}>
-                        <button
-                          onClick={() => handleVote("like", "answer", ans.id)}
-                          style={{
-                            ...voteButton,
-                            backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
-                            color: ans.userVote === 1 ? "#fff" : "#000",
-                          }}
-                        >
-                          👍
-                        </button>
-                        <button
-                          onClick={() => handleVote("dislike", "answer", ans.id)}
-                          style={{
-                            ...voteButton,
-                            backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
-                            color: ans.userVote === -1 ? "#fff" : "#000",
-                          }}
-                        >
-                          👎
-                        </button>
-                      </div>
-                      <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
-                    </div>
-                  </div>
-                </li>
+              {latestCourses.map((course) => (
+                <li key={course.id}>{course.title}</li>
               ))}
             </ul>
-          ) : (
-            <p>Chưa có câu trả lời nào.</p>
-          )}
-        </div>
-
-        {/* Khung nhập câu trả lời */}
-        <div style={answerInputContainer}>
-          <label htmlFor="answer" style={answerCountLabel}>Câu trả lời của bạn:</label>
-          <textarea
-            id="answer"
-            value={newAnswer}
-            onChange={(e) => setNewAnswer(e.target.value)}
-            style={textAreaStyle}
-            placeholder="Nhập câu trả lời của bạn tại đây..."
-          />
-          <button style={submitButtonStyle} onClick={handlePostAnswer}>
-            Đăng câu trả lời
-          </button>
+          </div>
+          <div style={styles.sidebarBox}>
+            <h3 style={styles.sidebarTitle}>
+              <FaFire style={styles.iconStyle} /> Khóa học nổi bật
+            </h3>
+            <ul>
+              {hotCourses.map((course) => (
+                <li key={course.id}>{course.title}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-    </StudentForumLayout>
+    </TeacherCoursesLayout>
   );
-}
-
-// CSS styles
-const containerStyle = {
-  backgroundColor: "#f8f9fa",
-  padding: "15px",
-  borderRadius: "8px",
-  border: "1px solid #ddd",
-  marginBottom: "30px",
-  marginTop: "15px",
-  marginLeft: "160px",
-  width: "1020px",
-  color: "#003366",
 };
 
-const questionContainerStyle = {
-  backgroundColor: "#ffffff",
-  padding: "15px",
-  borderRadius: "8px",
-  border: "1px solid #ccc",
-  display: "flex",
-  marginBottom: "20px",
-};
+export default TeacherDetailCourses;
 
-const voteButton = {
-  padding: "4px 8px",
-  fontSize: "16px",
-  border: "1px solid #99ccff",
-  borderRadius: "4px",
-  cursor: "pointer",
-  transition: "background-color 0.2s ease",
+const styles = {
+  pageLayout: {
+    display: "flex",
+    flexDirection: "row",
+    padding: "20px",
+    gap: "20px",
+  },
+  containerStyle: {
+    flex: 3,
+    display: "flex",
+    flexDirection: "column",
+  },
+  headerWithButton: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  courseContentWrapper: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "20px",
+    marginTop: "20px",
+  },
+  videoWrapper: {
+    flex: 2,
+  },
+  videoStyle: {
+    width: "100%",
+    height: "auto",
+  },
+  courseInfo: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  additionalInfoWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  additionalInfoItem: {
+    display: "flex",
+    alignItems: "center",
+  },
+  iconStyle: {
+    marginRight: "10px",
+  },
+  containerContent: {
+    marginTop: "40px",
+  },
+  sidebarWrapper: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  sidebarBox: {
+    backgroundColor: "#f5f5f5",
+    padding
+::contentReference[oaicite:11]{index=11}
+     alignItems: "center",
+    marginBottom: "16px",
+  },
+  courseContentWrapper: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "20px",
+    marginBottom: "30px",
+  },
+  videoWrapper: {
+    flex: 2,
+  },
+  videoStyle: {
+    width: "100%",
+    maxHeight: "400px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+  },
+  courseInfo: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+    padding: "20px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  },
+  additionalInfoWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  additionalInfoItem: {
+    display: "flex",
+    alignItems: "center",
+  },
+  iconStyle: {
+    marginRight: "10px",
+    color: "#1976d2",
+  },
+  containerContent: {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+  },
+  sidebarWrapper: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  sidebarBox: {
+    backgroundColor: "#f5f5f5",
+    padding: "16px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  },
+  sidebarTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "10px",
+    fontSize: "18px",
+  },
 };
-
-const questionContentStyle = {
-  flex: 1,
-};
-
-const metaContainerStyle = {
-  fontSize: "14px",
-  color: "#003366",
-  marginBottom: "10px",
-  display: "flex",
-  gap: "30px",
-  alignItems: "center",
-  flexWrap: "wrap",
-};
-
-const answerContainer = {
-  backgroundColor: "#fff",
-  padding: "15px",
-  borderRadius: "8px",
-  border: "1px solid #ccc",
-  marginBottom: "20px",
-};
-
-const answerCountLabel = {
-  fontWeight: "bold",
-  fontSize: "16px",
-  marginBottom: "10px",
-  display: "block",
-};
-
-const answerItemStyle = {
-  marginBottom: "15px",
-  listStyle: "none",
-};
-
-const singleAnswerBox = {
-  border: "1px solid #ddd",
-  borderRadius: "6px",
-  padding: "10px",
-  backgroundColor: "#f0f8ff",
-};
-
-const answerInputContainer = {
-  backgroundColor: "#ffffff",
-  padding: "15px",
-  borderRadius: "8px",
-  border: "1px solid #ccc",
-};
-
-const textAreaStyle = {
-  width: "97.5%",
-  height: "200px",
-  borderRadius: "6px",
-  border: "2px solid #003366",
-  padding: "10px",
-  fontSize: "16px",
-  marginBottom: "10px",
-};
-
-const submitButtonStyle = {
-  backgroundColor: "#003366",
-  color: "#fff",
-  border: "none",
-  padding: "10px 20px",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "16px",
-  fontWeight: "bold",
-};
-
-export default StudentForumQuestionDetail;
