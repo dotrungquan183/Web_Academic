@@ -9,7 +9,7 @@ import os
 from moviepy import VideoFileClip
 from django.core.files.storage import FileSystemStorage
 from api.serializers import CourseListSerializer
-
+import urllib.parse
 class TeacherAddCoursesView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -98,7 +98,8 @@ class TeacherAddCoursesView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, course_id):
+    def put(self, request, *args, **kwargs):
+        course_id = kwargs['pk']  # Lấy tham số 'pk' từ kwargs
         user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
@@ -190,12 +191,25 @@ class TeacherAddCoursesView(APIView):
         user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
+        
+        # Lấy tham số filter từ URL và giải mã nếu cần
+        filter_param = request.GET.get('filter', 'all')
+        filter_param = urllib.parse.unquote(filter_param)  # Giải mã URL
 
-        courses = Course.objects.filter(user=user)
+        print(f"Filter param after decoding: {filter_param}")  # In ra giá trị sau khi giải mã
+        
+        # Kiểm tra giá trị filter và áp dụng filter tương ứng
+        if filter_param == 'Khóa học của tôi':  # So sánh với giá trị đã giải mã
+            print(f"Filter is 'mine', filtering courses for user: {user}")
+            courses = Course.objects.filter(user=user)
+        else:
+            print(f"Filter is 'all', fetching all courses.")
+            courses = Course.objects.all()
 
         serializer = CourseListSerializer(courses, many=True)
+        
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def get_video_duration(self, video_file):
         if not video_file:
             return timedelta()

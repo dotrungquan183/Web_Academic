@@ -13,7 +13,23 @@ const TeacherListCourses = () => {
   const [visibleFreeCount, setVisibleFreeCount] = useState(6);
   const [latestCourses, setLatestCourses] = useState([]);
   const [hotCourses, setHotCourses] = useState([]);
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
+  const fetchUserFromToken = useCallback(() => {
+    const token = getToken();
+    if (token) {
+      try {
+        jwtDecode(token);
+      } catch (error) {
+        console.error("Invalid token:", error);
+        navigate("/login");
+      }
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  // 🔥 Hot courses
   useEffect(() => {
     axios.get('http://localhost:8000/api/teacher/teacher_courses/teacher_bestcourses/')
       .then(response => {
@@ -24,6 +40,7 @@ const TeacherListCourses = () => {
       });
   }, []);
 
+  // 🆕 Latest courses
   useEffect(() => {
     const fetchLatestCourses = async () => {
       try {
@@ -45,45 +62,40 @@ const TeacherListCourses = () => {
     fetchLatestCourses();
   }, []);
 
-  const fetchUserFromToken = useCallback(() => {
-    const token = getToken();
-    if (token) {
-      try {
-        jwtDecode(token);
-      } catch (error) {
-        console.error("Invalid token:", error);
-        navigate("/login");
-      }
-    } else {
-      navigate("/login");
-    }
-  }, [navigate]);
-
+  // 📚 All/mine courses
   useEffect(() => {
+    console.log("Selected filter:", selectedFilter);
     fetchUserFromToken();
 
     const fetchCourses = async () => {
       try {
-        const token = getToken();
-        const response = await fetch(
-          "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) throw new Error("Failed to fetch courses");
+        const token = getToken(); // Lấy token từ helper
+        console.log("Token:", token); // Log token để kiểm tra
+        
+        const url = `http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/?filter=${selectedFilter}`;
+        console.log("API URL:", url); // Log URL để kiểm tra xem filter có đúng không
+        
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Gửi token cùng với header
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
+        
         const data = await response.json();
-        setCourses(data);
+        console.log("Fetched courses data:", data); // Log dữ liệu trả về từ API
+    
+        setCourses(data); // Cập nhật state với dữ liệu mới
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching courses:", error); // Log lỗi nếu có
       }
-    };
+    };    
 
     fetchCourses();
-  }, [fetchUserFromToken]);
+  }, [fetchUserFromToken, selectedFilter]); // 👈 Update khi selectedFilter đổi
 
   const proCourses = courses.filter(course => parseFloat(course.fee) > 0);
   const freeCourses = courses.filter(course => parseFloat(course.fee) === 0);
@@ -93,7 +105,40 @@ const TeacherListCourses = () => {
       <div style={styles.layoutStyle}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
-            <h2 style={{ textTransform: "uppercase" }}>DANH SÁCH KHÓA HỌC</h2>
+            {/* Bên trái: Tiêu đề và combobox nằm sát nhau */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexGrow: 1,
+              gap: "20px",
+              marginRight: "15px"
+            }}>
+              <h2 style={{
+                textTransform: "uppercase",
+                color: "#003366",
+                margin: 0,
+                fontSize: "20px"
+              }}>
+                Danh sách khóa học
+              </h2>
+              <select
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  fontSize: "14px",
+                  color: "#003366"
+                }}
+              >
+                <option value="Tất cả">Tất cả</option>
+                <option value="Khóa học của tôi">Khóa học của tôi</option>
+              </select>
+            </div>
+
+            {/* Bên phải: Nút thêm khóa học */}
             <button
               style={styles.addButton}
               onClick={() => navigate("/teachercourses/listcourses/addcourses")}
@@ -188,7 +233,7 @@ const TeacherListCourses = () => {
                         : "#003366",
                       cursor: "pointer", // thêm hiệu ứng chuột
                     }}
-                    onClick={() => navigate(`/teachercourses/teacher_listcourses/${course.id}`)}
+                    onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
                   >
                     <div style={styles.courseImageWrapper}>
                       <img
@@ -245,7 +290,13 @@ const TeacherListCourses = () => {
             </h3>
             <ul>
               {latestCourses.map((course) => (
-                <li key={course.id}>{course.title}</li>
+                <li
+                  key={course.id}
+                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)} // Điều hướng khi click
+                  style={{ ...styles.linkStyle, cursor: 'pointer' }} // Đảm bảo có con trỏ khi hover
+                >
+                  {course.title}
+                </li>
               ))}
             </ul>
           </div>
@@ -256,7 +307,13 @@ const TeacherListCourses = () => {
             </h3>
             <ul>
               {hotCourses.map(course => (
-                <li key={course.id}>{course.title}</li>
+                <li
+                  key={course.id}
+                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)} // Điều hướng khi click
+                  style={{ ...styles.linkStyle, cursor: 'pointer' }} // Đảm bảo có con trỏ khi hover
+                >
+                  {course.title}
+                </li>
               ))}
             </ul>
           </div>

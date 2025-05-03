@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams,  useNavigate  } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
 import TeacherCoursesLayout from "../../Layout";
+import { FaEdit } from "react-icons/fa";
+
 import {
   FaMoneyBillWave,
   FaClock,
@@ -18,6 +20,7 @@ const BASE_URL = "http://localhost:8000";
 
 const TeacherDetailCourses = () => {
   const { courseId } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [latestCourses, setLatestCourses] = useState([]);
   const [hotCourses, setHotCourses] = useState([]);
@@ -84,7 +87,14 @@ const TeacherDetailCourses = () => {
       <div style={styles.pageLayout}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
-            <h2 style={{ textTransform: "uppercase" }}>{course.title}</h2>
+            <h2 style={{ textTransform: "uppercase", margin: 0 }}>{course.title}</h2>
+            <button
+              style={styles.editButton}
+              onClick={() => navigate(`/teachercourses/listcourses/addcourses/${course.id}`, { state: { course } })}
+            >
+              <FaEdit style={{ marginRight: "6px" }} />
+              Chỉnh sửa
+            </button>
           </div>
           <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
 
@@ -184,7 +194,7 @@ const TeacherDetailCourses = () => {
                               {/* Hiển thị tài liệu nếu có */}
                               {lesson.document_link && (
                                 <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366"}}>
-                                  📄 Tài liệu:{" "}
+                                  📚 Tài liệu:{" "}
                                   <a
                                     href={`${BASE_URL}${lesson.document_link}`}
                                     target="_blank"
@@ -214,7 +224,13 @@ const TeacherDetailCourses = () => {
             </h3>
             <ul>
               {latestCourses.map((course) => (
-                <li key={course.id}>{course.title}</li>
+                <li
+                  key={course.id}
+                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                  style={{ ...styles.linkStyle, cursor: 'pointer' }}
+                >
+                  {course.title}
+                </li>
               ))}
             </ul>
           </div>
@@ -224,7 +240,13 @@ const TeacherDetailCourses = () => {
             </h3>
             <ul>
               {hotCourses.map((course) => (
-                <li key={course.id}>{course.title}</li>
+                <li
+                  key={course.id}
+                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                  style={{ ...styles.linkStyle, cursor: 'pointer' }}
+                >
+                  {course.title}
+                </li>
               ))}
             </ul>
           </div>
@@ -310,6 +332,7 @@ const styles = {
     padding: "16px",
     borderRadius: "10px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    color:"#003366",
   },
   sidebarTitle: {
     display: "flex",
@@ -318,7 +341,16 @@ const styles = {
     marginBottom: "10px",
     fontSize: "18px",
     color: "#003366", 
-
+  },
+  editButton: {
+    padding: "8px 12px",
+    backgroundColor: "#003366",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "15px"
   },
 };
 

@@ -19,21 +19,20 @@ function Login({ onLoginSuccess }) {
 
       const data = await response.json();
 
-      // Kiểm tra lỗi trả về từ API
       if (!response.ok) {
         alert(data.error || "Đăng nhập thất bại!");
         return;
       }
 
-      // Kiểm tra các trường dữ liệu cần thiết có tồn tại
       if (!data.role || !data.username || !data.avatar) {
         alert("Dữ liệu từ API không hợp lệ!");
         return;
       }
 
-      const avatarUrl = data?.avatar && data.avatar.trim() !== "" 
-        ? data.avatar 
-        : "/default-avatar.png";
+      const avatarUrl =
+        data?.avatar && data.avatar.trim() !== ""
+          ? data.avatar
+          : "/default-avatar.png";
 
       const userData = {
         username: data.username,
@@ -42,13 +41,8 @@ function Login({ onLoginSuccess }) {
         role: data.role,
       };
 
-      // Lưu thông tin người dùng vào localStorage
       localStorage.setItem("user", JSON.stringify(userData));
-
-      // Lưu token vào localStorage
-      localStorage.setItem("token", data.token); // Lưu token
-
-      // Gọi callback khi đăng nhập thành công
+      localStorage.setItem("token", data.token);
       onLoginSuccess(userData.role);
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);
@@ -57,15 +51,18 @@ function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div style={{ 
-      display: "flex", 
-      justifyContent: "center", 
-      alignItems: "center", 
-      height: "100vh",
-      backgroundImage: "url('https://images.pexels.com/photos/869258/pexels-photo-869258.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')",
-      backgroundSize: "cover",
-      backgroundPosition: "center"
-    }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        backgroundImage:
+          "url('https://images.pexels.com/photos/869258/pexels-photo-869258.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div
         style={{
           width: "350px",
@@ -75,8 +72,16 @@ function Login({ onLoginSuccess }) {
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
         }}
       >
-        <h2 style={{ textAlign: "center", textTransform: "uppercase", fontWeight: "bold", marginBottom: "10px" }}>
-          <FaUserGraduate size={28} color="#003366" /> Toán học sinh viên <FaUserGraduate size={28} color="#003366" />
+        <h2
+          style={{
+            textAlign: "center",
+            textTransform: "uppercase",
+            fontWeight: "bold",
+            marginBottom: "10px",
+          }}
+        >
+          <FaUserGraduate size={28} color="#003366" /> Toán học sinh viên{" "}
+          <FaUserGraduate size={28} color="#003366" />
         </h2>
 
         <form onSubmit={handleLogin} autoComplete="off">
@@ -87,7 +92,13 @@ function Login({ onLoginSuccess }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              style={{ width: "94%", padding: "10px", marginTop: "10px", border: "1px solid #ccc", borderRadius: "5px" }}
+              style={{
+                width: "94%",
+                padding: "10px",
+                marginTop: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+              }}
             />
           </div>
 
@@ -98,7 +109,13 @@ function Login({ onLoginSuccess }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ width: "94%", padding: "10px", marginTop: "10px", border: "1px solid #ccc", borderRadius: "5px" }}
+              style={{
+                width: "94%",
+                padding: "10px",
+                marginTop: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+              }}
             />
           </div>
 
@@ -130,9 +147,26 @@ function Login({ onLoginSuccess }) {
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: "15px" }}>
-          <Link to="/forgotpassword" style={{ color: "#003366", textDecoration: "none", fontWeight: "bold" }}>
+        {/* Quên mật khẩu và Đăng ký trên cùng một dòng */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "15px",
+            fontWeight: "bold",
+          }}
+        >
+          <Link
+            to="/forgotpassword"
+            style={{ color: "#003366", textDecoration: "none" }}
+          >
             Quên mật khẩu?
+          </Link>
+          <Link
+            to="/register"
+            style={{ color: "#003366", textDecoration: "none" }}
+          >
+            Đăng ký tài khoản
           </Link>
         </div>
       </div>

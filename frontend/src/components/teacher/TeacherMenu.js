@@ -11,6 +11,8 @@ const BASE_URL = "http://localhost:8000";
 function TeacherMenu() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Kiểm tra đăng nhập và bắt buộc reload nếu trang được load từ cache
   useEffect(() => {
@@ -44,23 +46,58 @@ function TeacherMenu() {
     window.location.replace("/login");
   };
 
+  // Hàm để xử lý tìm kiếm và gọi đến window.find
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+
+    // Clear timeout trước khi gán timeout mới
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const newSearchTimeout = setTimeout(() => {
+      // Tự động gọi window.find để tìm kiếm trên trang
+      if (e.target.value) {
+        window.find(e.target.value, false, false, true, false, false); // Tìm kiếm theo từ khóa
+      }
+    }, 500); // 500ms trễ trước khi gọi window.find
+
+    setSearchTimeout(newSearchTimeout);
+  };
+
+  // Hàm xử lý sự kiện khi nhấn Enter
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      if (searchTerm) {
+        window.find(searchTerm, false, false, true, false, false); // Tìm kiếm ngay lập tức khi nhấn Enter
+      }
+    }
+  };
+
   return (
     <div className="menu-container">
       <div className="header">
         <h1 className="header-title" style={{ marginBottom: "23px", fontSize: "28px"}}>
-        <div className="header">
-          <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
-          <span className="header-text black">Toán </span>
-          <span className="header-text black">Học </span>
-          <span className="header-text blue">Sinh </span>
-          <span className="header-text blue">Viên </span>
-        </div>
+          <div className="header">
+            <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
+            <span className="header-text black">Toán </span>
+            <span className="header-text black">Học </span>
+            <span className="header-text blue">Sinh </span>
+            <span className="header-text blue">Viên </span>
+          </div>
         </h1>
       </div>
 
       <div className="search-bar-container">
         <div className="search-bar">
-          <input type="text" placeholder="Tìm kiếm..." className="search-input" />
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm..." 
+            className="search-input" 
+            value={searchTerm}
+            onChange={handleSearch} // Gọi hàm handleSearch khi có sự thay đổi
+            onKeyPress={handleKeyPress} // Gọi hàm khi nhấn Enter
+          />
           <FaSearch className="search-icon" />
         </div>
       </div>
@@ -141,19 +178,13 @@ function TeacherMenu() {
           <Link to="/teacherintro">GIỚI THIỆU</Link>
         </li>
         <li>
-          <Link to="/teachercourses/listcourses">KHÓA HỌC</Link>
+          <Link to="/teachercourses/listcourses">QUẢN LÝ KHÓA HỌC</Link>
         </li>
         <li>
-          <Link to="/teacherdocs">TÀI LIỆU HỌC TẬP</Link>
+          <Link to="/teachersupport">KẾT QUẢ HỌC TẬP</Link>
         </li>
         <li>
-          <Link to="/teacherhomework">BÀI TẬP</Link>
-        </li>
-        <li>
-          <Link to="/teachersupport">HỖ TRỢ HỌC TẬP</Link>
-        </li>
-        <li>
-          <Link to="/teacherforum">DIỄN ĐÀN</Link>
+          <Link to="/teacherforum">DIỄN ĐÀN HỌC TẬP</Link>
         </li>
         <li>
           <Link to="/teachercontact">LIÊN HỆ</Link>

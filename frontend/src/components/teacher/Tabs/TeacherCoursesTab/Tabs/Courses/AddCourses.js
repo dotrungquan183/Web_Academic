@@ -46,11 +46,11 @@ function TeacherAddCourses() {
 
       setFormData({
         title: course.title || "",
-        description: course.description || "",
-        tags: course.tags?.join(", ") || "",
-        price: course.price || 0,
-        courseImage: course.courseImage || null,
-        introVideo: course.introVideo || null,
+        description: course.intro || "",
+        tags: course.tags || "", 
+        price: course.fee || 0,
+        courseImage: course.thumbnail || null,
+        introVideo: course.intro_video || null,
         qr_code: course.qr_code || null, // 🆕 Thêm dòng này
       });
       setChapters(course.chapters || []);
@@ -188,7 +188,7 @@ function TeacherAddCourses() {
     const isEditing = !!location.state?.course;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
-      ? `http://localhost:8000/api/teacher/courses/${location.state.course.id}/`
+      ? `http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/${location.state.course.id}/`
       : "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/";
   
     try {
@@ -220,7 +220,7 @@ function TeacherAddCourses() {
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
-            <FaBook size={24} color="#003366" /> {location.state?.course ? "Chỉnh sửa Khóa học" : "THÊM KHÓA HỌC"}
+            <FaBook size={24} color="#003366" /> {location.state?.course ? "CHỈNH SỬA KHÓA HỌC" : "THÊM KHÓA HỌC"}
           </h2>
 
           <form onSubmit={handleSubmit} style={styles.form}>

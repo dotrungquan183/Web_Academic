@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiTag, FiSave } from "react-icons/fi";
+import { FaBook, FaRoad, FaPen } from "react-icons/fa";
 
 function Sidebar() {
   const location = useLocation();
@@ -19,7 +19,7 @@ function Sidebar() {
             color: isCoursesTab ? "white" : "#003366",
           }}
         >
-          <FiTag style={styles.icon} /> Khóa học
+          <FaBook style={styles.icon} /> Khóa học
         </button>
       </Link>
 
@@ -31,7 +31,7 @@ function Sidebar() {
             color: isRoadmapTab ? "white" : "#003366",
           }}
         >
-          <FiTag style={styles.icon} /> Lộ trình
+          <FaRoad style={styles.icon} /> Lộ trình
         </button>
       </Link>
 
@@ -43,7 +43,7 @@ function Sidebar() {
             color: isPostTab ? "white" : "#003366",
           }}
         >
-          <FiSave style={styles.icon} /> Bài viết
+          <FaPen style={styles.icon} /> Bài viết
         </button>
       </Link>
     </div>
@@ -80,6 +80,7 @@ const styles = {
     marginRight: "10px",
     fontSize: "20px",
     verticalAlign: "middle",
+    
   },
   link: {
     textDecoration: "none",
