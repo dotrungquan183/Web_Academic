@@ -12,7 +12,8 @@ function StudentMenu() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const location = useLocation();
-
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -37,7 +38,24 @@ function StudentMenu() {
     setUser(null);
     window.location.replace("/");
   };
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
 
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    const newTimeout = setTimeout(() => {
+      if (value) window.find(value, false, false, true, false, false);
+    }, 500);
+
+    setSearchTimeout(newTimeout);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && searchTerm) {
+      window.find(searchTerm, false, false, true, false, false);
+    }
+  };
   return (
     <div className="menu-container">
       <div className="header">
@@ -51,11 +69,17 @@ function StudentMenu() {
         </div>
       </h1>
       </div>
-
       <div className="search-bar-container">
         <div className="search-bar">
-          <input type="text" placeholder="Tìm kiếm..." className="search-input" />
-          <FaSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm..."
+            className="search-input"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyPress}
+          />
+          <FaSearch className="search-icon" title="Tìm kiếm" />
         </div>
       </div>
 
@@ -129,20 +153,15 @@ function StudentMenu() {
         <li className={location.pathname === "/studentintro" ? "active" : ""}>
           <Link to="/studentintro">GIỚI THIỆU</Link>
         </li>
-        <li className={location.pathname === "/studentcourses" ? "active" : ""}>
-          <Link to="/studentcourses">KHÓA HỌC</Link>
+        <li className={location.pathname === "/studentcourses/listcourses" ? "active" : ""}>
+          <Link to="/studentcourses/listcourses">DANH SÁCH KHÓA HỌC</Link>
         </li>
-        <li className={location.pathname === "/studentdocs" ? "active" : ""}>
-          <Link to="/studentdocs">TÀI LIỆU HỌC TẬP</Link>
-        </li>
-        <li className={location.pathname === "/studenthomework" ? "active" : ""}>
-          <Link to="/studenthomework">BÀI TẬP</Link>
-        </li>
+
         <li className={location.pathname === "/studentsupport" ? "active" : ""}>
           <Link to="/studentsupport">HỖ TRỢ HỌC TẬP</Link>
         </li>
         <li className={location.pathname.startsWith("/studentforum") ? "active" : ""}>
-          <Link to="/studentforum">DIỄN ĐÀN</Link>
+          <Link to="/studentforum">DIỄN ĐÀN HỌC TẬP</Link>
         </li>
         <li className={location.pathname === "/studentcontact" ? "active" : ""}>
           <Link to="/studentcontact">LIÊN HỆ</Link>

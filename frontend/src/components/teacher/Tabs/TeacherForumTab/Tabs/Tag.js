@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import StudentForumLayout from "../Layout";
+import TeacherForumLayout from "../Layout";
 
 function TeacherForumTag() {
   const [data, setData] = useState(null);
@@ -22,7 +22,7 @@ function TeacherForumTag() {
   }, []);
 
   return (
-    <StudentForumLayout>
+    <TeacherForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
@@ -94,7 +94,7 @@ function TeacherForumTag() {
           <p>Không có câu hỏi nào.</p>
         )}
       </div>
-    </StudentForumLayout>
+    </TeacherForumLayout>
   );
 }
 

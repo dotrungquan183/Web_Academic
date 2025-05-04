@@ -1,63 +1,49 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
+import { FaBook, FaRoad, FaPen } from "react-icons/fa";
 
 function Sidebar() {
   const location = useLocation();
 
-  const isQuestionPath = location.pathname.startsWith("/teacherforum/question");
-  const isUnansweredTab = location.pathname.startsWith("/teacherforum/unanswer");
-  const isQuestionTab = isQuestionPath && !isUnansweredTab;
-  const isTagTab = location.pathname.startsWith("/teacherforum/tag");
-  const isSaveTab = location.pathname.startsWith("/teacherforum/save");
+  const isCoursesTab = location.pathname.startsWith("/studentcourses/listcourses");
+  const isRoadmapTab= location.pathname.startsWith("/studentcourses/roadmap");
+  const isPostTab = location.pathname.startsWith("/studentcourses/post");
 
   return (
     <div style={styles.sidebar}>
-      <Link to="/teacherforum/question" style={styles.link}>
+      <Link to="/studentcourses/listcourses" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: isQuestionTab ? "#003366" : "transparent",
-            color: isQuestionTab ? "white" : "#003366",
+            backgroundColor: isCoursesTab ? "#003366" : "transparent",
+            color: isCoursesTab ? "white" : "#003366",
           }}
         >
-          <FiHelpCircle style={styles.icon} /> Câu hỏi
+          <FaBook style={styles.icon} /> Khóa học
         </button>
       </Link>
 
-      <Link to="/teacherforum/unanswer" style={styles.link}>
+      <Link to="/studentcourses/roadmap" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: isUnansweredTab ? "#003366" : "transparent",
-            color: isUnansweredTab ? "white" : "#003366",
+            backgroundColor: isRoadmapTab ? "#003366" : "transparent",
+            color: isRoadmapTab ? "white" : "#003366",
           }}
         >
-          <FiXCircle style={styles.icon} /> Chưa trả lời
+          <FaRoad style={styles.icon} /> Lộ trình
         </button>
       </Link>
 
-      <Link to="/teacherforum/tag" style={styles.link}>
+      <Link to="/studentcourses/post" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: isTagTab ? "#003366" : "transparent",
-            color: isTagTab ? "white" : "#003366",
+            backgroundColor: isPostTab ? "#003366" : "transparent",
+            color: isPostTab ? "white" : "#003366",
           }}
         >
-          <FiTag style={styles.icon} /> Thẻ
-        </button>
-      </Link>
-
-      <Link to="/teacherforum/save" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: isSaveTab ? "#003366" : "transparent",
-            color: isSaveTab ? "white" : "#003366",
-          }}
-        >
-          <FiSave style={styles.icon} /> Lưu trữ
+          <FaPen style={styles.icon} /> Bài viết
         </button>
       </Link>
     </div>
@@ -94,6 +80,7 @@ const styles = {
     marginRight: "10px",
     fontSize: "20px",
     verticalAlign: "middle",
+    
   },
   link: {
     textDecoration: "none",

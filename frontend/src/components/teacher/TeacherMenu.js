@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
-import { 
-  FaCalculator, FaSearch, FaBell, FaCog, FaQuestionCircle, 
-  FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome 
+import { Link, useLocation } from "react-router-dom";
+import {
+  FaCalculator, FaSearch, FaBell, FaCog, FaQuestionCircle,
+  FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome
 } from "react-icons/fa";
 import "./teachermenu.css";
 import { useState, useEffect } from "react";
@@ -11,10 +11,9 @@ const BASE_URL = "http://localhost:8000";
 function TeacherMenu() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchTimeout, setSearchTimeout] = useState(null);
-
-  // Kiểm tra đăng nhập và bắt buộc reload nếu trang được load từ cache
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -22,83 +21,65 @@ function TeacherMenu() {
     } else {
       window.location.replace("/login");
     }
-    // Nếu trang được load lại từ bộ nhớ cache (ấn Back) thì reload lại trang
-    window.onpageshow = function (event) {
-      if (event.persisted) {
-        window.location.reload();
-      }
+    window.onpageshow = (event) => {
+      if (event.persisted) window.location.reload();
     };
   }, []);
 
   const getAvatarUrl = () => {
     if (user?.avatar) {
-      return user.avatar.startsWith("http")
-        ? user.avatar
-        : `${BASE_URL}${user.avatar}`;
+      return user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`;
     }
     return null;
   };
 
-  // Hàm đăng xuất: xóa dữ liệu và chuyển hướng bằng window.location.replace
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    window.location.replace("/login");
+    window.location.replace("/");
+  };
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    const newTimeout = setTimeout(() => {
+      if (value) window.find(value, false, false, true, false, false);
+    }, 500);
+
+    setSearchTimeout(newTimeout);
   };
 
-  // Hàm để xử lý tìm kiếm và gọi đến window.find
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-
-    // Clear timeout trước khi gán timeout mới
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    const newSearchTimeout = setTimeout(() => {
-      // Tự động gọi window.find để tìm kiếm trên trang
-      if (e.target.value) {
-        window.find(e.target.value, false, false, true, false, false); // Tìm kiếm theo từ khóa
-      }
-    }, 500); // 500ms trễ trước khi gọi window.find
-
-    setSearchTimeout(newSearchTimeout);
-  };
-
-  // Hàm xử lý sự kiện khi nhấn Enter
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      if (searchTerm) {
-        window.find(searchTerm, false, false, true, false, false); // Tìm kiếm ngay lập tức khi nhấn Enter
-      }
+    if (e.key === "Enter" && searchTerm) {
+      window.find(searchTerm, false, false, true, false, false);
     }
   };
-
   return (
     <div className="menu-container">
       <div className="header">
-        <h1 className="header-title" style={{ marginBottom: "23px", fontSize: "28px"}}>
-          <div className="header">
-            <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
-            <span className="header-text black">Toán </span>
-            <span className="header-text black">Học </span>
-            <span className="header-text blue">Sinh </span>
-            <span className="header-text blue">Viên </span>
-          </div>
-        </h1>
+      <h1 className="header-title" style={{ marginBottom: "23px", fontSize: "28px"}}>
+        <div className="header">
+          <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
+          <span className="header-text black">Toán </span>
+          <span className="header-text black">Học </span>
+          <span className="header-text blue">Sinh </span>
+          <span className="header-text blue">Viên </span>
+        </div>
+      </h1>
       </div>
-
       <div className="search-bar-container">
         <div className="search-bar">
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm..." 
-            className="search-input" 
+          <input
+            type="text"
+            placeholder="Tìm kiếm..."
+            className="search-input"
             value={searchTerm}
-            onChange={handleSearch} // Gọi hàm handleSearch khi có sự thay đổi
-            onKeyPress={handleKeyPress} // Gọi hàm khi nhấn Enter
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyPress}
           />
-          <FaSearch className="search-icon" />
+          <FaSearch className="search-icon" title="Tìm kiếm" />
         </div>
       </div>
 
@@ -115,9 +96,7 @@ function TeacherMenu() {
           onMouseLeave={() => setIsDropdownOpen(false)}
         >
           <div className="profile-info">
-            <span className="profile-email">
-              {user?.full_name || "Người dùng"}
-            </span>
+            <span className="profile-email">{user?.full_name || "Người dùng"}</span>
             {getAvatarUrl() ? (
               <img src={getAvatarUrl()} alt="Avatar" className="profile-avatar" />
             ) : (
@@ -129,64 +108,62 @@ function TeacherMenu() {
             <ul className="submenu-profile">
               <li>
                 <Link to="/profile">
-                  <FaUser className="submenu-icon" />
-                  <span style={{ marginLeft: "10px" }}>Hồ sơ</span>
+                  <FaUser className="submenu-icon" /> Hồ sơ
                 </Link>
               </li>
               <li>
                 <Link to="/settings">
-                  <FaWrench className="submenu-icon" />
-                  <span style={{ marginLeft: "10px" }}>Tài khoản</span>
+                  <FaWrench className="submenu-icon" /> Tài khoản
                 </Link>
               </li>
               <li onClick={handleLogout} className="logout hover-effect">
-                <FaSignOutAlt className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Đăng xuất</span>
+                <FaSignOutAlt className="submenu-icon" /> Đăng xuất
               </li>
             </ul>
           )}
         </div>
       </div>
 
+      {/* ======== NAVIGATION MENU ======== */}
       <ul className="nav">
-        <li>
-          <Link to="/teacher" className="menu-item">
-            TRANG CHỦ ▾
-          </Link>
+        <li className="menu-item-container">
+        <Link to="/teacher" className="menu-item no-underline">
+          TRANG CHỦ ▾
+        </Link>
+
           <ul className="submenu">
-            <li>
+            <li className={location.pathname === "/teacherhome1" ? "active" : ""}>
               <Link to="/teacherhome1">
-                <FaHome className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home1</span>
+                <FaHome className="submenu-icon" /> Home1
               </Link>
             </li>
-            <li>
+            <li className={location.pathname === "/teacherhome2" ? "active" : ""}>
               <Link to="/teacherhome2">
-                <FaBook className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home2</span>
+                <FaBook className="submenu-icon" /> Home2
               </Link>
             </li>
-            <li>
+            <li className={location.pathname === "/teacherhome3" ? "active" : ""}>
               <Link to="/teacherhome3">
-                <FaChalkboardTeacher className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home3</span>
+                <FaChalkboardTeacher className="submenu-icon" /> Home3
               </Link>
             </li>
           </ul>
         </li>
-        <li>
+
+        <li className={location.pathname === "/teacherintro" ? "active" : ""}>
           <Link to="/teacherintro">GIỚI THIỆU</Link>
         </li>
-        <li>
-          <Link to="/teachercourses/listcourses">QUẢN LÝ KHÓA HỌC</Link>
+        <li className={location.pathname === "/teachercourses/listcourses" ? "active" : ""}>
+          <Link to="/teachercourses/listcourses">DANH SÁCH KHÓA HỌC</Link>
         </li>
-        <li>
-          <Link to="/teachersupport">KẾT QUẢ HỌC TẬP</Link>
+
+        <li className={location.pathname === "/teacherresult" ? "active" : ""}>
+          <Link to="/teacherresult">BÁO CÁO THỐNG KÊ</Link>
         </li>
-        <li>
+        <li className={location.pathname.startsWith("/teacherforum") ? "active" : ""}>
           <Link to="/teacherforum">DIỄN ĐÀN HỌC TẬP</Link>
         </li>
-        <li>
+        <li className={location.pathname === "/teachercontact" ? "active" : ""}>
           <Link to="/teachercontact">LIÊN HỆ</Link>
         </li>
       </ul>

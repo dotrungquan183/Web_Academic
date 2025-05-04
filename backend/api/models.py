@@ -55,7 +55,6 @@ class Lesson(models.Model):
     video = models.FileField(upload_to='lesson_videos/', null=True, blank=True, verbose_name="Video bài học")
     duration = models.DurationField(verbose_name="Thời lượng")
     document_link = models.FileField(upload_to='lesson_documents/', null=True, blank=True, verbose_name="Tài liệu bài học")
-    exercise = models.OneToOneField('Exercise', null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Bài tập")
     created_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian tạo")  # Thêm default=timezone.now
 
     class Meta:
@@ -65,28 +64,24 @@ class Lesson(models.Model):
         return self.title
 
 
-class Exercise(models.Model):
-    total_questions = models.PositiveIntegerField(default=0, verbose_name="Tổng số câu hỏi")
+class ExerciseQuestion(models.Model):
+    lesson_id = models.PositiveIntegerField(verbose_name="ID bài học", default=1)  # Thay thế Exercise FK
 
-    class Meta:
-        db_table = 'exercise'
+    content = models.TextField(verbose_name="Nội dung câu hỏi")
 
-    def __str__(self):
-        return f"Bài tập #{self.id}"
+    answer_a = models.CharField(max_length=255, verbose_name="Đáp án A")
+    answer_b = models.CharField(max_length=255, verbose_name="Đáp án B")
+    answer_c = models.CharField(max_length=255, verbose_name="Đáp án C")
+    answer_d = models.CharField(max_length=255, verbose_name="Đáp án D")
 
-
-class MultipleChoiceQuestion(models.Model):
-    exercise = models.ForeignKey(Exercise, related_name="questions", on_delete=models.CASCADE)
-    content = models.TextField(verbose_name="Nội dung")
-    choices = models.JSONField(verbose_name="Các đáp án")  # Ví dụ: {"A": "Đáp án A", "B": "Đáp án B", ...}
-    correct_answer = models.CharField(max_length=1, verbose_name="Đáp án đúng")  # Ví dụ: "A"
+    correct_answer = models.CharField(max_length=1, verbose_name="Đáp án đúng")  # A/B/C/D
     score = models.DecimalField(max_digits=5, decimal_places=2, default=1.0, verbose_name="Điểm")
 
     class Meta:
-        db_table = 'multiple_choice_question'
+        db_table = 'exercise_question'
 
     def __str__(self):
-        return self.content
+        return f"Câu hỏi #{self.id} (Lesson {self.lesson_id})"
 
 class OTP(models.Model):
     user = models.ForeignKey("UserInformation", on_delete=models.CASCADE)

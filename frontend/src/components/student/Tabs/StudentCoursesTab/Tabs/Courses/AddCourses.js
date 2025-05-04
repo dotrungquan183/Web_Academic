@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaBook, FaPlus, FaVideo, FaFileAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import TeacherCoursesLayout from "../../Layout";
+import StudentCoursesLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 
-function TeacherAddCourses() {
+function StudentAddCourses() {
   const navigate = useNavigate();
   const location = useLocation();
   const hasCheckedPermissionRef = useRef(false);
@@ -40,7 +40,7 @@ function TeacherAddCourses() {
       const course = location.state.course;
       if (course.teacher_id && course.teacher_id !== currentUserId) {
         alert("Bạn không có quyền chỉnh sửa khóa học này!");
-        navigate("/teachercourses/listcourses");
+        navigate("/studentcourses/listcourses");
         return;
       }
 
@@ -205,7 +205,7 @@ function TeacherAddCourses() {
   
       if (response.ok) {
         alert(isEditing ? "Cập nhật khóa học thành công!" : "Thêm khóa học mới thành công!");
-        navigate("/teachercourses/listcourses");
+        navigate("/studentcourses/listcourses");
       } else {
         console.error("Lỗi chi tiết:", result);
         alert(`Lỗi: ${result.detail || result.error || JSON.stringify(result)}`);
@@ -216,7 +216,7 @@ function TeacherAddCourses() {
     }
   };  
   return (
-    <TeacherCoursesLayout>
+    <StudentCoursesLayout>
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
@@ -394,7 +394,7 @@ function TeacherAddCourses() {
           </form>
         </div>
       </div>
-    </TeacherCoursesLayout>
+    </StudentCoursesLayout>
   );
 }
 
@@ -517,4 +517,4 @@ const styles = {
   }
 };
 
-export default TeacherAddCourses;
+export default StudentAddCourses;

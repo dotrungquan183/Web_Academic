@@ -1,44 +1,45 @@
-.nav {
-    background-color: rgba(250, 252, 255, 0.05) !important; ;
-    padding: 10px 0;
-    text-align: none;
-    margin-left: -5px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-top: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía trên */
-    border-bottom: 2px solid rgba(255, 255, 255, 0.15); /* ✅ Viền trắng mờ phía dưới */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6); /* Bóng mờ màu đen */
-  }
-  
-  .nav ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .nav li {
-    display: inline-block;
-    position: relative;
-    color: #fff;
-    padding: 6px 45px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: color 0.3s ease;
-  }
-  
-  /* ✅ Đảm bảo chữ menu là trắng */
-  .nav li a {
-    color: white !important; 
-    text-decoration: none; /* Xóa gạch chân */
-    font-weight: none;
-    font-weight: bold;
-  }
-  
-  /* ✅ Hover vào menu chính */
-  .nav li:hover > a {
-    color: #a1cfff !important;
-  }
+nav {
+  background:  rgba(250, 252, 255, 0.05)  !important;/* Giảm opacity để nhìn thấy nền */
+  padding: 10px 0;
+  margin-left: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px); /* Tạo hiệu ứng mờ nền */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Thêm viền nhẹ để rõ hơn */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6); /* Bóng mờ màu đen */
+}
+
+.nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav li {
+  display: inline-block;
+  position: relative;
+  color: #fff;
+  padding: 6px 45px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+/* ✅ Đảm bảo chữ menu là trắng */
+.nav li a {
+  color: white !important; 
+  text-decoration: none;
+  position: relative;
+  font-weight: bold;
+}
+
+/* ✅ Chỉ gạch chân chữ, không gạch chân icon hoặc dấu tam giác */
+.nav li a span {
+  display: inline-block; /* Đảm bảo chỉ áp dụng hiệu ứng lên chữ */
+  position: relative;
+}
+
 /* ✅ Hover vào thì thêm gạch xanh bên dưới */
 .nav li:hover > a::before {  
   content: "";
@@ -61,6 +62,18 @@
   height: 2px;
   background-color: white;
 }
+
+
+/* ✅ Hover đổi màu chữ */
+.nav li:hover > a {
+  color: #a1cfff !important;
+}
+
+/* ✅ Không gạch chân TRANG CHỦ khi hover */
+.nav li:first-child:hover > a::after {
+  content: none !important;
+}
+
   /* 🔹 Submenu */
   .submenu {
     display: none;
@@ -99,7 +112,6 @@
   .submenu li:hover {
     background-color: #333;
   }
-  
   /* Table */
   table {
     width: 50%;
@@ -166,6 +178,7 @@
     display: inline-block;
     vertical-align: -5px;
   }
+
   /* ✅ Nút đăng ký */
   .register-button {
     padding: 10px 15px;
@@ -233,10 +246,12 @@
   /* 🎨 Giữ màu chữ */
   .header-text.black {
     color: white;
+    margin-bottom: -20px;
   }
   
   .header-text.blue {
     color: white; /* Bắt buộc giữ màu xanh */
+    margin-top: -20px;
   }
   
   /*Chỉnh vị trí của icons và profile*/
@@ -274,7 +289,7 @@
   
   /* Đổi màu khi hover */
   .profile-dropdown:hover .profile-email {
-    color: #a1cfff; /* Xanh dương */
+    color: #9dcbf8; /* Xanh dương */
   }
   
   /* Submenu hiển thị ngay dưới email */
@@ -353,5 +368,10 @@
     color: #a1cfff ;
     cursor: pointer;
   }
-
-  
+  /* Thêm ảnh nền đẹp, ý tưởng của siupestcuti */
+  body {
+    background-image: url('https://images.pexels.com/photos/11297732/pexels-photo-11297732.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }

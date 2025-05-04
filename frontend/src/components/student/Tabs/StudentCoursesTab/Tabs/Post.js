@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import TeacherForumLayout from "../Layout";
+import StudentForumLayout from "../Layout";
 
-function TeacherForumSave() {
+function StudentTagQuestion() {
   const [data, setData] = useState(null);
   const [timeFilter, setTimeFilter] = useState("Newest");
   const [bountyFilter, setBountyFilter] = useState("Bountied");
@@ -9,7 +9,7 @@ function TeacherForumSave() {
   const [qualityFilter, setQualityFilter] = useState("Score");
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/teacher/teacher_forum/teacher_save/")
+    fetch("http://localhost:8000/api/student/student_forum/student_tag/")
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched data:", data);
@@ -22,7 +22,7 @@ function TeacherForumSave() {
   }, []);
 
   return (
-    <TeacherForumLayout>
+    <StudentForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
@@ -94,7 +94,7 @@ function TeacherForumSave() {
           <p>Không có câu hỏi nào.</p>
         )}
       </div>
-    </TeacherForumLayout>
+    </StudentForumLayout>
   );
 }
 
@@ -203,4 +203,4 @@ const questionItemStyle = {
   lineHeight: "1.5",
 };
 
-export default TeacherForumSave;
+export default StudentTagQuestion;
