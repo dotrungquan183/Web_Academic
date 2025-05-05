@@ -5,7 +5,7 @@ from api.models import Course
 from api.serializers import CourseListSerializer
 from api.views.auth.authHelper import get_authenticated_user
 
-class TeacherLatestCoursesAPIView(APIView):
+class TeacherLastestCoursesView(APIView):
     def get(self, request):
         user, error_response = get_authenticated_user(request)
         if error_response:

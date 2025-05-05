@@ -38,7 +38,7 @@ function StudentAddCourses() {
       const decoded = jwtDecode(token);
       const currentUserId = decoded.user_id || decoded.id || decoded.sub;
       const course = location.state.course;
-      if (course.teacher_id && course.teacher_id !== currentUserId) {
+      if (course.student_id && course.student_id !== currentUserId) {
         alert("Bạn không có quyền chỉnh sửa khóa học này!");
         navigate("/studentcourses/listcourses");
         return;
@@ -188,8 +188,8 @@ function StudentAddCourses() {
     const isEditing = !!location.state?.course;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
-      ? `http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/${location.state.course.id}/`
-      : "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/";
+      ? `http://localhost:8000/api/student/student_courses/student_addcourses/${location.state.course.id}/`
+      : "http://localhost:8000/api/student/student_courses/student_addcourses/";
   
     try {
       const response = await fetch(endpoint, {

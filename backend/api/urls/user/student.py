@@ -5,7 +5,6 @@ from api.views.student.student_home.student_home2 import StudentHome2View
 from api.views.student.student_home.student_home3 import StudentHome3View
 
 from api.views.student.student_intro import StudentIntroView
-from api.views.student.student_courses.student_courses import StudentCoursesView
 from api.views.student.student_docs.student_docs import StudentDocView
 from api.views.student.student_homework.student_homework import StudentHomeworkView
 from api.views.student.student_support.student_support import StudentSupportView
@@ -20,6 +19,11 @@ from api.views.student.student_forum.student_tag import StudentTagView
 from api.views.student.student_forum.student_save import StudentSaveView
 from api.views.student.student_forum.student_question.student_relatedquestion import StudentRelatedQuestionView
 from api.views.student.student_forum.student_question.student_hotquestion import StudentHotQuestionView
+from api.views.student.student_courses.student_addcourses import StudentAddCoursesView
+from api.views.student.student_courses.student_lastestcourses import StudentLastestCoursesView
+from api.views.student.student_courses.student_bestcourses import StudentBestCoursesView
+from api.views.student.student_courses.student_detailcourses import StudentDetailCoursesView
+from api.views.student.student_courses.student_registrycourses import StudentRegistryCoursesView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -32,7 +36,14 @@ urlpatterns = [
     path('student/student_home/student_home2/', StudentHome2View.as_view(), name='student_home2'),
     path('student/student_home/student_home3/', StudentHome3View.as_view(), name='student_home3'),
     path('student/student_intro/', StudentIntroView.as_view(), name='student_intro'),
-    path('student/student_courses/student_courses/', StudentCoursesView.as_view(), name='student_courses'),
+    path('student/student_courses/student_addcourses/', StudentAddCoursesView.as_view(), name='student_addcourses'),
+    path('student/student_courses/student_addcourses/<int:pk>/', StudentAddCoursesView.as_view(), name='student_addcourses_id'),
+    path('student/student_courses/student_lastestcourses/', StudentLastestCoursesView.as_view(), name='student_lastestcourses'),
+    path('student/student_courses/student_bestcourses/', StudentBestCoursesView.as_view(), name='student_bestcourses'),
+    path('student/student_courses/student_detailcourses/', StudentDetailCoursesView.as_view(), name='student_detailcourses'),
+    path('student/student_courses/student_detailcourses/<int:pk>/', StudentDetailCoursesView.as_view(), name='student_detailcourses_id'),
+    path('student/student_courses/student_registrycourses/<int:course_id>/', StudentRegistryCoursesView.as_view(), name='student_registrycourses_id'),
+    path('student/student_courses/student_registrycourses/', StudentRegistryCoursesView.as_view(), name='student_registrycourses_id'),
     path('student/student_docs/student_docs/', StudentDocView.as_view(), name='student_docs'),
     path('student/student_homework/student_homework/', StudentHomeworkView.as_view(), name='student_homework'),
     path('student/student_contact/student_contact/', StudentContactView.as_view(), name='student_contact'),

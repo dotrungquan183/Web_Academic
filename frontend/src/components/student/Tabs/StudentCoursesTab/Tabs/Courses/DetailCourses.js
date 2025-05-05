@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams,  useNavigate  } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
-import TeacherCoursesLayout from "../../Layout";
+import StudentCoursesLayout from "../../Layout";
 import { FaEdit } from "react-icons/fa";
 
 import {
@@ -18,21 +18,22 @@ import {
 
 const BASE_URL = "http://localhost:8000";
 
-const TeacherDetailCourses = () => {
+const StudentDetailCourses = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [latestCourses, setLatestCourses] = useState([]);
-  const [hotCourses, setHotCourses] = useState([]);
+  const [hotCourses] = useState([]);
   const [videoURL, setVideoURL] = useState("");
   const [introVideoURL, setIntroVideoURL] = useState("");
   const [expandedChapters, setExpandedChapters] = useState({});
+  const [isRegistered, setIsRegistered] = useState(false);
   const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await axios.get(`${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`);
+        const res = await axios.get(`${BASE_URL}/api/student/student_courses/student_detailcourses/${courseId}/`);
         console.log("Dữ liệu khóa học nhận được:", res.data); // <-- Dòng này giúp kiểm tra dữ liệu
         setCourse(res.data);
         setIntroVideoURL(`${BASE_URL}${res.data.intro_video}`);
@@ -47,7 +48,7 @@ const TeacherDetailCourses = () => {
     const fetchLatestCourses = async () => {
       try {
         const token = getToken();
-        const response = await fetch(`${BASE_URL}/api/teacher/teacher_courses/teacher_lastestcourses/`, {
+        const response = await fetch(`${BASE_URL}/api/student/student_courses/student_lastestcourses/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
@@ -60,12 +61,103 @@ const TeacherDetailCourses = () => {
   }, []);
 
   useEffect(() => {
-    axios
-      .get(`${BASE_URL}/api/teacher/teacher_courses/teacher_bestcourses/`)
-      .then((response) => setHotCourses(response.data))
-      .catch((error) => console.error("Lỗi khi tải khóa học nổi bật:", error));
-  }, []);
+    const checkRegistration = async () => {
+      const token = localStorage.getItem("token"); // ✅ Đặt trong async function
+  
+      if (!token) {
+        console.warn("Không tìm thấy token.");
+        return;
+      }
+  
+      if (!course || !course.id) {
+        console.warn("Thông tin khóa học chưa sẵn sàng.");
+        return;
+      }
+  
+      try {
+        const response = await fetch(
+          `${BASE_URL}/api/student/student_courses/student_registrycourses/`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: "omit",
+          }
+        );
+  
+        if (!response.ok) {
+          throw new Error("Không thể lấy danh sách đăng ký");
+        }
+  
+        const data = await response.json();
+        console.log("✅ Danh sách khóa học đã đăng ký:", data);
+  
+        const isRegisteredCourse = data.registrations?.some((item) => item.course_id === course.id);
+        console.log(`✅ Đã đăng ký khóa ${course.id}:`, isRegisteredCourse);
+        setIsRegistered(isRegisteredCourse);
+      } catch (error) {
+        console.error("❌ Lỗi khi kiểm tra đăng ký:", error);
+      }
+    };
+  
+    checkRegistration();
+  }, [course]); // ✅ Chạy lại khi `course.id` thay đổi
+   
 
+  const handleRegister = async () => {
+    const token = localStorage.getItem("token");
+  
+    try {
+      const detailRes = await fetch(
+        `${BASE_URL}/api/student/student_courses/student_detailcourses/${course.id}/`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "omit",
+        }
+      );
+  
+      if (!detailRes.ok) {
+        throw new Error("Không lấy được thông tin khóa học");
+      }
+  
+      const courseDetail = await detailRes.json();
+  
+      if (parseFloat(courseDetail.fee) === 0) {
+        const endpoint = `${BASE_URL}/api/student/student_courses/student_registrycourses/${course.id}/`;
+  
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "omit",
+        });
+  
+        const result = await response.json();
+  
+        if (!response.ok) {
+          throw new Error(result.error || "Đăng ký thất bại.");
+        }
+  
+        alert(result.message || "Đăng ký thành công!");
+        setIsRegistered(true); // ✅ Cập nhật ngay
+  
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        alert("Khóa học này có phí. Không thể tự động đăng ký.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi đăng ký:", error.message);
+      alert(error.message || "Đăng ký thất bại.");
+    }
+  };  
+  
   const toggleChapter = (chapterId) => {
     setExpandedChapters((prev) => ({
       ...prev,
@@ -83,18 +175,18 @@ const TeacherDetailCourses = () => {
   if (!course) return <div>Đang tải...</div>;
 
   return (
-    <TeacherCoursesLayout>
+    <StudentCoursesLayout>
       <div style={styles.pageLayout}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
             <h2 style={{ textTransform: "uppercase", margin: 0 }}>{course.title}</h2>
-            <button
-              style={styles.editButton}
-              onClick={() => navigate(`/teachercourses/listcourses/addcourses/${course.id}`, { state: { course } })}
-            >
-              <FaEdit style={{ marginRight: "6px" }} />
-              Chỉnh sửa
-            </button>
+            {/* Nút đăng ký chỉ hiển thị nếu chưa đăng ký */}
+            {!isRegistered && (
+              <button style={styles.editButton} onClick={handleRegister}>
+                <FaEdit style={{ marginRight: "6px" }} />
+                Đăng ký học
+              </button>
+            )}
           </div>
           <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
 
@@ -127,7 +219,7 @@ const TeacherDetailCourses = () => {
                 </div>
                 <div style={styles.additionalInfoItem}>
                   <FaUserTie style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Giáo viên: </span>{course.teacher}
+                  <span style={{ fontWeight: "bold" }}>Giáo viên: </span>{course.student}
                 </div>
                 <div style={styles.additionalInfoItem}>
                   <FaUsers style={styles.iconStyle} />
@@ -176,24 +268,23 @@ const TeacherDetailCourses = () => {
                             <span style={{ fontSize: "14px", color: "#666" }}>{lesson.duration || "--:--"}</span>
                           </div>
 
-                          {/* Hiển thị video nếu được chọn */}
-                          {isSelected && (
+                          {/* Hiển thị video nếu đã đăng ký và bài học đang được chọn */}
+                          {isRegistered && isSelected && (
                             <div style={{ marginTop: "10px" }}>
                               <video
                                 key={lessonVideoURL}
                                 controls
                                 style={{
                                   width: "100%",
-                                  borderRadius: "8px"
+                                  borderRadius: "8px",
                                 }}
                               >
                                 <source src={lessonVideoURL} type="video/mp4" />
                                 Trình duyệt không hỗ trợ video.
                               </video>
 
-                              {/* Hiển thị tài liệu nếu có */}
                               {lesson.document_link && (
-                                <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366"}}>
+                                <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366" }}>
                                   📚 Tài liệu:{" "}
                                   <a
                                     href={`${BASE_URL}${lesson.document_link}`}
@@ -226,7 +317,7 @@ const TeacherDetailCourses = () => {
               {latestCourses.map((course) => (
                 <li
                   key={course.id}
-                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                  onClick={() => navigate(`/studentcourses/listcourses/${course.id}`)}
                   style={{ ...styles.linkStyle, cursor: 'pointer' }}
                 >
                   {course.title}
@@ -242,7 +333,7 @@ const TeacherDetailCourses = () => {
               {hotCourses.map((course) => (
                 <li
                   key={course.id}
-                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                  onClick={() => navigate(`/studentcourses/listcourses/${course.id}`)}
                   style={{ ...styles.linkStyle, cursor: 'pointer' }}
                 >
                   {course.title}
@@ -252,7 +343,7 @@ const TeacherDetailCourses = () => {
           </div>
         </div>
       </div>
-    </TeacherCoursesLayout>
+    </StudentCoursesLayout>
   );
 };
 
@@ -354,4 +445,4 @@ const styles = {
   },
 };
 
-export default TeacherDetailCourses;
+export default StudentDetailCourses;

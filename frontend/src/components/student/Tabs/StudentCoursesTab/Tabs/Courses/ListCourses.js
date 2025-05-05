@@ -13,7 +13,7 @@ const StudentListCourses = () => {
   const [visibleFreeCount, setVisibleFreeCount] = useState(6);
   const [latestCourses, setLatestCourses] = useState([]);
   const [hotCourses, setHotCourses] = useState([]);
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("Tất cả");
 
   const fetchUserFromToken = useCallback(() => {
     const token = getToken();
@@ -31,7 +31,7 @@ const StudentListCourses = () => {
 
   // 🔥 Hot courses
   useEffect(() => {
-    axios.get('http://localhost:8000/api/teacher/teacher_courses/teacher_bestcourses/')
+    axios.get('http://localhost:8000/api/student/student_courses/student_bestcourses/')
       .then(response => {
         setHotCourses(response.data);
       })
@@ -45,7 +45,7 @@ const StudentListCourses = () => {
     const fetchLatestCourses = async () => {
       try {
         const token = getToken();
-        const response = await fetch("http://localhost:8000/api/teacher/teacher_courses/teacher_lastestcourses/", {
+        const response = await fetch("http://localhost:8000/api/student/student_courses/student_lastestcourses/", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -72,7 +72,7 @@ const StudentListCourses = () => {
         const token = getToken(); // Lấy token từ helper
         console.log("Token:", token); // Log token để kiểm tra
         
-        const url = `http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/?filter=${selectedFilter}`;
+        const url = `http://localhost:8000/api/student/student_courses/student_addcourses/?filter=${selectedFilter}`;
         console.log("API URL:", url); // Log URL để kiểm tra xem filter có đúng không
         
         const response = await fetch(url, {
@@ -113,7 +113,7 @@ const StudentListCourses = () => {
               flexGrow: 1,
               gap: "20px",
               marginRight: "15px"
-            }}>
+              }}>
               <h2 style={{
                 textTransform: "uppercase",
                 color: "#003366",
@@ -122,29 +122,42 @@ const StudentListCourses = () => {
               }}>
                 Danh sách khóa học
               </h2>
-              <select
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  fontSize: "14px",
-                  color: "#003366"
-                }}
-              >
-                <option value="Tất cả">Tất cả</option>
-                <option value="Khóa học của tôi">Khóa học của tôi</option>
-              </select>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px"
+              }}>
+                <label
+                  htmlFor="course-filter"
+                  style={{
+                    color: "#003366",
+                    fontSize: "16px",
+                    fontWeight: "bold"
+                  }}
+                >
+                  Khóa học
+                </label>
+                <select
+                  id="course-filter"
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "5px",
+                    border: "2px solid #003366",
+                    fontSize: "14px",
+                    color: "#003366"
+                  }}
+                >
+                  <option value="Tất cả">Tất cả</option>
+                  <option value="a">a</option>
+                  <option value="b">b</option>
+                  <option value="c">c</option>
+                  <option value="d">d</option>
+                  <option value="e">e</option>
+                </select>
+              </div>
             </div>
-
-            {/* Bên phải: Nút thêm khóa học */}
-            <button
-              style={styles.addButton}
-              onClick={() => navigate("/studentcourses/listcourses/addcourses")}
-            >
-              + Thêm khóa học
-            </button>
           </div>
 
           {/* PRO COURSES */}
@@ -181,7 +194,7 @@ const StudentListCourses = () => {
                     <h3 style={styles.courseTitle}>{course.title}</h3>
                     <p style={styles.coursePrice}>${course.fee}</p>
                     <p style={styles.courseInfo}>
-                      <FaUserTie style={{ marginRight: "4px" }} /> {course.teacher}
+                      <FaUserTie style={{ marginRight: "4px" }} /> {course.student}
                       <span style={{ marginLeft: "12px" }}>🎬 {course.video_count} video</span>
                       <FaClock style={{ margin: "0 6px 0 12px" }} /> {course.total_duration}
                     </p>
