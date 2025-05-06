@@ -4,6 +4,8 @@ import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
 import StudentCoursesLayout from "../../Layout";
 import { FaEdit } from "react-icons/fa";
+import {jwtDecode} from "jwt-decode";
+import Modal from "./Modal";
 
 import {
   FaMoneyBillWave,
@@ -28,6 +30,9 @@ const StudentDetailCourses = () => {
   const [introVideoURL, setIntroVideoURL] = useState("");
   const [expandedChapters, setExpandedChapters] = useState({});
   const [isRegistered, setIsRegistered] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentContent, setPaymentContent] = useState("");
+
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -107,15 +112,20 @@ const StudentDetailCourses = () => {
 
   const handleRegister = async () => {
     const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Vui lòng đăng nhập trước khi đăng ký.");
+      return;
+    }
+  
+    const decodedToken = jwtDecode(token);
+    const userId = decodedToken.user_id || decodedToken.id;
   
     try {
       const detailRes = await fetch(
         `${BASE_URL}/api/student/student_courses/student_detailcourses/${course.id}/`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
           credentials: "omit",
         }
       );
@@ -131,32 +141,27 @@ const StudentDetailCourses = () => {
   
         const response = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
           credentials: "omit",
         });
   
         const result = await response.json();
-  
-        if (!response.ok) {
-          throw new Error(result.error || "Đăng ký thất bại.");
-        }
+        if (!response.ok) throw new Error(result.error || "Đăng ký thất bại.");
   
         alert(result.message || "Đăng ký thành công!");
-        setIsRegistered(true); // ✅ Cập nhật ngay
-  
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        setIsRegistered(true);
+        setTimeout(() => window.location.reload(), 1000);
       } else {
-        alert("Khóa học này có phí. Không thể tự động đăng ký.");
+        const paymentNote = `DANGKY_${course.id}_${userId}`;
+        setPaymentContent(paymentNote);
+        setShowPayment(true);
       }
     } catch (error) {
       console.error("Lỗi khi đăng ký:", error.message);
       alert(error.message || "Đăng ký thất bại.");
     }
-  };  
+  };
+  
   
   const toggleChapter = (chapterId) => {
     setExpandedChapters((prev) => ({
@@ -187,6 +192,25 @@ const StudentDetailCourses = () => {
                 Đăng ký học
               </button>
             )}
+            <Modal isOpen={showPayment} onClose={() => setShowPayment(false)}>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                <h3 style={{ color: "#003366" }}>Thông tin thanh toán</h3>
+                <img
+                  src="http://localhost:8000/image/qr_system.jpg"
+                  alt="QR thanh toán"
+                  style={{ width: "250px", height: "350px", borderRadius: "8px" }}
+                />
+                <p style={{ marginTop: "12px", fontWeight: "bold", color: "#003366" }}>
+                  Nội dung chuyển khoản: {paymentContent}
+                </p>
+                <p style={{ marginTop: "12px", fontWeight: "bold", color: "#003366" }}>
+                  Học phí : {course.fee} đồng
+                </p>
+                <p style={{ color: "#ff0000" }}>
+                  * Vui lòng chuyển khoản đúng nội dung để hệ thống xác nhận!
+                </p>
+              </div>
+            </Modal>
           </div>
           <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
 
