@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Menu from "./components/normal_users/Menu";
 import Login from "./components/auth/Login";
+import AccountPage from "./components/auth/Account";
 import ForgotPassword from "./components/auth/Forgotpassword";
+import FakeStackUserProfile from "./components/auth/Profile";
 import HomeTab from "./components/normal_users/Tabs/HomeTab";
 import Home1 from "./components/normal_users/Tabs/Home/Home1";
 import Home2 from "./components/normal_users/Tabs/Home/Home2";
@@ -217,6 +219,22 @@ function App() {
         <Route path="/register" element={<Register />} />
         {/* Quên mật khẩu */}
         <Route path="/forgotpassword" element={<ForgotPasswordHandler />} />
+
+        <Route path="/profile" element={
+          <>
+            <TeacherMenu />
+            <FakeStackUserProfile />
+            <TeacherFooter />
+          </>
+        } />
+
+        <Route path="/account" element={
+          <>
+            <TeacherMenu />
+            <AccountPage />
+            <TeacherFooter />
+          </>
+        } />
 
         {/* Sinh viên */}
         <Route path="/student" element={userRole === "student" ? <StudentMenu /> : <LoginHandler setUserRole={setUserRole} />} />

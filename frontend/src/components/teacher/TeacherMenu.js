@@ -112,7 +112,7 @@ function TeacherMenu() {
                 </Link>
               </li>
               <li>
-                <Link to="/settings">
+                <Link to="/account">
                   <FaWrench className="submenu-icon" /> Tài khoản
                 </Link>
               </li>
@@ -158,7 +158,7 @@ function TeacherMenu() {
         </li>
 
         <li className={location.pathname === "/teacherresult" ? "active" : ""}>
-          <Link to="/teacherresult">BÁO CÁO THỐNG KÊ</Link>
+          <Link to="/teacherresult">TÌNH TRẠNG HỌC TẬP</Link>
         </li>
         <li className={location.pathname.startsWith("/teacherforum") ? "active" : ""}>
           <Link to="/teacherforum">DIỄN ĐÀN HỌC TẬP</Link>
