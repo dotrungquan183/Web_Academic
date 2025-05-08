@@ -106,7 +106,7 @@ const styles = {
 const FakeStackUserProfile = () => {
   return (
     <div style={styles.pageLayout}>
-      {/* Top Section: User Info + About */}
+      {/* Top Section */}
       <div style={styles.topBox}>
         <div style={styles.avatarIcon}>👤</div>
         <div style={{ flex: 1 }}>
@@ -121,76 +121,128 @@ const FakeStackUserProfile = () => {
         </div>
       </div>
 
-      {/* Bottom Section: Main + Sidebar */}
+      {/* Bottom Layout */}
       <div style={styles.bottomLayout}>
-        {/* Main Content */}
-        <div style={styles.mainContent}>
-          <h3 style={styles.sectionTitle}>Stats</h3>
-          <div style={styles.infoGrid}>
-            <p>⭐ <strong>Reputation:</strong> 14,361</p>
-            <p>📈 <strong>Ranking:</strong> #48 this quarter</p>
-            <p>💬 <strong>Answers:</strong> 1</p>
-            <p>❓ <strong>Questions:</strong> 0</p>
-            <p>
-              🌐 <strong>Communities:</strong><br />
-              Mathematics (14.4k), MathOverflow (1.7k)
-            </p>
+      {/* Main Content (Right side) */}
+      <div style={styles.mainContent}>
+        {/* Reputation */}
+        <div style={styles.section}>
+          <div style={styles.sectionHeader}>
+            <h3 style={styles.sectionTitle}>Reputation</h3>
           </div>
-
-          <hr style={{ margin: "16px 0" }} />
-
-          {/* Badges Section */}
-          <h3 style={styles.sectionTitle}>Badges</h3>
-          <div style={styles.badgesRow}>
-            <div style={styles.badge}>
-              🥇<span>Gold</span>
-              <strong>0</strong>
+          <div style={styles.card}>
+            <div style={styles.reputationItem}>
+              <div style={{ color: "red", display: "inline-block", marginRight: "10px" , fontWeight:"bold"}}>-4</div>
+              <div style={{ display: "inline-block" }}>
+                Is possible to find a function
+              </div>
             </div>
-            <div style={styles.badge}>
-              🥈<span>Silver</span>
-              <strong>7</strong>
-            </div>
-            <div style={styles.badge}>
-              🥉<span>Bronze</span>
-              <strong>5</strong>
+            <div style={styles.reputationItem}>
+              <div style={{ color: "green", display: "inline-block", marginRight: "10px", fontWeight:"bold"}}>+10</div>
+              <div style={{ display: "inline-block" }}>
+                Characteristic function of product of two random variables with arbitrary normal distributions
+              </div>
             </div>
           </div>
-          <p>🥈 Silver: Yearling × 7</p>
-          <p>🥉 Bronze: Teacher, Editor, Critic</p>
         </div>
 
-        {/* Sidebar */}
+        {/* Questions */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Questions</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>     
+            <a href="#" style={styles.viewAllLink}>View all 97 questions</a>
+            <div style={styles.filterBar}>
+              <div style={styles.filterButton}>Score</div>
+              <div style={{ ...styles.filterButton, fontWeight: "bold" }}>Activity</div>
+              <div style={styles.filterButton}>Newest</div>
+              <div style={styles.filterButton}>Views</div>
+            </div>
+          </div>
+          <ul style={styles.list}>
+            <li>-2 — Is possible to find a function f... (1 hour ago)</li>
+            <li>9 — Compute ∫₀ ln(...) dx (Sep 17, 2024)</li>
+            <li>1 — Compute lim ∫γR (Apr 10)</li>
+            <li>0 — Determine whether a straight line... (Feb 24)</li>
+            <li>1 — Proof of additivity... (Aug 9, 2024)</li>
+          </ul>
+        </div>
+
+        {/* Answers */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Answers</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <a href="#" style={styles.viewAllLink}>View all 23 answers</a>
+            <div style={styles.filterBar}>
+              <div style={{ ...styles.filterButton, fontWeight: "bold" }}>Score</div>
+              <div style={styles.filterButton}>Activity</div>
+              <div style={styles.filterButton}>Newest</div>
+            </div>
+          </div>
+          <ul style={styles.list}>
+            <li>5 — Evaluating lim... (Oct 22, 2024)</li>
+            <li>3 — Geodesics (definition) (Jul 12, 2024)</li>
+            <li>3 — Find Integral using Trapezoid method (Dec 5, 2024)</li>
+            <li>3 — Let α and β be... (Dec 29, 2024)</li>
+            <li>2 — Proof of integrals... (Sep 16, 2024)</li>
+          </ul>
+        </div>
+
+
+        {/* Tags */}
+        <div style={styles.section}>
+          <div style={styles.sectionHeader}>
+            <h3 style={styles.sectionTitle}>Tags</h3>
+            <a href="#">View all 81 tags</a>
+          </div>
+          <ul style={styles.tagList}>
+            <li><strong>real-analysis</strong> — 8 score — 13 posts</li>
+            <li><strong>limits</strong> — 6 score — 10 posts</li>
+            <li><strong>integration</strong> — 5 score — 11 posts</li>
+            <li><strong>analysis</strong> — 4 score — 3 posts</li>
+          </ul>
+        </div>
+      </div>
+
+        {/* Sidebar (right) */}
         <div style={styles.sidebarWrapper}>
           <div style={styles.sidebarBox}>
-            <div style={styles.sectionTitle}>Top Tags</div>
-            <ul>
-              <li>discussion (0)</li>
-              <li>undeletion (0)</li>
-              <li>re-open (0)</li>
-              <li>big-list (0)</li>
-            </ul>
-          </div>
-
-          <div style={styles.sidebarBox}>
-            <div style={styles.sectionTitle}>Newest Posts</div>
-            <div style={styles.filterBar}>
-              <div style={styles.filterButton}>All</div>
-              <div style={styles.filterButton}>Answers</div>
-              <div style={styles.filterButton}>Questions</div>
-              <div style={styles.filterButton}>Votes</div>
+            <h3 style={styles.sectionTitle}>Stats</h3>
+            <div style={styles.infoGrid}>
+              <p>⭐ <strong>Reputation:</strong> 14,361</p>
+              <p>📈 <strong>Ranking:</strong> #48 </p>
+              <p>💬 <strong>Answers:</strong> 1</p>
+              <p>❓ <strong>Questions:</strong> 0</p>
             </div>
-            <p>Requests for Reopen & Undeletion Votes (June 25, 2024)</p>
           </div>
 
           <div style={styles.sidebarBox}>
-            <div style={styles.sectionTitle}>Top Posts</div>
-            <ul style={{ paddingLeft: "20px" }}>
-              <li>Are these figures homeomorphic? (47)</li>
-              <li>Are βQ and β(βQ∖Q) homeomorphic? (22)</li>
-              <li>Does ∑∞n=1|sin(n)|/n converge? (20)</li>
-              <li>Example of a point not the limit of any sequence... (18)</li>
-              <li>Zero distance between closed sets in metric space (15)</li>
-            </ul>
+            <h3 style={styles.sectionTitle}>Badges</h3>
+            <div style={styles.badgesRow}>
+              <div style={styles.badge}>
+                🥇<span>Gold</span>
+                <strong>0</strong>
+              </div>
+              <div style={styles.badge}>
+                🥈<span>Silver</span>
+                <strong>7</strong>
+              </div>
+              <div style={styles.badge}>
+                🥉<span>Bronze</span>
+                <strong>5</strong>
+              </div>
+            </div>
+            <p>🥈 Silver: Yearling × 7</p>
+            <p>🥉 Bronze: Teacher, Editor, Critic</p>
+          </div>
+
+          <div style={styles.sidebarBox}>
+            <h3 style={styles.sectionTitle}>Votes Cast</h3>
+            <div style={styles.infoGrid}>
+              <p>🔼 <strong>Upvotes:</strong> 201</p>
+              <p>🔽 <strong>Downvotes:</strong> 34</p>
+              <p>❓ <strong>Question Votes:</strong> 67</p>
+              <p>💬 <strong>Answer Votes:</strong> 168</p>
+            </div>
           </div>
         </div>
       </div>
