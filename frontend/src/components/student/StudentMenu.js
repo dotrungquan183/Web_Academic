@@ -107,7 +107,7 @@ function StudentMenu() {
           {isDropdownOpen && (
             <ul className="submenu-profile">
               <li>
-                <Link to="/profile">
+                <Link to="/studentprofile/forum">
                   <FaUser className="submenu-icon" /> Hồ sơ
                 </Link>
               </li>

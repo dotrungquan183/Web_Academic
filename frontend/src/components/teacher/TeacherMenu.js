@@ -107,7 +107,7 @@ function TeacherMenu() {
           {isDropdownOpen && (
             <ul className="submenu-profile">
               <li>
-                <Link to="/profile">
+                <Link to="/teacherprofile/forum">
                   <FaUser className="submenu-icon" /> Hồ sơ
                 </Link>
               </li>

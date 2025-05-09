@@ -105,15 +105,16 @@ class OTP(models.Model):
 class UserInformation(models.Model):  
     user = models.OneToOneField(User, on_delete=models.CASCADE, db_column="user_id", primary_key=True)
     full_name = models.CharField(max_length=255)
-    #username = models.CharField(max_length=255, unique=True, null=False, blank=False)  # Bắt buộc, không trùng
-    #password = models.CharField(max_length=255, null=False, blank=False)  # Bắt buộc nhập
-    #email = models.CharField(max_length=255, unique=True)  # Bắt buộc, không trùng
     phone = models.CharField(max_length=20, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=[("Nam", "Nam"), ("Nữ", "Nữ")])
     user_type = models.CharField(max_length=50)
     address = models.TextField(max_length=255, null=True, blank=True)
     avatar = models.CharField(max_length=255, null=True, blank=True)
+    
+    # ✅ Thêm trường reputation ở đây
+    reputation = models.IntegerField(default=0)
+
     class Meta:
         db_table = "user_info"
 
@@ -126,7 +127,7 @@ class Question(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_answer_id = models.IntegerField(null=True, blank=True)
-    bounty_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0)
+    bounty_amount = models.IntegerField(null=True, blank=True, default=0)
 
     def __str__(self):
         return self.title

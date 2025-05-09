@@ -1051,9 +1051,11 @@ const handleDeleteQuestion = (questionId) => {
           <div style={metaContainerStyle}>
             <div style={{ display: "flex", gap: "4px" }}>
               <button
+                disabled={parseInt(question?.user_id) === parseInt(userId)}
                 onClick={() => handleVote("like", "question", question.id)}
                 style={{
                   ...voteButton,
+                  cursor: question?.user_id === userId ? "not-allowed" : "pointer",
                   backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
                   color: userVoteQuestion === 1 ? "#fff" : "#000",
                 }}
@@ -1061,9 +1063,11 @@ const handleDeleteQuestion = (questionId) => {
                 👍
               </button>
               <button
+                disabled={parseInt(question?.user_id) === parseInt(userId)}
                 onClick={() => handleVote("dislike", "question", question.id)}
                 style={{
                   ...voteButton,
+                  cursor: question?.user_id === userId ? "not-allowed" : "pointer",
                   backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
                   color: userVoteQuestion === -1 ? "#fff" : "#000",
                 }}
@@ -1257,8 +1261,10 @@ const handleDeleteQuestion = (questionId) => {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <button
                         onClick={() => handleVote("like", "answer", ans.id)}
+                        disabled={ans?.user_id === userId}
                         style={{
                           ...voteButton,
+                          cursor: ans?.user_id === userId ? "not-allowed" : "pointer",
                           backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
                           color: ans.userVote === 1 ? "#fff" : "#000",
                         }}
@@ -1274,9 +1280,11 @@ const handleDeleteQuestion = (questionId) => {
                       </button>
 
                       <button
+                        disabled={ans?.user_id === userId}
                         onClick={() => handleVote("dislike", "answer", ans.id)}
                         style={{
                           ...voteButton,
+                          cursor: ans?.user_id === userId ? "not-allowed" : "pointer",
                           backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
                           color: ans.userVote === -1 ? "#fff" : "#000",
                         }}

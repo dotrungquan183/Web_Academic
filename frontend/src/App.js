@@ -4,7 +4,7 @@ import Menu from "./components/normal_users/Menu";
 import Login from "./components/auth/Login";
 import AccountPage from "./components/auth/Account";
 import ForgotPassword from "./components/auth/Forgotpassword";
-import FakeStackUserProfile from "./components/auth/Profile";
+
 import HomeTab from "./components/normal_users/Tabs/HomeTab";
 import Home1 from "./components/normal_users/Tabs/Home/Home1";
 import Home2 from "./components/normal_users/Tabs/Home/Home2";
@@ -41,6 +41,8 @@ import StudentAddCourses from "./components/student/Tabs/StudentCoursesTab/Tabs/
 import StudentDetailCourses from "./components/student/Tabs/StudentCoursesTab/Tabs/Courses/DetailCourses";
 import StudentPost from "./components/student/Tabs/StudentCoursesTab/Tabs/Post";
 import StudentRoadmap from "./components/student/Tabs/StudentCoursesTab/Tabs/Roadmap";
+import StudentProfileCourses from "./components/student/Profile/Tabs/ProfileCourses";
+import StudentProfileForum from "./components/student/Profile/Tabs/ProfileForum";
 
 import TeacherMenu from "./components/teacher/TeacherMenu";
 import TeacherFooter from "./components/teacher/TeacherFooter";
@@ -65,6 +67,9 @@ import TeacherPost from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Post";
 import TeacherRoadmap from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Roadmap";
 import TeacherAskQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/AskQuestion"
 import TeacherForumQuestionDetail from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/DetailQuestion"
+import TeacherProfileCourses from "./components/teacher/Profile/Tabs/ProfileCourses";
+import TeacherProfileForum from "./components/teacher/Profile/Tabs/ProfileForum";
+
 function NormalUserLayout({ children }) {
   return (
     <>
@@ -188,7 +193,9 @@ function App() {
         <Route path="/studentforum/question/:id" element={<StudentLayout><StudentForumQuestionDetail /></StudentLayout>} />
         <Route path="/studentforum/unanswer" element={<StudentLayout><StudentForumUnanswer /></StudentLayout>} />
         <Route path="/studentforum/tag" element={<StudentLayout><StudentForumTag /></StudentLayout>} />
-        <Route path="/studentforum/save" element={<StudentLayout><StudentForumSave /></StudentLayout>} />
+        <Route path="/studentforum/save" element={<StudentLayout><StudentForumSave /></StudentLayout>} />       
+        <Route path="/studentprofile/courses" element={<StudentLayout><StudentProfileCourses /></StudentLayout>} />
+        <Route path="/studentprofile/forum" element={<StudentLayout><StudentProfileForum /></StudentLayout>} />
 
         <Route path="/teacher" element={<TeacherLayout><TeacherHomeTab /></TeacherLayout>} />
         <Route path="/teacherhome1" element={<TeacherLayout><TeacherHome1 /></TeacherLayout>} />
@@ -212,6 +219,8 @@ function App() {
         <Route path="/teacherforum/unanswer" element={<TeacherLayout><TeacherForumUnanswer /></TeacherLayout>} />
         <Route path="/teacherforum/tag" element={<TeacherLayout><TeacherForumTag /></TeacherLayout>} />
         <Route path="/teacherforum/save" element={<TeacherLayout><TeacherForumSave /></TeacherLayout>} />
+        <Route path="/teacherprofile/courses" element={<TeacherLayout><TeacherProfileCourses /></TeacherLayout>} />
+        <Route path="/teacherprofile/forum" element={<TeacherLayout><TeacherProfileForum /></TeacherLayout>} />
 
         {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />
@@ -219,14 +228,6 @@ function App() {
         <Route path="/register" element={<Register />} />
         {/* Quên mật khẩu */}
         <Route path="/forgotpassword" element={<ForgotPasswordHandler />} />
-
-        <Route path="/profile" element={
-          <>
-            <TeacherMenu />
-            <FakeStackUserProfile />
-            <TeacherFooter />
-          </>
-        } />
 
         <Route path="/account" element={
           <>
