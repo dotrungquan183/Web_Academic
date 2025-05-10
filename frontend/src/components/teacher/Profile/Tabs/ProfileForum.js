@@ -1,6 +1,504 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { getToken } from "../../../auth/authHelper";
 import StudentProfileLayout from "../Layout";
 
+const StudentProfileForum = () => {
+  const navigate = useNavigate();
+  const [questions, setQuestions] = useState([]);
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
+  const [allQuestions, setAllQuestions] = useState([]);
+  const [filterquestion, setFilterQuestion] = useState("newest");
+  const [filteranswer, setFilterAnswer] = useState("newest");
+  const [answers, setAnswers] = useState([]);
+  const [allAnswers, setAllAnswers] = useState([]);
+  const [showAllAnswers, setShowAllAnswers] = useState(false);
+  const [tags, setTags] = useState([]);
+  const [filtertag, setFilterTag] = useState("top"); // default là top 5
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  const handleCloseModal = () => {
+    setShowAllTags(false); // Đóng modal
+  };
+
+  // Fetch tags
+  const fetchTags = useCallback(async () => {
+    try {
+      const token = getToken(); // lấy token từ localStorage hoặc context
+      const response = await axios.get(
+        `http://localhost:8000/api/teacher/teacher_profile/teacher_tag?filter=${filtertag}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setTags(response.data);
+    } catch (error) {
+      console.error("Failed to fetch tags", error);
+    }
+  }, [filtertag]); // Phụ thuộc vào filtertag
+
+  useEffect(() => {
+    fetchTags(); // gọi khi component mount hoặc filtertag thay đổi
+  }, [fetchTags]);
+
+  const handleTagsAll = () => {
+    setFilterTag("all");
+    setShowAllTags(true); 
+  };
+
+  // Fetch questions
+  const fetchQuestions = useCallback(async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `http://localhost:8000/api/teacher/teacher_profile/teacher_question?filter=${filterquestion}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setQuestions(response.data);
+    } catch (error) {
+      console.error("Failed to fetch questions", error);
+    }
+  }, [filterquestion]); // Phụ thuộc vào filterquestion
+
+  const fetchAllQuestions = useCallback(async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `http://localhost:8000/api/teacher/teacher_profile/teacher_question?filter=all`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAllQuestions(response.data);
+    } catch (error) {
+      console.error("Failed to fetch all questions", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchQuestions(); // gọi khi filterquestion thay đổi
+  }, [fetchQuestions]);
+
+  // Fetch answers
+  const fetchAnswers = useCallback(async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `http://localhost:8000/api/teacher/teacher_profile/teacher_answer?filter=${filteranswer}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAnswers(response.data);
+    } catch (error) {
+      console.error("Failed to fetch answers", error);
+    }
+  }, [filteranswer]); // Phụ thuộc vào filteranswer
+
+  const fetchAllAnswers = useCallback(async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `http://localhost:8000/api/teacher/teacher_profile/teacher_answer?filter=all`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAllAnswers(response.data);
+    } catch (error) {
+      console.error("Failed to fetch all answers", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAnswers(); // gọi khi filteranswer thay đổi
+  }, [fetchAnswers]);
+
+  const handleQuestionClick = (id) => {
+    navigate(`/teacherforum/question/${id}`);
+  };
+
+  const handleAnswerClick = (id) => {
+    navigate(`/teacherforum/question/${id}`);
+  };
+  return (
+    <StudentProfileLayout>
+      <div style={styles.pageLayout}>
+        {/* Top Section */}
+        <div style={styles.topBox}>
+          <div style={styles.avatarIcon}>👤</div>
+          <div style={{ flex: 1 }}>
+            <div style={styles.userInfo}>
+              <h2 style={{ fontSize: "28px", marginBottom: "5px" }}>Jakobian</h2>
+              <p>Member for 7 years, 8 months</p>
+              <p>Last seen: more than a week ago</p>
+            </div>
+            <div style={styles.aboutBox}>
+              "Less is more, but less is also less. Perchance?"
+            </div>
+          </div>
+        </div>
+  
+        {/* Bottom Layout */}
+        <div style={styles.bottomLayout}>
+          {/* Main Content */}
+          <div style={styles.mainContent}>
+            {/*Question*/}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Questions</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button
+                  style={styles.viewAllLink}
+                  onClick={() => {
+                    fetchAllQuestions(); // fetch tất cả câu hỏi
+                    setShowAllQuestions(true); // mở modal
+                  }}
+                >
+                  View all questions
+                </button>
+
+                <div style={styles.filterBar}>
+                  {["newest", "bountied", "votes", "views"].map((f) => (
+                    <button
+                      key={f}
+                      style={{
+                        ...styles.filterButton,
+                        fontWeight: filterquestion === f ? "bold" : "normal",
+                      }}
+                      onClick={() => {
+                        setFilterQuestion(f);
+                        setShowAllQuestions(false);
+                      }}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <ul style={styles.list}>
+                {questions.map((q) => (
+                  <li
+                    key={q.id}
+                    style={{ ...styles.questionRow, cursor: "pointer" }}
+                    onClick={() => handleQuestionClick(q.id)}
+                  >
+                    <div
+                      style={{
+                        ...styles.voteBox,
+                        backgroundColor:
+                          q.vote_score > 0
+                            ? "#2e7d32"
+                            : q.vote_score < 0
+                            ? "#c62828"
+                            : "#003366",
+                      }}
+                    >
+                      {q.vote_score}
+                    </div>
+                    <div style={styles.questionText}>{q.title}</div>
+                    <div style={styles.questionDate}>
+                      {new Date(q.created_at).toLocaleDateString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {showAllQuestions && (
+                <div style={styles.modalOverlay}>
+                  <div style={styles.modalContent}>
+                    <div style={styles.modalHeader}>
+                      <h3 style={{ margin: 0 }}>All Questions</h3>
+                      <button
+                        onClick={() => setShowAllQuestions(false)}
+                        style={styles.closeButton}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <ul style={styles.list}>
+                      {allQuestions.map((q) => (
+                        <li
+                          key={q.id}
+                          style={styles.questionRow}
+                          onClick={() => handleQuestionClick(q.id)}
+                        >
+                          <div
+                            style={{
+                              ...styles.voteBox,
+                              backgroundColor:
+                                q.vote_score > 0
+                                  ? "#2e7d32"
+                                  : q.vote_score < 0
+                                  ? "#c62828"
+                                  : "#003366",
+                            }}
+                          >
+                            {q.vote_score}
+                          </div>
+                          <div style={styles.questionText}>{q.title}</div>
+                          <div style={styles.questionDate}>
+                            {new Date(q.created_at).toLocaleDateString()}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Answers</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button
+                  style={styles.viewAllLink}
+                  onClick={() => {
+                    fetchAllAnswers(); // fetch tất cả câu hỏi
+                    setShowAllAnswers(true); // mở modal
+                  }}
+                >
+                  View all answers
+                </button>
+
+                <div style={styles.filterBar}>
+                  {["newest", "votes"].map((f) => (
+                    <button
+                      key={f}
+                      style={{
+                        ...styles.filterButton,
+                        fontWeight: filteranswer === f ? "bold" : "normal",
+                      }}
+                      onClick={() => {
+                        setFilterAnswer(f);
+                        setShowAllAnswers(false);
+                      }}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <ul style={styles.list}>
+                {answers.map((a) => (
+                  <li
+                    key={a.id}
+                    style={{ ...styles.questionRow, cursor: "pointer" }}
+                    onClick={() => handleAnswerClick(a.id)}
+                  >
+                    <div
+                      style={{
+                        ...styles.voteBox,
+                        backgroundColor:
+                          a.vote_score > 0
+                            ? "#2e7d32"
+                            : a.vote_score < 0
+                            ? "#c62828"
+                            : "#003366",
+                      }}
+                    >
+                      {a.vote_score}
+                    </div>
+                    <div style={styles.questionText}>{a.content}</div>
+                    <div style={styles.questionDate}>
+                      {new Date(a.created_at).toLocaleDateString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {showAllAnswers && (
+                <div style={styles.modalOverlay}>
+                  <div style={styles.modalContent}>
+                    <div style={styles.modalHeader}>
+                      <h3 style={{ margin: 0 }}>All Answers</h3>
+                      <button
+                        onClick={() => setShowAllAnswers(false)}
+                        style={styles.closeButton}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <ul style={styles.list}>
+                      {allAnswers.map((a) => (
+                        <li
+                          key={a.id}
+                          style={styles.questionRow}
+                          onClick={() => handleAnswerClick(a.id)}
+                        >
+                          <div
+                            style={{
+                              ...styles.voteBox,
+                              backgroundColor:
+                                a.vote_score > 0
+                                  ? "#2e7d32"
+                                  : a.vote_score < 0
+                                  ? "#c62828"
+                                  : "#003366",
+                            }}
+                          >
+                            {a.vote_score}
+                          </div>
+                          <div style={styles.questionText}>{a.content}</div>
+                          <div style={styles.questionDate}>
+                            {new Date(a.created_at).toLocaleDateString()}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+  
+            {/* Tags */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Tags</h3>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button
+                  style={styles.viewAllLink}
+                  onClick={handleTagsAll} // Chỉ set showAllTags(true) để mở modal
+                >
+                  View all tags
+                </button>
+              </div>
+
+              <ul style={styles.list}>
+                {tags.map((t) => (
+                  <li
+                    key={t.tag_id}
+                    style={{ ...styles.questionRow, cursor: "pointer" }}
+                    onClick={() => handleAnswerClick(t.tag_id)}
+                  >
+                    <div
+                      style={{
+                        ...styles.voteBox,
+                        backgroundColor:
+                          t.total_vote_score > 0
+                            ? "#2e7d32"
+                            : t.total_vote_score < 0
+                            ? "#c62828"
+                            : "#003366",
+                      }}
+                    >
+                      {t.total_vote_score}
+                    </div>
+                    <div style={styles.questionText}>{t.tag_name}</div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Modal hiển thị khi bấm vào "View all tags" */}
+              {showAllTags && (
+                <div style={styles.modalOverlay}>
+                  <div style={styles.modalContent}>
+                    <div style={styles.modalHeader}>
+                      <h3 style={{ margin: 0 }}>All Tags</h3>
+                      <button
+                        onClick={handleCloseModal} // Đóng modal
+                        style={styles.closeButton}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <ul style={styles.list}>
+                      {tags.map((t) => (
+                        <li
+                          key={t.tag_id}
+                          style={styles.questionRow}
+                          onClick={() => handleAnswerClick(t.tag_id)} // Sử dụng callback tương tự khi nhấn vào tag
+                        >
+                          <div
+                            style={{
+                              ...styles.voteBox,
+                              backgroundColor:
+                                t.total_vote_score > 0
+                                  ? "#2e7d32"
+                                  : t.total_vote_score < 0
+                                  ? "#c62828"
+                                  : "#003366",
+                            }}
+                          >
+                            {t.total_vote_score}
+                          </div>
+                          <div style={styles.questionText}>{t.tag_name}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+  
+          {/* Sidebar */}
+          <div style={styles.sidebarWrapper}>
+            <div style={styles.sidebarBox}>
+              <h3 style={styles.sectionTitle}>Stats</h3>
+              <div style={styles.infoGrid}>
+                <p>⭐ <strong>Reputation:</strong> 14,361</p>
+                <p>📈 <strong>Rank:</strong> #48</p>
+                <p>💬 <strong>Answers:</strong> 1</p>
+                <p>❓ <strong>Questions:</strong> 0</p>
+              </div>
+            </div>
+  
+            <div style={styles.sidebarBox}>
+              <h3 style={styles.sectionTitle}>Badges</h3>
+              <div style={styles.badgesRow}>
+                <div style={styles.badge}>
+                  🥇<span>Gold</span>
+                  <strong>0</strong>
+                </div>
+                <div style={styles.badge}>
+                  🥈<span>Silver</span>
+                  <strong>7</strong>
+                </div>
+                <div style={styles.badge}>
+                  🥉<span>Bronze</span>
+                  <strong>5</strong>
+                </div>
+              </div>
+              <p>🥈 Silver: Yearling × 7</p>
+              <p>🥉 Bronze: Teacher, Editor, Critic</p>
+            </div>
+  
+            <div style={styles.sidebarBox}>
+              <h3 style={styles.sectionTitle}>Votes</h3>
+              <div style={styles.infoGrid}>
+                <p>🔼 <strong>Upvotes:</strong> 201</p>
+                <p>🔽 <strong>Downvotes:</strong> 34</p>
+                <p>❓ <strong>Question votes:</strong> 67</p>
+                <p>💬 <strong>Answer votes:</strong> 168</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </StudentProfileLayout>
+  );
+}
 const styles = {
   pageLayout: {
     display: "flex",
@@ -102,154 +600,95 @@ const styles = {
     backgroundColor: "#fff",
     cursor: "pointer",
   },
-};
 
-const StudentProfileForum = () => {
-  return (
-    <StudentProfileLayout>
-      <div style={styles.pageLayout}>
-        {/* Top Section */}
-        <div style={styles.topBox}>
-          <div style={styles.avatarIcon}>👤</div>
-          <div style={{ flex: 1 }}>
-            <div style={styles.userInfo}>
-              <h2 style={{ fontSize: "28px", marginBottom: "5px" }}>Jakobian</h2>
-              <p>Member for 7 years, 8 months</p>
-              <p>Last seen: more than a week ago</p>
-            </div>
-            <div style={styles.aboutBox}>
-              "Less is more, but less is also less. Perchance?"
-            </div>
-          </div>
-        </div>
-  
-        {/* Bottom Layout */}
-        <div style={styles.bottomLayout}>
-          {/* Main Content */}
-          <div style={styles.mainContent}>
-            {/* Reputation */}
-            <div style={styles.section}>
-              <div style={styles.sectionHeader}>
-                <h3 style={styles.sectionTitle}>Reputation</h3>
-              </div>
-              <div style={styles.card}>
-                <div style={styles.reputationItem}>
-                  <div style={{ color: "red", display: "inline-block", marginRight: "10px", fontWeight: "bold" }}>-4</div>
-                  <div style={{ display: "inline-block" }}>
-                    How to find a function
-                  </div>
-                </div>
-                <div style={styles.reputationItem}>
-                  <div style={{ color: "green", display: "inline-block", marginRight: "10px", fontWeight: "bold" }}>+10</div>
-                  <div style={{ display: "inline-block" }}>
-                    Characteristic function of product of two arbitrarily normal-distributed random variables
-                  </div>
-                </div>
-              </div>
-            </div>
-  
-            {/* Questions */}
-            <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Questions</h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button style={styles.viewAllLink}>View all 97 questions</button>
-                <div style={styles.filterBar}>
-                  <button style={styles.filterButton}>Score</button>
-                  <button style={{ ...styles.filterButton, fontWeight: "bold" }}>Activity</button>
-                  <button style={styles.filterButton}>Newest</button>
-                  <button style={styles.filterButton}>Views</button>
-                </div>
-              </div>
-              <ul style={styles.list}>
-                <li>-2 — How to find a function f... (1 hour ago)</li>
-                <li>9 — Evaluate ∫₀ ln(...) dx (Sep 17, 2024)</li>
-                <li>1 — Compute lim ∫γR (Apr 10)</li>
-                <li>0 — Determine whether a line... (Feb 24)</li>
-                <li>1 — Prove the additivity of... (Aug 9, 2024)</li>
-              </ul>
-            </div>
-  
-            {/* Answers */}
-            <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Answers</h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button style={styles.viewAllLink}>View all 23 answers</button>
-                <div style={styles.filterBar}>
-                  <button style={{ ...styles.filterButton, fontWeight: "bold" }}>Score</button>
-                  <button style={styles.filterButton}>Activity</button>
-                  <button style={styles.filterButton}>Newest</button>
-                </div>
-              </div>
-              <ul style={styles.list}>
-                <li>5 — Evaluate lim... (Oct 22, 2024)</li>
-                <li>3 — Geodesic theorem (Jul 12, 2024)</li>
-                <li>3 — Compute integral using trapezoidal method (Dec 5, 2024)</li>
-                <li>3 — Let α and β be... (Dec 29, 2024)</li>
-                <li>2 — Prove the integral... (Sep 16, 2024)</li>
-              </ul>
-            </div>
-  
-            {/* Tags */}
-            <div style={styles.section}>
-              <div style={styles.sectionHeader}>
-                <h3 style={styles.sectionTitle}>Tags</h3>
-                <button>View all 81 tags</button>
-              </div>
-              <ul style={styles.tagList}>
-                <li><strong>real-analysis</strong> — 8 score — 13 posts</li>
-                <li><strong>limits</strong> — 6 score — 10 posts</li>
-                <li><strong>integration</strong> — 5 score — 11 posts</li>
-                <li><strong>analysis</strong> — 4 score — 3 posts</li>
-              </ul>
-            </div>
-          </div>
-  
-          {/* Sidebar */}
-          <div style={styles.sidebarWrapper}>
-            <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Stats</h3>
-              <div style={styles.infoGrid}>
-                <p>⭐ <strong>Reputation:</strong> 14,361</p>
-                <p>📈 <strong>Rank:</strong> #48</p>
-                <p>💬 <strong>Answers:</strong> 1</p>
-                <p>❓ <strong>Questions:</strong> 0</p>
-              </div>
-            </div>
-  
-            <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Badges</h3>
-              <div style={styles.badgesRow}>
-                <div style={styles.badge}>
-                  🥇<span>Gold</span>
-                  <strong>0</strong>
-                </div>
-                <div style={styles.badge}>
-                  🥈<span>Silver</span>
-                  <strong>7</strong>
-                </div>
-                <div style={styles.badge}>
-                  🥉<span>Bronze</span>
-                  <strong>5</strong>
-                </div>
-              </div>
-              <p>🥈 Silver: Yearling × 7</p>
-              <p>🥉 Bronze: Teacher, Editor, Critic</p>
-            </div>
-  
-            <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Votes</h3>
-              <div style={styles.infoGrid}>
-                <p>🔼 <strong>Upvotes:</strong> 201</p>
-                <p>🔽 <strong>Downvotes:</strong> 34</p>
-                <p>❓ <strong>Question votes:</strong> 67</p>
-                <p>💬 <strong>Answer votes:</strong> 168</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </StudentProfileLayout>
-  );
-}
+  // ✅ Bổ sung cho phần hiển thị câu hỏi
+  list: {
+    listStyle: "none",
+    padding: 0,
+    marginTop: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  questionRow: {
+    display: "flex",
+    alignItems: "center",
+    padding: "10px 12px",
+    backgroundColor: "#f9f9f9",
+    borderRadius: "8px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+  },
+  voteBox: {
+    minWidth: "32px",
+    height: "32px",
+    backgroundColor: "#2e7d32",
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "14px",
+    borderRadius: "6px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: "12px",
+  },
+  questionText: {
+    flexGrow: 1,
+    fontSize: "14px",
+    color: "#333",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  questionDate: {
+    fontSize: "13px",
+    color: "#666",
+    marginLeft: "12px",
+    whiteSpace: "nowrap",
+  },
+    modalOverlay: {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    width: '80%',
+    maxWidth: '600px',
+    borderRadius: '8px',
+    padding: '20px',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+    overflowY: 'auto',
+    maxHeight: '80vh',
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '20px',
+  },
+  closeButton: {
+    fontSize: '20px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#888',
+  },
+  viewAllLink: {
+    background: "none",
+    border: "none",
+    color: "#0077cc",        // Màu giống link
+    textDecoration: "underline",  // Gạch chân giống link
+    cursor: "pointer",       // Con trỏ tay khi hover
+    padding: 0,
+    fontSize: "14px",
+    fontFamily: "inherit",
+    fontWeight: "normal"
+  },
+};
 
 export default StudentProfileForum;
