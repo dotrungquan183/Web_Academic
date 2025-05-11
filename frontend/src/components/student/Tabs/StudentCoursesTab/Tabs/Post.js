@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import StudentForumLayout from "../Layout";
+import StudentCoursesLayout from "../Layout";
 
-function StudentTagQuestion() {
+function StudentPost() {
   const [data, setData] = useState(null);
   const [timeFilter, setTimeFilter] = useState("Newest");
   const [bountyFilter, setBountyFilter] = useState("Bountied");
@@ -22,7 +22,7 @@ function StudentTagQuestion() {
   }, []);
 
   return (
-    <StudentForumLayout>
+    <StudentCoursesLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
@@ -94,7 +94,7 @@ function StudentTagQuestion() {
           <p>Không có câu hỏi nào.</p>
         )}
       </div>
-    </StudentForumLayout>
+    </StudentCoursesLayout>
   );
 }
 
@@ -203,4 +203,4 @@ const questionItemStyle = {
   lineHeight: "1.5",
 };
 
-export default StudentTagQuestion;
+export default StudentPost;

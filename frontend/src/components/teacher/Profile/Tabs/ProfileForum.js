@@ -4,6 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { getToken } from "../../../auth/authHelper";
 import StudentProfileLayout from "../Layout";
 
+const getAvatarUrl = (user) => {
+  if (user?.avatar) {
+    return user.avatar.startsWith("http") ? user.avatar : `http://localhost:8000${user.avatar}`;
+  }
+  return null;
+};
+
 const StudentProfileForum = () => {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
@@ -17,6 +24,70 @@ const StudentProfileForum = () => {
   const [tags, setTags] = useState([]);
   const [filtertag, setFilterTag] = useState("top"); // default là top 5
   const [showAllTags, setShowAllTags] = useState(false);
+  const [stats,setStats] = useState(null);
+  const [voteStats, setVoteStats] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = getToken();
+        const response = await axios.get(`http://localhost:8000/api/teacher/teacher_profile/teacher_account`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+        });
+        setUser(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  useEffect(() => {
+    const fetchVoteStats = async () => {
+      try {
+        const token = getToken();
+        const response = await axios.get("http://localhost:8000/api/teacher/teacher_profile/teacher_vote", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setVoteStats(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin vote:", error);
+      }
+    };
+
+    fetchVoteStats();
+  }, []);
+
+  // ✅ useEffect này luôn được gọi
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = getToken();
+        const response = await axios.get(
+          "http://localhost:8000/api/teacher/teacher_profile/teacher_stat",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setStats(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin thống kê:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const handleCloseModal = () => {
     setShowAllTags(false); // Đóng modal
@@ -144,17 +215,31 @@ const StudentProfileForum = () => {
       <div style={styles.pageLayout}>
         {/* Top Section */}
         <div style={styles.topBox}>
-          <div style={styles.avatarIcon}>👤</div>
-          <div style={{ flex: 1 }}>
-            <div style={styles.userInfo}>
-              <h2 style={{ fontSize: "28px", marginBottom: "5px" }}>Jakobian</h2>
-              <p>Member for 7 years, 8 months</p>
-              <p>Last seen: more than a week ago</p>
-            </div>
-            <div style={styles.aboutBox}>
-              "Less is more, but less is also less. Perchance?"
-            </div>
-          </div>
+          {user && (
+            <>
+              <div style={styles.avatarIcon}>
+                {getAvatarUrl(user) ? (
+                  <img
+                    src={getAvatarUrl(user)}
+                    alt="avatar"
+                    style={{ width: "80px", height: "80px", borderRadius: "50%" }}
+                  />
+                ) : (
+                  "👤"
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.user}>
+                  <h2 style={{ fontSize: "28px", marginBottom: "5px" }}>{user.username}</h2>
+                  <p>Member for {user.date_joined}</p>
+                  <p>Last seen: more than a week ago</p>
+                </div>
+                <div style={styles.aboutBox}>
+                  "Less is more, but less is also less. Perchance?"
+                </div>
+              </div>
+            </>
+          )}
         </div>
   
         {/* Bottom Layout */}
@@ -457,10 +542,10 @@ const StudentProfileForum = () => {
             <div style={styles.sidebarBox}>
               <h3 style={styles.sectionTitle}>Stats</h3>
               <div style={styles.infoGrid}>
-                <p>⭐ <strong>Reputation:</strong> 14,361</p>
-                <p>📈 <strong>Rank:</strong> #48</p>
-                <p>💬 <strong>Answers:</strong> 1</p>
-                <p>❓ <strong>Questions:</strong> 0</p>
+                <p>⭐ <strong>Reputation:</strong> {stats?.reputation}</p>
+                <p>📈 <strong>Rank:</strong> #{stats?.rank}</p>
+                <p>💬 <strong>Answers:</strong> {stats?.total_answers}</p>
+                <p>❓ <strong>Questions:</strong> {stats?.total_questions}</p>
               </div>
             </div>
   
@@ -484,15 +569,19 @@ const StudentProfileForum = () => {
               <p>🥉 Bronze: Teacher, Editor, Critic</p>
             </div>
   
+            {voteStats ? (
             <div style={styles.sidebarBox}>
               <h3 style={styles.sectionTitle}>Votes</h3>
               <div style={styles.infoGrid}>
-                <p>🔼 <strong>Upvotes:</strong> 201</p>
-                <p>🔽 <strong>Downvotes:</strong> 34</p>
-                <p>❓ <strong>Question votes:</strong> 67</p>
-                <p>💬 <strong>Answer votes:</strong> 168</p>
+                <p>🔼 <strong>Upvotes:</strong> {voteStats.upvotes}</p>
+                <p>🔽 <strong>Downvotes:</strong> {voteStats.downvotes}</p>
+                <p>❓ <strong>Question votes:</strong> {voteStats.question_votes}</p>
+                <p>💬 <strong>Answer votes:</strong> {voteStats.answer_votes}</p>
               </div>
             </div>
+            ) : (
+              <p>Đang tải thống kê votes...</p>
+            )}
           </div>
         </div>
       </div>

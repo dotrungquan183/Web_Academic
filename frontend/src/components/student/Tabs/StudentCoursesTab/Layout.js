@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import { FiMenu } from "react-icons/fi";
 
-function TeacherCoursesLayout({ children }) {
+function StudentCoursesLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
@@ -33,4 +33,4 @@ const styles = {
   },
 };
 
-export default TeacherCoursesLayout;
+export default StudentCoursesLayout;

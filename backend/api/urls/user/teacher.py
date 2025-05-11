@@ -20,6 +20,9 @@ from api.views.teacher.teacher_forum.teacher_save import TeacherSaveView
 from api.views.teacher.teacher_profile.teacher_question import TeacherProfileQuestionView
 from api.views.teacher.teacher_profile.teacher_answer import TeacherProfileAnswerView
 from api.views.teacher.teacher_profile.teacher_tag import TeacherProfileTagView
+from api.views.teacher.teacher_profile.teacher_stat import TeacherProfileStatView
+from api.views.teacher.teacher_profile.teacher_vote import TeacherProfileVoteView
+from api.views.teacher.teacher_profile.teacher_account import TeacherProfileAccountView
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
 from api.views.auth.register import register_view
@@ -48,5 +51,8 @@ urlpatterns = [
     path('teacher/teacher_profile/teacher_question/', TeacherProfileQuestionView.as_view(), name='teacher_profile_question'),
     path('teacher/teacher_profile/teacher_answer/', TeacherProfileAnswerView.as_view(), name='teacher_profile_answer'),
     path('teacher/teacher_profile/teacher_tag/', TeacherProfileTagView.as_view(), name='teacher_profile_tag'),
+    path('teacher/teacher_profile/teacher_stat/', TeacherProfileStatView.as_view(), name='teacher_profile_stat'),
+    path('teacher/teacher_profile/teacher_vote/', TeacherProfileVoteView.as_view(), name='teacher_profile_vote'),
+    path('teacher/teacher_profile/teacher_account/', TeacherProfileAccountView.as_view(), name='teacher_profile_account'),
 ]
 
