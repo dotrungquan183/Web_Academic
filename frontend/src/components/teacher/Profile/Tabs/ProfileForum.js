@@ -29,23 +29,26 @@ const StudentProfileForum = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const token = getToken();
-        const response = await axios.get(`http://localhost:8000/api/teacher/teacher_profile/teacher_account`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-        });
-        setUser(response.data);
-      } catch (error) {
-        console.error("Lỗi khi lấy thông tin người dùng:", error);
-      }
-    };
+  const fetchUserInfo = async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(`http://localhost:8000/api/teacher/teacher_profile/teacher_account`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      });
 
-    fetchUserInfo();
-  }, []);
+      console.log("Dữ liệu trả về từ API:", response.data); // ✅ Log dữ liệu tại đây
+      setUser(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin người dùng:", error);
+    }
+  };
+
+  fetchUserInfo();
+}, []);
+
 
   useEffect(() => {
     const fetchVoteStats = async () => {
@@ -231,8 +234,8 @@ const StudentProfileForum = () => {
               <div style={{ flex: 1 }}>
                 <div style={styles.user}>
                   <h2 style={{ fontSize: "28px", marginBottom: "5px" }}>{user.username}</h2>
-                  <p>Member for {user.date_joined}</p>
-                  <p>Last seen: more than a week ago</p>
+                  <p>Là thành viên {user.member_for}</p>
+                  <p>Hoạt động {user.last_seen}</p>
                 </div>
                 <div style={styles.aboutBox}>
                   "Less is more, but less is also less. Perchance?"
@@ -248,7 +251,7 @@ const StudentProfileForum = () => {
           <div style={styles.mainContent}>
             {/*Question*/}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Questions</h3>
+              <h3 style={styles.sectionTitle}>Câu hỏi</h3>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <button
                   style={styles.viewAllLink}
@@ -257,7 +260,7 @@ const StudentProfileForum = () => {
                     setShowAllQuestions(true); // mở modal
                   }}
                 >
-                  View all questions
+                  Xem tất cả câu hỏi
                 </button>
 
                 <div style={styles.filterBar}>
@@ -352,7 +355,7 @@ const StudentProfileForum = () => {
             </div>
 
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Answers</h3>
+              <h3 style={styles.sectionTitle}>Câu trả lời</h3>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <button
                   style={styles.viewAllLink}
@@ -361,7 +364,7 @@ const StudentProfileForum = () => {
                     setShowAllAnswers(true); // mở modal
                   }}
                 >
-                  View all answers
+                  Xem tất cả
                 </button>
 
                 <div style={styles.filterBar}>
@@ -457,14 +460,14 @@ const StudentProfileForum = () => {
   
             {/* Tags */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Tags</h3>
+              <h3 style={styles.sectionTitle}>Thẻ</h3>
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <button
                   style={styles.viewAllLink}
                   onClick={handleTagsAll} // Chỉ set showAllTags(true) để mở modal
                 >
-                  View all tags
+                  Xem tất cả
                 </button>
               </div>
 
@@ -540,17 +543,17 @@ const StudentProfileForum = () => {
           {/* Sidebar */}
           <div style={styles.sidebarWrapper}>
             <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Stats</h3>
+              <h3 style={styles.sectionTitle}>Tổng quan</h3>
               <div style={styles.infoGrid}>
-                <p>⭐ <strong>Reputation:</strong> {stats?.reputation}</p>
-                <p>📈 <strong>Rank:</strong> #{stats?.rank}</p>
-                <p>💬 <strong>Answers:</strong> {stats?.total_answers}</p>
-                <p>❓ <strong>Questions:</strong> {stats?.total_questions}</p>
+                <p>⭐ <strong>Điểm uy tín:</strong> {stats?.reputation}</p>
+                <p>📈 <strong>Hạng:</strong> #{stats?.rank}</p>
+                <p>💬 <strong>Câu trả lời:</strong> {stats?.total_answers}</p>
+                <p>❓ <strong>Câu hỏi:</strong> {stats?.total_questions}</p>
               </div>
             </div>
   
             <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Badges</h3>
+              <h3 style={styles.sectionTitle}>Huy hiệu</h3>
               <div style={styles.badgesRow}>
                 <div style={styles.badge}>
                   🥇<span>Gold</span>
@@ -571,12 +574,12 @@ const StudentProfileForum = () => {
   
             {voteStats ? (
             <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Votes</h3>
+              <h3 style={styles.sectionTitle}>Lượt vote</h3>
               <div style={styles.infoGrid}>
-                <p>🔼 <strong>Upvotes:</strong> {voteStats.upvotes}</p>
-                <p>🔽 <strong>Downvotes:</strong> {voteStats.downvotes}</p>
-                <p>❓ <strong>Question votes:</strong> {voteStats.question_votes}</p>
-                <p>💬 <strong>Answer votes:</strong> {voteStats.answer_votes}</p>
+                <p>🔼 <strong>Lượt upvote:</strong> {voteStats.upvotes}</p>
+                <p>🔽 <strong>Lượt downvote:</strong> {voteStats.downvotes}</p>
+                <p>❓ <strong>Vote câu hỏi:</strong> {voteStats.question_votes}</p>
+                <p>💬 <strong>Vote câu trả lời:</strong> {voteStats.answer_votes}</p>
               </div>
             </div>
             ) : (

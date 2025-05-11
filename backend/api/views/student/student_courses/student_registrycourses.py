@@ -25,7 +25,7 @@ def read_emails_from_gmail():
 
         email_ids = messages[0].split()
         print(f"📧 Tìm thấy {len(email_ids)} email chưa đọc.")
-        email_data = []
+        filtered_emails = []
 
         for email_id in email_ids:
             status, msg_data = mail.fetch(email_id, '(RFC822)')
@@ -46,18 +46,36 @@ def read_emails_from_gmail():
                     if isinstance(from_name, bytes):
                         from_name = from_name.decode(encoding if encoding else 'utf-8')
 
-                    body = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
+                    body = ""
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            content_type = part.get_content_type()
+                            content_disposition = str(part.get("Content-Disposition"))
+                            if content_type == "text/plain" and "attachment" not in content_disposition:
+                                try:
+                                    part_body = part.get_payload(decode=True).decode('utf-8', errors='ignore')
+                                    body += part_body
+                                except:
+                                    pass
+                    else:
+                        body = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
 
-                    print(f"📨 Email từ: {from_email}, Tiêu đề: {subject}")
-                    print(f"📝 Nội dung (100 ký tự đầu): {body[:100]}")
+                    # ⚠️ Chỉ lọc email từ sms-forwarder
+                    if "no-reply@sms-forwarder.com" not in from_:
+                        continue
 
-                    email_data.append({
-                        "subject": subject,
-                        "from": from_email,
-                        "body": body
-                    })
+                    # ✅ Kiểm tra nội dung có chứa giao dịch ViettelPay không
+                    if re.search(r"TK ViettelPay.*?GD.*?VND.*?luc.*?So du.*?VND", body):
+                        print(f"✅ Email hợp lệ từ: {from_}, Tiêu đề: {subject}")
+                        print(f"📩 Nội dung (100 ký tự đầu): {body[:100]}")
 
-        return email_data
+                        filtered_emails.append({
+                            "subject": subject,
+                            "from": from_,
+                            "body": body
+                        })
+
+        return filtered_emails
 
     except Exception as e:
         print(f"❌ Lỗi khi đọc email: {e}")
@@ -66,73 +84,83 @@ def read_emails_from_gmail():
 # ======================= KIỂM TRA THANH TOÁN =======================
 def check_payment_in_email(email_data, course_id, user_id):
     print("🔍 Đang kiểm tra email để xác nhận thanh toán...")
-    pattern = re.compile(r"DANG[ _]KY[ _](\d+)[ _](\d+)", re.IGNORECASE)
+    
+    # Regex linh hoạt hơn: chấp nhận DANGKY_5_10, DANG KY 5 10, v.v.
+    pattern = re.compile(r"DANG[ _]?KY[ _]?(\d+)[ _]?(\d+)", re.IGNORECASE)
 
-    for email in email_data:
-        body = email['body']
+    for email_item in email_data:
+        body = email_item['body']
+
+        # In nội dung body để debug nếu cần
+        print("📨 Nội dung email:")
+        print(body[:300])  # Giới hạn in để tránh log quá dài
+
+        # Tìm kiếm theo pattern
         match = pattern.search(body)
-
         if match:
             email_course_id = match.group(1)
             email_user_id = match.group(2)
-            print(f"✅ Phát hiện: course_id={email_course_id}, user_id={email_user_id}")
+
+            print(f"✅ Phát hiện ID từ email: course_id={email_course_id}, user_id={email_user_id}")
 
             if str(course_id) == email_course_id and str(user_id) == email_user_id:
                 print("🎉 Đã xác nhận thanh toán hợp lệ.")
                 return True
+            else:
+                print("⚠️ Khớp định dạng nhưng không đúng ID khóa học hoặc người dùng.")
 
     print("❌ Không tìm thấy thanh toán hợp lệ trong email.")
     return False
-
 # ===================== API ĐĂNG KÝ KHÓA HỌC =======================
 class StudentRegistryCoursesView(APIView):
     def post(self, request, course_id):
-        print("🚀 API POST /registry-course được gọi.")
-        
+        print("🚀 [POST] /registry-course")
+
+        # Xác thực người dùng
         user, error_response = get_authenticated_user(request)
         if error_response:
             print("❌ Người dùng chưa xác thực.")
             return error_response
 
+        # Tìm khóa học
         try:
             course = Course.objects.get(id=course_id)
-            print(f"📘 Tìm thấy khóa học ID: {course_id} - '{course.title}', học phí: {course.fee}")
+            print(f"📘 Khóa học: ID={course.id}, Tiêu đề='{course.title}', Học phí={course.fee}")
         except Course.DoesNotExist:
             print("❌ Không tìm thấy khóa học.")
-            return Response({'lỗi': 'Không tìm thấy khóa học'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Không tìm thấy khóa học'}, status=status.HTTP_404_NOT_FOUND)
 
-        if course.fee != 0:
-            print("💰 Kiểm tra thanh toán qua email...")
+        # Nếu có học phí, kiểm tra email thanh toán
+        if course.fee > 0:
+            print("💰 Kiểm tra email xác nhận thanh toán...")
             email_data = read_emails_from_gmail()
 
             if not email_data:
-                print("⚠️ Không lấy được email nào.")
-                return Response({'lỗi': 'Chưa nhận được thanh toán hợp lệ (không có email)'}, status=status.HTTP_400_BAD_REQUEST)
+                print("⚠️ Không tìm thấy email.")
+                return Response({'error': 'Không có email thanh toán được tìm thấy'}, status=status.HTTP_400_BAD_REQUEST)
 
             if not check_payment_in_email(email_data, course_id, user.id):
-                return Response({'lỗi': 'Chưa nhận được thanh toán hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+                print("❌ Email không chứa thông tin thanh toán hợp lệ.")
+                return Response({'error': 'Không tìm thấy thanh toán hợp lệ trong email'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Đăng ký nếu chưa có
+        # Tạo bản ghi đăng ký nếu chưa có
         registration, created = CourseRegistration.objects.get_or_create(user=user, course=course)
 
         if not created:
             print("ℹ️ Người dùng đã đăng ký khóa học trước đó.")
-            return Response({'thông báo': 'Bạn đã đăng ký khóa học này trước đó'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Bạn đã đăng ký khóa học này rồi'}, status=status.HTTP_200_OK)
 
-        # Tăng số lượng học viên nếu đăng ký mới
+        # Tăng số lượng học viên nếu là đăng ký mới
         course.student_count += 1
         course.save()
-        print(f"✅ Đăng ký thành công. Tổng học viên mới: {course.student_count}")
+        print(f"✅ Đăng ký thành công. Tổng học viên: {course.student_count}")
 
-        return Response({'thông báo': 'Đăng ký khóa học thành công'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Đăng ký khóa học thành công'}, status=status.HTTP_201_CREATED)
 
     def get(self, request):
-        # Kiểm tra xác thực người dùng
         user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
 
-        # Lấy danh sách đăng ký
         registrations = CourseRegistration.objects.filter(user=user).values('user_id', 'course_id')
-
         return Response({'registrations': list(registrations)}, status=status.HTTP_200_OK)

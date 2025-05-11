@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.models import update_last_login  # ✅ import hàm này
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -23,6 +24,9 @@ def login_view(request):
         user_info = UserInformation.objects.get(user=user)
     except UserInformation.DoesNotExist:
         return Response({"error": "Không tìm thấy thông tin user!"}, status=status.HTTP_404_NOT_FOUND)
+
+    # ✅ Cập nhật last_login ngay tại đây
+    update_last_login(None, user)
 
     user_type = user_info.user_type.lower()
     role_map = {"sinh viên": "student", "giảng viên": "teacher", "admin": "admin"}

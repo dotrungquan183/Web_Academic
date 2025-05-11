@@ -116,10 +116,10 @@ const StudentDetailCourses = () => {
       alert("Vui lòng đăng nhập trước khi đăng ký.");
       return;
     }
-  
+ 
     const decodedToken = jwtDecode(token);
     const userId = decodedToken.user_id || decodedToken.id;
-  
+ 
     try {
       const detailRes = await fetch(
         `${BASE_URL}/api/student/student_courses/student_detailcourses/${course.id}/`,
@@ -129,32 +129,47 @@ const StudentDetailCourses = () => {
           credentials: "omit",
         }
       );
-  
+ 
       if (!detailRes.ok) {
         throw new Error("Không lấy được thông tin khóa học");
       }
-  
+ 
       const courseDetail = await detailRes.json();
-  
-      if (parseFloat(courseDetail.fee) === 0) {
+      const fee = parseFloat(courseDetail.fee);
+ 
+      const registerCourse = async () => {
         const endpoint = `${BASE_URL}/api/student/student_courses/student_registrycourses/${course.id}/`;
-  
+ 
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           credentials: "omit",
         });
-  
+ 
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Đăng ký thất bại.");
-  
+ 
         alert(result.message || "Đăng ký thành công!");
         setIsRegistered(true);
         setTimeout(() => window.location.reload(), 1000);
+      };
+ 
+      if (fee === 0) {
+        // Học phí = 0 -> đăng ký ngay
+        await registerCourse();
       } else {
+        // Học phí > 0 -> hiển thị thông tin thanh toán
         const paymentNote = `DANGKY_${course.id}_${userId}`;
         setPaymentContent(paymentNote);
         setShowPayment(true);
+ 
+        // Đợi 2 phút trước khi gửi POST
+        setTimeout(() => {
+          registerCourse().catch((error) => {
+            console.error("Lỗi khi đăng ký sau chờ:", error.message);
+            alert(error.message || "Đăng ký thất bại sau khi thanh toán.");
+          });
+        }, 2 * 60 * 1000); // 2 phút
       }
     } catch (error) {
       console.error("Lỗi khi đăng ký:", error.message);
