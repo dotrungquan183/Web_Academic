@@ -16,7 +16,7 @@ function TeacherAddCourses() {
     tags: "",
     price: "",
     courseImage: null,
-    introVideo: null,
+    introVideo: "",
     qr_code: null,
     courseLevel: "basic",
   });
@@ -50,27 +50,52 @@ function TeacherAddCourses() {
         tags: course.tags || "", 
         price: course.fee || 0,
         courseImage: course.thumbnail || null,
-        introVideo: course.intro_video || null,
+        introVideo: course.intro_video || "",
         qr_code: course.qr_code || null, // 🆕 Thêm dòng này
       });
       setChapters(course.chapters || []);
     }
   }, [location.state, navigate]);
 
-  const handleFormChange = (e) => {
-    const { name, value, files } = e.target;
-  
-    if (name === "courseImage" || name === "introVideo" || name === "qr_code") {  // 🛠️ Sửa đúng field
-      setFormData({ ...formData, [name]: files[0] });
-    } else if (name === "price") {
-      const numericValue = Number(value);
-      if (numericValue >= 0) {
-        setFormData({ ...formData, [name]: numericValue });
-      }
-    } else {
-      setFormData({ ...formData, [name]: value });
+const handleFormChange = (e) => {
+  const { name, value, files } = e.target;
+
+  if (name === "courseImage" || name === "qr_code") {
+    setFormData({ ...formData, [name]: files[0] });
+
+  } else if (name === "price") {
+    const numericValue = Number(value);
+    if (numericValue >= 0) {
+      setFormData({ ...formData, [name]: numericValue });
     }
-  };
+
+  } else if (name === "introVideo") {
+    let updatedValue = value;
+
+    try {
+      const url = new URL(value);
+      // Xử lý link dạng youtube.com/watch?v=...
+      if (url.hostname.includes("youtube.com") && url.searchParams.get("v")) {
+        const videoId = url.searchParams.get("v");
+        updatedValue = `https://www.youtube.com/embed/${videoId}`;
+      }
+
+      // Xử lý link dạng youtu.be/<id>
+      if (url.hostname === "youtu.be") {
+        const videoId = url.pathname.slice(1);
+        updatedValue = `https://www.youtube.com/embed/${videoId}`;
+      }
+
+    } catch (error) {
+      console.warn("Invalid YouTube URL:", value);
+    }
+
+    setFormData({ ...formData, [name]: updatedValue });
+
+  } else {
+    setFormData({ ...formData, [name]: value });
+  }
+};
 
   const handlePriceChange = (e) => {
     const value = e.target.value;
@@ -138,9 +163,7 @@ function TeacherAddCourses() {
     if (formData.courseImage) {
       formDataToSend.append("courseImage", formData.courseImage);
     }
-    if (formData.introVideo) {
-      formDataToSend.append("introVideo", formData.introVideo);
-    }
+    formDataToSend.append("introVideo", formData.introVideo || "");
     if (formData.qr_code) {
       formDataToSend.append("qr_code", formData.qr_code);
     }
@@ -150,7 +173,7 @@ function TeacherAddCourses() {
       const lessons = chapter.lessons.map((lesson, lessonIndex) => {
         const lessonData = {
           title: lesson.title || "",
-          video: lesson.video ? `lesson_video_${chapterIndex}_${lessonIndex}` : null,
+          video: lesson.video || "",
           document_link: lesson.document_link ? `lesson_document_link_${chapterIndex}_${lessonIndex}` : null,
           exercise: lesson.exercise || null,
         };
@@ -165,17 +188,14 @@ function TeacherAddCourses() {
     // Gửi bản chapters không chứa file
     formDataToSend.append("chapters", JSON.stringify(chaptersWithoutFiles));
   
-    // Upload các file video và tài liệu của các bài học
     chapters.forEach((chapter, chapterIndex) => {
       chapter.lessons.forEach((lesson, lessonIndex) => {
-        if (lesson.video) {
-          formDataToSend.append(`lesson_video_${chapterIndex}_${lessonIndex}`, lesson.video);
-        }
         if (lesson.document_link) {
           formDataToSend.append(`lesson_document_link_${chapterIndex}_${lessonIndex}`, lesson.document_link);
         }
       });
     });
+
   
     // Log dữ liệu gửi lên để kiểm tra
     console.log("--- FORM DATA GỬI LÊN SERVER ---");
@@ -292,11 +312,12 @@ function TeacherAddCourses() {
                 </div>
                 
                 <div style={styles.inputGroup}>
-                <label style={styles.label}>Video giới thiệu:</label>
+                  <label style={styles.label}>Video giới thiệu:</label>
                   <input
-                    type="file"
+                    type="text"
                     name="introVideo"
-                    accept="video/*"
+                    placeholder="https://www.youtube.com/..."
+                    value={formData.introVideo}
                     onChange={handleFormChange}
                     style={styles.input2}
                   />
@@ -360,18 +381,29 @@ function TeacherAddCourses() {
                       </div>
 
                       <div style={styles.lessonButtonGroup}>
-                        <label><FaVideo /> Video bài giảng:</label>
+                        <label><FaVideo /> Link video bài giảng (YouTube):</label>
                         <input
-                          type="file"
-                          accept="video/*"
-                          onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "video", e.target.files[0])}
+                          type="text"
+                          placeholder="https://www.youtube.com/..."
+                          value={lesson.video}
+                          onChange={(e) =>
+                            handleLessonChange(chapterIndex, lessonIndex, "video", e.target.value)
+                          }
                           style={styles.input3}
                         />
+
                         <label><FaFileAlt /> Tài liệu bài học:</label>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
-                          onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "document_link", e.target.files[0])}
+                          onChange={(e) =>
+                            handleLessonChange(
+                              chapterIndex,
+                              lessonIndex,
+                              "document_link",
+                              e.target.files[0]
+                            )
+                          }
                           style={styles.input3}
                         />
                       </div>

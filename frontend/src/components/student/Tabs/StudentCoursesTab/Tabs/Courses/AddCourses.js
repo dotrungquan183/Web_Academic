@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaBook, FaPlus, FaVideo, FaFileAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -16,7 +16,7 @@ function StudentAddCourses() {
     tags: "",
     price: "",
     courseImage: null,
-    introVideo: null,
+    introVideo: "",
     qr_code: null,
     courseLevel: "basic",
   });
@@ -50,7 +50,7 @@ function StudentAddCourses() {
         tags: course.tags || "", 
         price: course.fee || 0,
         courseImage: course.thumbnail || null,
-        introVideo: course.intro_video || null,
+        introVideo: course.intro_video || "",
         qr_code: course.qr_code || null, // 🆕 Thêm dòng này
       });
       setChapters(course.chapters || []);
@@ -60,7 +60,7 @@ function StudentAddCourses() {
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
   
-    if (name === "courseImage" || name === "introVideo" || name === "qr_code") {  // 🛠️ Sửa đúng field
+    if (name === "courseImage" || name === "qr_code") {  // 🛠️ Sửa đúng field
       setFormData({ ...formData, [name]: files[0] });
     } else if (name === "price") {
       const numericValue = Number(value);
@@ -138,9 +138,7 @@ function StudentAddCourses() {
     if (formData.courseImage) {
       formDataToSend.append("courseImage", formData.courseImage);
     }
-    if (formData.introVideo) {
-      formDataToSend.append("introVideo", formData.introVideo);
-    }
+    formDataToSend.append("introVideo", formData.introVideo || "");
     if (formData.qr_code) {
       formDataToSend.append("qr_code", formData.qr_code);
     }
@@ -292,11 +290,12 @@ function StudentAddCourses() {
                 </div>
                 
                 <div style={styles.inputGroup}>
-                <label style={styles.label}>Video giới thiệu:</label>
+                  <label style={styles.label}>Video giới thiệu:</label>
                   <input
-                    type="file"
+                    type="text"
                     name="introVideo"
-                    accept="video/*"
+                    placeholder="https://www.youtube.com/..."
+                    value={formData.introVideo}
                     onChange={handleFormChange}
                     style={styles.input2}
                   />

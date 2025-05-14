@@ -23,7 +23,7 @@ class Course(models.Model):
     video_count = models.PositiveIntegerField(default=0, verbose_name="Số video")
     total_duration = models.DurationField(default=timedelta(), verbose_name="Tổng thời lượng")
     level = models.CharField(max_length=30, choices=LEVEL_CHOICES, default='basic', verbose_name="Trình độ")
-    intro_video = models.FileField(upload_to='intro_videos/', null=True, blank=True, verbose_name="Video giới thiệu")
+    intro_video = models.CharField(max_length=500, null=True, blank=True, verbose_name="Giới thiệu")
     thumbnail = models.ImageField(upload_to='course_thumbnails/', null=True, blank=True, verbose_name="Ảnh khóa học")
     tags = models.CharField(max_length=255, blank=True, verbose_name="Thẻ (tags)")
     qr_code = models.FileField(upload_to='qr_codes/', null=True, blank=True, verbose_name="Mã QR")
@@ -52,7 +52,7 @@ class Chapter(models.Model):
 class Lesson(models.Model):
     chapter = models.ForeignKey('Chapter', related_name="lessons", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Tên bài học")
-    video = models.FileField(upload_to='lesson_videos/', null=True, blank=True, verbose_name="Video bài học")
+    video = models.CharField(max_length=500, null=True, blank=True, verbose_name="Link video bài học")
     duration = models.DurationField(verbose_name="Thời lượng")
     document_link = models.FileField(upload_to='lesson_documents/', null=True, blank=True, verbose_name="Tài liệu bài học")
     created_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian tạo")  # Thêm default=timezone.now

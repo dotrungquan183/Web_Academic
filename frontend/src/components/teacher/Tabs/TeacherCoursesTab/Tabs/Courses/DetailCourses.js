@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect} from "react";
 import { useParams,  useNavigate  } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
@@ -27,21 +27,20 @@ const TeacherDetailCourses = () => {
   const [videoURL, setVideoURL] = useState("");
   const [introVideoURL, setIntroVideoURL] = useState("");
   const [expandedChapters, setExpandedChapters] = useState({});
-  const videoRef = useRef(null);
 
   useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        const res = await axios.get(`${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`);
-        console.log("Dữ liệu khóa học nhận được:", res.data); // <-- Dòng này giúp kiểm tra dữ liệu
-        setCourse(res.data);
-        setIntroVideoURL(`${BASE_URL}${res.data.intro_video}`);
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu khóa học:", error);
-      }
-    };
-    fetchCourse();
-  }, [courseId]);
+  const fetchCourse = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`);
+      console.log("Dữ liệu khóa học nhận được:", res.data);
+      setCourse(res.data);
+      setIntroVideoURL(res.data.intro_video); // <-- chỉ cần lấy trực tiếp
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu khóa học:", error);
+    }
+  };
+  fetchCourse();
+}, [courseId]);
 
   useEffect(() => {
     const fetchLatestCourses = async () => {
@@ -73,12 +72,16 @@ const TeacherDetailCourses = () => {
     }));
   };
 
-  const handleLessonClick = (lesson) => {
-    if (lesson.video) {
-      const fullURL = `${BASE_URL}${lesson.video}`;
-      setVideoURL((prev) => (prev === fullURL ? "" : fullURL)); // toggle video
-    }
-  };
+const handleLessonClick = (lesson) => {
+  const videoLink = lesson.video; // Đã là link đầy đủ từ backend
+  // Kiểm tra xem video có link hợp lệ hay không
+  if (videoLink) {
+    setVideoURL((prev) => (prev === videoLink ? "" : videoLink)); // toggle video
+  } else {
+    console.log("Không có video cho bài học này.");
+  }
+};
+
 
   if (!course) return <div>Đang tải...</div>;
 
@@ -101,14 +104,14 @@ const TeacherDetailCourses = () => {
           <div style={styles.courseContentWrapper}>
             <div style={styles.videoWrapper}>
               {introVideoURL ? (
-                <video
-                  ref={videoRef}
-                  controls
-                  style={styles.videoStyle}
-                >
-                  <source src={introVideoURL} type="video/mp4" />
-                  Trình duyệt không hỗ trợ video.
-                </video>
+                <iframe
+                  width="100%"
+                  height="300"
+                  src={introVideoURL}  // Đảm bảo introVideoURL là link embed từ backend
+                  title="Giới thiệu khóa học"
+                  frameBorder="0"
+                  allowFullScreen
+                ></iframe>
               ) : (
                 <p>Không có video được chọn.</p>
               )}
@@ -158,7 +161,7 @@ const TeacherDetailCourses = () => {
                 {expandedChapters[chapter.id] && (
                   <ul style={{ listStyle: "none", paddingLeft: "20px" }}>
                     {chapter.lessons.map((lesson, lessonIndex) => {
-                      const lessonVideoURL = `${BASE_URL}${lesson.video}`;
+                      const lessonVideoURL = lesson.video; // Đảm bảo rằng lesson.video đã là URL đầy đủ
                       const isSelected = videoURL === lessonVideoURL;
 
                       return (
@@ -179,17 +182,23 @@ const TeacherDetailCourses = () => {
                           {/* Hiển thị video nếu được chọn */}
                           {isSelected && (
                             <div style={{ marginTop: "10px" }}>
-                              <video
+                              <iframe
                                 key={lessonVideoURL}
-                                controls
+                                width="100%"  // Điều chỉnh chiều rộng của iframe
+                                height="400"  // Điều chỉnh chiều cao của iframe (có thể thay đổi theo nhu cầu)
+                                src={lessonVideoURL}  // Đây là link YouTube embed sẵn
+                                title="Video khóa học"  // Thêm thuộc tính title để cải thiện accessibility
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
                                 style={{
                                   width: "100%",
                                   borderRadius: "8px"
                                 }}
                               >
-                                <source src={lessonVideoURL} type="video/mp4" />
                                 Trình duyệt không hỗ trợ video.
-                              </video>
+                              </iframe>
+
 
                               {/* Hiển thị tài liệu nếu có */}
                               {lesson.document_link && (
