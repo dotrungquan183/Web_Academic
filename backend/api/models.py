@@ -100,7 +100,7 @@ class OTP(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
-        return (datetime.datetime.now(datetime.timezone.utc) - self.created_at).seconds < 300
+        return (datetime.datetime.now() - self.created_at).total_seconds() < 300
 
 class UserInformation(models.Model):  
     user = models.OneToOneField(User, on_delete=models.CASCADE, db_column="user_id", primary_key=True)
