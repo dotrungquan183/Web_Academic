@@ -184,15 +184,58 @@ const StudentDetailCourses = () => {
     }));
   };
 
-  const handleLessonClick = (lesson) => {
-    const videoLink = lesson.video; // Đã là link đầy đủ từ backend
-    // Kiểm tra xem video có link hợp lệ hay không
-    if (videoLink) {
-      setVideoURL((prev) => (prev === videoLink ? "" : videoLink)); // toggle video
-    } else {
-      console.log("Không có video cho bài học này.");
+  const handleLessonClick = async (lesson) => {
+  const videoLink = lesson.video;
+  const token = getToken();
+
+  if (!videoLink || !token) {
+    console.log("Không có video hoặc token.");
+    return;
+  }
+
+  // Decode token để kiểm tra hợp lệ
+  try {
+    jwtDecode(token); // Nếu token lỗi thì throw để ngăn request
+  } catch (error) {
+    console.error("Lỗi giải mã token:", error);
+    return;
+  }
+
+  // Toggle video
+  setVideoURL((prev) => {
+    const isOpening = prev !== videoLink;
+
+    // Nếu đang mở video (click lần 1, 3, 5...), thì ghi log
+    if (isOpening) {
+      fetch("http://localhost:8000/api/student/student_courses/student_viewvideocourses/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,  // gửi token cho backend
+        },
+        body: JSON.stringify({
+          lesson: lesson.id,
+        }),
+        credentials: "omit", // omit hoặc same-origin, tuỳ setup CORS
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Ghi log thất bại");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Đã ghi log xem bài học:", data);
+        })
+        .catch((error) => {
+          console.error("Lỗi ghi log xem bài học:", error);
+        });
     }
+
+    return isOpening ? videoLink : "";
+  });
 };
+
 
   if (!course) return <div>Đang tải...</div>;
 

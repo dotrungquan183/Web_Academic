@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Question,  Chapter, Lesson
+from .models import Course, Question,  Chapter, Lesson, LessonVideoView
 import datetime
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,3 +58,8 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         return obj.user.username if obj.user and hasattr(obj.user, 'username') else "Unknown"
+
+class LessonVideoViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonVideoView
+        fields = ['lesson', 'user']
