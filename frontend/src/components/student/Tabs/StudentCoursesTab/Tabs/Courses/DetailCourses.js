@@ -184,7 +184,7 @@ const StudentDetailCourses = () => {
     }));
   };
 
-  const handleLessonClick = async (lesson) => {
+const handleLessonClick = async (lesson) => {
   const videoLink = lesson.video;
   const token = getToken();
 
@@ -193,48 +193,41 @@ const StudentDetailCourses = () => {
     return;
   }
 
-  // Decode token để kiểm tra hợp lệ
   try {
-    jwtDecode(token); // Nếu token lỗi thì throw để ngăn request
+    jwtDecode(token); // kiểm tra hợp lệ
   } catch (error) {
     console.error("Lỗi giải mã token:", error);
     return;
   }
 
-  // Toggle video
-  setVideoURL((prev) => {
-    const isOpening = prev !== videoLink;
+  // Kiểm tra xem video này đã mở chưa
+  const isOpening = videoURL !== videoLink;
 
-    // Nếu đang mở video (click lần 1, 3, 5...), thì ghi log
-    if (isOpening) {
-      fetch("http://localhost:8000/api/student/student_courses/student_viewvideocourses/", {
+  // Nếu là lần mở mới => ghi log
+  if (isOpening) {
+    try {
+      const response = await fetch("http://localhost:8000/api/student/student_courses/student_viewvideocourses/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,  // gửi token cho backend
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          lesson: lesson.id,
-        }),
-        credentials: "omit", // omit hoặc same-origin, tuỳ setup CORS
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Ghi log thất bại");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          console.log("Đã ghi log xem bài học:", data);
-        })
-        .catch((error) => {
-          console.error("Lỗi ghi log xem bài học:", error);
-        });
-    }
+        body: JSON.stringify({ lesson: lesson.id }),
+        credentials: "omit",
+      });
 
-    return isOpening ? videoLink : "";
-  });
+      if (!response.ok) throw new Error("Ghi log thất bại");
+      const data = await response.json();
+      console.log("✅ Đã ghi log xem bài học:", data);
+    } catch (error) {
+      console.error("❌ Lỗi ghi log xem bài học:", error);
+    }
+  }
+
+  // Toggle video URL
+  setVideoURL(isOpening ? videoLink : "");
 };
+
 
 
   if (!course) return <div>Đang tải...</div>;
