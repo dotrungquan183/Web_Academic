@@ -174,7 +174,7 @@ const handleFormChange = (e) => {
         const lessonData = {
           title: lesson.title || "",
           video: lesson.video || "",
-          document_link: lesson.document_link ? `lesson_document_link_${chapterIndex}_${lessonIndex}` : null,
+          document_link: lesson.document_link ? "" : null, // để backend nhận file từ FormData, đừng gán tên file cứng
           exercise: lesson.exercise || null,
         };
         return lessonData;
@@ -188,14 +188,13 @@ const handleFormChange = (e) => {
     // Gửi bản chapters không chứa file
     formDataToSend.append("chapters", JSON.stringify(chaptersWithoutFiles));
   
-    chapters.forEach((chapter, chapterIndex) => {
-      chapter.lessons.forEach((lesson, lessonIndex) => {
+    chapters.forEach((chapter) => {
+      chapter.lessons.forEach((lesson) => {
         if (lesson.document_link) {
-          formDataToSend.append(`lesson_document_link_${chapterIndex}_${lessonIndex}`, lesson.document_link);
+          formDataToSend.append("document_link", lesson.document_link); // giống như input name="document_link"
         }
       });
     });
-
   
     // Log dữ liệu gửi lên để kiểm tra
     console.log("--- FORM DATA GỬI LÊN SERVER ---");

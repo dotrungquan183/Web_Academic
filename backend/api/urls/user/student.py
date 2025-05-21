@@ -25,6 +25,7 @@ from api.views.student.student_courses.student_bestcourses import StudentBestCou
 from api.views.student.student_courses.student_detailcourses import StudentDetailCoursesView
 from api.views.student.student_courses.student_registrycourses import StudentRegistryCoursesView
 from api.views.student.student_courses.student_viewvideocourses import StudentLessonVideoView
+from api.views.student.student_courses.student_viewdocumentcourses import StudentLessonDocumentView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -43,6 +44,7 @@ urlpatterns = [
     path('student/student_courses/student_bestcourses/', StudentBestCoursesView.as_view(), name='student_bestcourses'),
     path('student/student_courses/student_detailcourses/', StudentDetailCoursesView.as_view(), name='student_detailcourses'),
     path('student/student_courses/student_viewvideocourses/', StudentLessonVideoView.as_view(), name='student_viewvideocourses'),
+    path('student/student_courses/student_viewdocumentcourses/', StudentLessonDocumentView.as_view(), name='student_viewdocumentcourses'),
     path('student/student_courses/student_detailcourses/<int:pk>/', StudentDetailCoursesView.as_view(), name='student_detailcourses_id'),
     path('student/student_courses/student_registrycourses/<int:course_id>/', StudentRegistryCoursesView.as_view(), name='student_registrycourses_id'),
     path('student/student_courses/student_registrycourses/', StudentRegistryCoursesView.as_view(), name='student_registrycourses'),

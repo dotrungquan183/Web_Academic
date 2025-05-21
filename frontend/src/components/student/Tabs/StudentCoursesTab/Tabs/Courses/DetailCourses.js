@@ -228,6 +228,40 @@ const handleLessonClick = async (lesson) => {
   setVideoURL(isOpening ? videoLink : "");
 };
 
+const handleDocumentView = async (lesson) => {
+  const documentLink = lesson.document_link;
+  const token = getToken();
+
+  if (!documentLink || !token) {
+    console.log("Không có tài liệu hoặc token.");
+    return;
+  }
+
+  try {
+    jwtDecode(token); // kiểm tra token hợp lệ
+  } catch (error) {
+    console.error("Lỗi giải mã token:", error);
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8000/api/student/student_courses/student_viewdocumentcourses/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ lesson: lesson.id }),
+      credentials: "omit",
+    });
+
+    if (!response.ok) throw new Error("Ghi log xem tài liệu thất bại");
+    const data = await response.json();
+    console.log("✅ Đã ghi log xem tài liệu:", data);
+  } catch (error) {
+    console.error("❌ Lỗi ghi log xem tài liệu:", error);
+  }
+};
 
 
   if (!course) return <div>Đang tải...</div>;
@@ -373,11 +407,13 @@ const handleLessonClick = async (lesson) => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{ color: "#1d4ed8", textDecoration: "underline" }}
+                                    onClick={() => handleDocumentView(lesson)}
                                   >
                                     Xem tài liệu
                                   </a>
                                 </div>
                               )}
+
                             </div>
                           )}
                         </li>

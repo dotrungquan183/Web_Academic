@@ -10,9 +10,29 @@ from api.serializers import CourseListSerializer
 from urllib.parse import unquote
 import re
 import yt_dlp
+
+
 class TeacherAddCoursesView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    def convert_to_embed_url(self, url):
+        try:
+            # Nếu đã là embed rồi thì trả luôn
+            if 'youtube.com/embed/' in url:
+                return url
+
+            # Dùng regex lấy video id từ URL youtube chuẩn
+            video_id_match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]+)', url)
+            if video_id_match:
+                video_id = video_id_match.group(1)
+                embed_url = f'https://www.youtube.com/embed/{video_id}'
+                return embed_url
+            else:
+                return url  # Trả lại link gốc nếu không tìm được id
+        except Exception as e:
+            print(f"Lỗi chuyển đổi sang embed URL: {e}")
+            return url
+    
     def get_youtube_duration(self, url):
         try:
             # Chuyển embed sang URL chuẩn
@@ -66,6 +86,9 @@ class TeacherAddCoursesView(APIView):
             if isinstance(chapters_data, str):
                 chapters_data = json.loads(chapters_data)
 
+            document_files = request.FILES.getlist("document_link")
+            file_pointer = 0  # dùng để trỏ tới đúng file cho mỗi lesson
+
             for chapter_data in chapters_data:
                 chapter = Chapter.objects.create(
                     course=course,
@@ -75,19 +98,23 @@ class TeacherAddCoursesView(APIView):
 
                 for lesson_data in chapter_data.get('lessons', []):
                     video_url = lesson_data.get('video', '')
+                    embed_url = self.convert_to_embed_url(video_url) if video_url else ''
                     duration = self.get_youtube_duration(video_url) if video_url else timedelta()
 
-                    if video_url:
-                        video_count += 1
-                        total_duration += duration
+                    # Lấy file theo thứ tự
+                    document_file = None
+                    if file_pointer < len(document_files):
+                        document_file = document_files[file_pointer]
+                        file_pointer += 1
 
                     Lesson.objects.create(
                         chapter=chapter,
                         title=lesson_data['title'],
-                        video=video_url,
+                        video=embed_url,
                         duration=duration,
-                        document_link=lesson_data.get('document_link', None)  # chỉ lưu link text
+                        document_link=document_file
                     )
+
 
             course.total_duration = total_duration
             course.video_count = video_count
@@ -136,6 +163,9 @@ class TeacherAddCoursesView(APIView):
             # Xoá toàn bộ chương và bài học cũ
             course.chapters.all().delete()
 
+            document_files = request.FILES.getlist("document_link")
+            file_pointer = 0  # dùng để trỏ tới đúng file cho mỗi lesson
+
             for chapter_data in chapters_data:
                 chapter = Chapter.objects.create(
                     course=course,
@@ -145,19 +175,23 @@ class TeacherAddCoursesView(APIView):
 
                 for lesson_data in chapter_data.get('lessons', []):
                     video_url = lesson_data.get('video', '')
+                    embed_url = self.convert_to_embed_url(video_url) if video_url else ''
                     duration = self.get_youtube_duration(video_url) if video_url else timedelta()
 
-                    if video_url:
-                        video_count += 1
-                        total_duration += duration
+                    # Lấy file theo thứ tự
+                    document_file = None
+                    if file_pointer < len(document_files):
+                        document_file = document_files[file_pointer]
+                        file_pointer += 1
 
                     Lesson.objects.create(
                         chapter=chapter,
                         title=lesson_data['title'],
-                        video=video_url,
+                        video=embed_url,
                         duration=duration,
-                        document_link=lesson_data.get('document_link', None)
+                        document_link=document_file
                     )
+
 
             course.total_duration = total_duration
             course.video_count = video_count

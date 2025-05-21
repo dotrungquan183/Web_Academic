@@ -268,3 +268,13 @@ class LessonVideoView(models.Model):
             return f"{self.user.username} viewed {self.lesson.title} at {self.view_at}"
     class Meta:
         db_table = 'lesson_video_view'
+
+class LessonDocumentView(models.Model):
+    lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    view_at = models.DateTimeField(auto_now_add=True)  # Thời điểm user bắt đầu xem
+
+    def __str__(self):
+            return f"{self.user.username} viewed {self.lesson.title} at {self.view_at}"
+    class Meta:
+        db_table = 'lesson_document_view'
