@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getToken } from "../../auth/authHelper";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -13,7 +14,6 @@ import {
   RadialLinearScale,
 } from 'chart.js';
 import { Pie, Doughnut, Bar, Line, PolarArea } from 'react-chartjs-2';
-import { FaChartPie, FaUsers, FaChartBar, FaQuestion, FaClipboardList, FaGift, FaRegTimesCircle } from 'react-icons/fa';
 
 ChartJS.register(
   ArcElement,
@@ -28,186 +28,257 @@ ChartJS.register(
   RadialLinearScale
 );
 
-// Component: Card thống kê trên đầu
-const StatCard = ({ icon: Icon, label, value, color }) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: '16px',
-    borderRadius: '12px',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-    margin: '0 12px',
-    minWidth: '200px',
-    flex: 1,
-  }}>
-    <Icon size={32} color={color} style={{ marginRight: '16px' }} />
-    <div>
-      <div style={{ fontSize: '14px', color: '#6b7280' }}>{label}</div>
-      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{value}</div>
-    </div>
-  </div>
-);
+const chartTitles = {
+  user_activity: "Hoạt động người dùng",
+  daily_views: "Lượt xem hàng ngày",
+  daily_votes: "Lượt vote hàng ngày",
+  vote_ratio: "Tỉ lệ vote",
+  top_questions_by_views: "Top câu hỏi theo lượt xem",
+  accepted_answers: "Câu trả lời được chấp nhận",
+  avg_votes_per_question: "Trung bình vote mỗi câu hỏi",
+  daily_questions: "Câu hỏi hàng ngày",
+  tag_question_count: "Câu hỏi theo thẻ",
+  bounty_distribution: "Phân bố treo giải",
+  comment_type_distribution: "Phân bố loại bình luận",
+  daily_answers: "Câu trả lời hàng ngày"
+};
 
-// Component: Chart Card
+const chartTypes = {
+  user_activity: 'bar',
+  daily_views: 'line',
+  daily_votes: 'line',
+  vote_ratio: 'doughnut',
+  top_questions_by_views: 'bar',
+  accepted_answers: 'bar',
+  avg_votes_per_question: 'bar',
+  daily_questions: 'line',
+  tag_question_count: 'bar',
+  bounty_distribution: 'polarArea',
+  comment_type_distribution: 'pie',
+  daily_answers: 'line'
+};
+
+const sidebarItems = [
+  { key: 'tab1', icon: '📊', label: 'Hoạt động' },
+  { key: 'tab2', icon: '📈', label: 'Tương tác' },
+];
+
+// ... (các import giữ nguyên)
+
 const ChartCard = ({ title, chart }) => (
-  <div style={{
-    flex: '1 1 calc(33.33% - 24px)',
-    margin: '12px',
-    padding: '16px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-    maxWidth: '400px',
-    minWidth: '280px',
-  }}>
-    <h3 style={{ fontSize: '16px', textAlign: 'center', marginBottom: '12px' }}>{title}</h3>
-    <div style={{ height: '250px' }}>
-      {chart}
-    </div>
+  <div
+    style={{
+      width: '350px', // 👈 bằng sidebar
+      margin: 16,
+      padding: 16,
+      backgroundColor: 'white',
+      borderRadius: 12,
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      height: 300,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      transition: 'all 0.3s ease', // 👈 thêm smooth effect
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+      e.currentTarget.style.backgroundColor = '#f0f4ff'; // 👈 highlight màu khi hover
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+      e.currentTarget.style.backgroundColor = 'white';
+    }}
+  >
+
+    <h3 style={{ fontSize: 16, textAlign: 'center', marginBottom: 12 }}>{title}</h3>
+    <div style={{ flex: 1, minHeight: 250 }}>{chart}</div>
   </div>
 );
 
-// Component: Sidebar
-const Sidebar = ({ onSelect }) => (
-  <div style={{
-    width: '60px',
-    backgroundColor: '#003366',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    paddingTop: '20px',
-    color: 'white'
-  }}>
-    <FaChartPie size={24} style={{ margin: '20px 0', cursor: 'pointer' }} onClick={() => onSelect('dashboard')} />
-    <FaUsers size={24} style={{ margin: '20px 0', cursor: 'pointer' }} onClick={() => onSelect('users')} />
-    <FaChartBar size={24} style={{ margin: '20px 0', cursor: 'pointer' }} onClick={() => onSelect('categories')} />
-    <FaQuestion size={24} style={{ margin: '20px 0', cursor: 'pointer' }} onClick={() => onSelect('questions')} />
-  </div>
-);
 
-// Component chính
-function TeacherDashboard() {
-  const [bountyData, setBountyData] = useState(null);
-  const [dummyData, setDummyData] = useState({});
-  const [selectedView, setSelectedView] = useState('dashboard');
-  const [bountied, setBountied] = useState(0);
-  const [nonBountied, setNonBountied] = useState(0);
+const renderChart = (type, data) => {
+  const chartMap = {
+    bar: <Bar data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
+    line: <Line data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
+    doughnut: <Doughnut data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
+    pie: <Pie data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
+    polarArea: <PolarArea data={data} options={{ responsive: true, maintainAspectRatio: false }} />
+  };
+  return chartMap[type] || null;
+};
+
+export default function TeacherDashboard() {
+  const [chartDataMap, setChartDataMap] = useState({});
+  const [activeTab, setActiveTab] = useState('tab1');
+  const token = getToken();
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/student/student_forum/student_question/student_showquestion/')
-      .then((res) => res.json())
-      .then((questions) => {
-        const bountyCount = questions.filter(q => q.bounty_amount > 0).length;
-        const nonBountyCount = questions.length - bountyCount;
+    const charts = Object.keys(chartTitles);
 
-        setBountied(bountyCount);
-        setNonBountied(nonBountyCount);
-
-        setBountyData({
-          labels: ['Treo giải', 'Không treo giải'],
-          datasets: [{
-            data: [bountyCount, nonBountyCount],
-            backgroundColor: ['#facc15', '#60a5fa'],
-            borderWidth: 1,
-          }],
-        });
-
-        setDummyData({
-          answered: {
-            labels: ['Đã trả lời', 'Chưa trả lời'],
-            datasets: [{ data: [40, 20], backgroundColor: ['#4ade80', '#f87171'] }]
-          },
-          categories: {
-            labels: ['Toán', 'Lý', 'Hóa', 'Văn', 'Anh'],
-            datasets: [{ label: 'Câu hỏi', data: [10, 20, 15, 8, 12], backgroundColor: '#60a5fa' }]
-          },
-          topUsers: {
-            labels: ['Quân', 'Linh', 'Tú', 'Minh', 'Lan'],
-            datasets: [{ label: 'Số câu hỏi', data: [12, 9, 7, 6, 5], backgroundColor: '#facc15' }]
-          },
-          questionsOverTime: {
-            labels: ['T2', 'T3', 'T4', 'T5', 'T6'],
-            datasets: [{
-              label: 'Số câu hỏi',
-              data: [5, 8, 6, 10, 7],
-              borderColor: '#10b981',
-              backgroundColor: '#d1fae5',
-              tension: 0.4
-            }]
-          },
-          bountyDist: {
-            labels: ['0-50', '50-100', '100-150', '150+'],
-            datasets: [{ label: 'Giải thưởng', data: [8, 12, 5, 3], backgroundColor: ['#a5f3fc', '#38bdf8', '#0ea5e9', '#0369a1'] }]
-          },
-          extra: {
-            labels: ['A', 'B', 'C'],
-            datasets: [{ label: 'Extra', data: [5, 10, 15], backgroundColor: ['#a78bfa', '#f472b6', '#34d399'] }]
+    Promise.all(
+      charts.map(chart =>
+        fetch(`http://localhost:8000/api/teacher/teacher_insight/teacher_insight_forum/?chart=${chart}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           }
-        });
+        })
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+              const labelKey = Object.keys(data[0]).find(k =>
+                typeof data[0][k] === 'string' &&
+                !['value', 'count', 'total'].includes(k)
+              ) || Object.keys(data[0])[0];
+
+              const valueKey = ['value', 'count', 'total'].find(k => k in data[0]) ||
+                Object.keys(data[0]).find(k => typeof data[0][k] === 'number' && k !== labelKey) ||
+                'value';
+
+              return {
+                chart,
+                data: {
+                  labels: data.map(d => d[labelKey]),
+                  datasets: [{
+                    label: chartTitles[chart],
+                    data: data.map(d => Number(d[valueKey]) || 0),
+                    backgroundColor: [
+                      '#60a5fa', '#facc15', '#34d399', '#f87171', '#a78bfa',
+                      '#fb923c', '#2dd4bf', '#818cf8', '#f472b6', '#22d3ee'
+                    ],
+                    borderWidth: 1,
+                    fill: false,
+                    borderColor: '#2563eb',
+                    tension: 0.4,
+                  }]
+                }
+              };
+            } else {
+              return null;
+            }
+          })
+          .catch(() => null)
+      )
+    ).then(results => {
+      const newChartDataMap = {};
+      results.forEach(r => {
+        if (r) newChartDataMap[r.chart] = r.data;
       });
-  }, []);
+      setChartDataMap(newChartDataMap);
+    });
+  }, [token]);
 
-  const renderCharts = () => (
-    <>
-      {bountyData && <ChartCard title="Treo giải vs Không treo" chart={<Pie data={bountyData} />} />}
-      {dummyData.answered && <ChartCard title="Tỉ lệ câu hỏi trả lời" chart={<Doughnut data={dummyData.answered} />} />}
-      {dummyData.categories && <ChartCard title="Câu hỏi theo chuyên mục" chart={<Bar data={dummyData.categories} />} />}
-      {dummyData.topUsers && <ChartCard title="Top 5 người hỏi" chart={<Bar data={dummyData.topUsers} options={{ indexAxis: 'y' }} />} />}
-      {dummyData.questionsOverTime && <ChartCard title="Biến động câu hỏi" chart={<Line data={dummyData.questionsOverTime} />} />}
-      {dummyData.bountyDist && <ChartCard title="Phân bố giải thưởng" chart={<PolarArea data={dummyData.bountyDist} />} />}
-    </>
-  );
+  const chartsTab1 = [
+    'user_activity',
+    'daily_views',
+    'daily_votes',
+    'vote_ratio',
+    'top_questions_by_views',
+    'accepted_answers'
+  ];
 
-  const renderView = () => {
-    switch (selectedView) {
-      case 'dashboard':
-        return renderCharts();
-      case 'users':
-      case 'categories':
-      case 'questions':
-        return (
-          <>
-            <ChartCard title="Extra 1" chart={<Pie data={dummyData.extra} />} />
-            <ChartCard title="Extra 2" chart={<Doughnut data={dummyData.answered} />} />
-            <ChartCard title="Extra 3" chart={<Line data={dummyData.questionsOverTime} />} />
-            <ChartCard title="Extra 4" chart={<PolarArea data={dummyData.bountyDist} />} />
-            <ChartCard title="Extra 5" chart={<Bar data={dummyData.topUsers} />} />
-          </>
-        );
-      default:
-        return null;
-    }
-  };
+  const chartsTab2 = [
+    'avg_votes_per_question',
+    'daily_questions',
+    'tag_question_count',
+    'bounty_distribution',
+    'comment_type_distribution',
+    'daily_answers'
+  ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-      <Sidebar onSelect={setSelectedView} />
-      <div style={{ flex: 1 }}>
-        <div style={{ 
-          backgroundColor: '#003366', 
-          color: 'white', 
-          padding: '20px', 
-          fontSize: '20px', 
-          fontWeight: "bold", 
-          textAlign: 'center' 
-        }}>
-          Dashboard dành cho khóa học giáo viên
-        </div>
-        {/* Cards thống kê */}
-        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '20px', backgroundColor: '#e5e7eb', flexWrap: 'wrap' }}>
-          <StatCard icon={FaClipboardList} label="Tổng câu hỏi" value={bountied + nonBountied} color="#2563eb" />
-          <StatCard icon={FaGift} label="Có treo giải" value={bountied} color="#facc15" />
-          <StatCard icon={FaRegTimesCircle} label="Không treo giải" value={nonBountied} color="#60a5fa" />
-        </div>
+    <div style={{ display: 'flex', height: '100vh', marginTop: '-15px' }}>
+      {/* Sidebar */}
+      <div style={{
+        width: 425,
+        backgroundColor: 'rgba(0, 51, 102, 0.95)',  // Màu nền mới
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',  // Căn giữa nội dung ngang
+        paddingTop: 20,
+        paddingBottom: 20,
+      }}>
+        <h2 style={{ marginBottom: 20, fontWeight: 'bold' }}>Dashboard</h2>
+        {sidebarItems.map(({ key, icon, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            onMouseEnter={(e) => {
+              if (activeTab !== key) e.currentTarget.style.backgroundColor = '#1e3a8a'; // hover màu
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== key) e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            style={{
+              width: 210,
+              backgroundColor: activeTab === key ? '#256ee3' : 'transparent',
+              color: 'white',
+              border: 'none',
+              padding: '12px 0',
+              marginBottom: 12,
+              cursor: 'pointer',
+              fontSize: 18,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              borderRadius: 8,
+              fontWeight: activeTab === key ? 'bold' : 'normal',
+              userSelect: 'none',
+              transition: 'background-color 0.3s ease', // thêm mượt
+            }}
+            title={label}
+          >
+            <span>{icon}</span> <span>{label}</span>
+          </button>
 
-        {/* Charts */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', padding: '20px' }}>
-          {renderView()}
-        </div>
+        ))}
+      </div>
+
+
+      {/* Content area */}
+      <div style={{
+        flexGrow: 1,
+        padding: 20,
+        overflowY: 'auto',
+        backgroundColor: 'rgba(243, 244, 246, 0.85)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+      }}>
+        {(activeTab === 'tab1' ? chartsTab1 : chartsTab2).map(chart =>
+          chartDataMap[chart] ? (
+            <ChartCard
+              key={chart}
+              title={chartTitles[chart]}
+              chart={renderChart(chartTypes[chart], chartDataMap[chart])}
+            />
+          ) : (
+            <div
+              key={chart}
+              style={{
+                width: '100%',
+                margin: 16,
+                padding: 16,
+                backgroundColor: '#003366',
+                borderRadius: 12,
+                textAlign: 'center',
+                color: '#999',
+                height: 320,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              Đang tải {chartTitles[chart]}...
+            </div>
+          )
+        )}
       </div>
     </div>
   );
 }
-
-export default TeacherDashboard;

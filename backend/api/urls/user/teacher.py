@@ -23,6 +23,7 @@ from api.views.teacher.teacher_profile.teacher_tag import TeacherProfileTagView
 from api.views.teacher.teacher_profile.teacher_stat import TeacherProfileStatView
 from api.views.teacher.teacher_profile.teacher_vote import TeacherProfileVoteView
 from api.views.teacher.teacher_profile.teacher_account import TeacherProfileAccountView
+from api.views.teacher.teacher_insight.teacher_insight_forum import TeacherInsightDataView
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
 from api.views.auth.register import register_view
@@ -54,5 +55,6 @@ urlpatterns = [
     path('teacher/teacher_profile/teacher_stat/', TeacherProfileStatView.as_view(), name='teacher_profile_stat'),
     path('teacher/teacher_profile/teacher_vote/', TeacherProfileVoteView.as_view(), name='teacher_profile_vote'),
     path('teacher/teacher_profile/teacher_account/', TeacherProfileAccountView.as_view(), name='teacher_profile_account'),
+    path('teacher/teacher_insight/teacher_insight_forum/', TeacherInsightDataView.as_view(), name='teacher_insight'),
 ]
 
