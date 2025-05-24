@@ -63,12 +63,10 @@ const sidebarItems = [
   { key: 'tab2', icon: '📈', label: 'Tương tác' },
 ];
 
-// ... (các import giữ nguyên)
-
 const ChartCard = ({ title, chart }) => (
   <div
     style={{
-      width: '350px', // 👈 bằng sidebar
+      width: '350px',
       margin: 16,
       padding: 16,
       backgroundColor: 'white',
@@ -78,23 +76,21 @@ const ChartCard = ({ title, chart }) => (
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      transition: 'all 0.3s ease', // 👈 thêm smooth effect
+      transition: 'all 0.3s ease',
     }}
     onMouseEnter={(e) => {
       e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
-      e.currentTarget.style.backgroundColor = '#f0f4ff'; // 👈 highlight màu khi hover
+      e.currentTarget.style.backgroundColor = '#f0f4ff';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
       e.currentTarget.style.backgroundColor = 'white';
     }}
   >
-
     <h3 style={{ fontSize: 16, textAlign: 'center', marginBottom: 12 }}>{title}</h3>
     <div style={{ flex: 1, minHeight: 250 }}>{chart}</div>
   </div>
 );
-
 
 const renderChart = (type, data) => {
   const chartMap = {
@@ -110,7 +106,15 @@ const renderChart = (type, data) => {
 export default function TeacherDashboard() {
   const [chartDataMap, setChartDataMap] = useState({});
   const [activeTab, setActiveTab] = useState('tab1');
+  const [currentTime, setCurrentTime] = useState(new Date());
   const token = getToken();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const charts = Object.keys(chartTitles);
@@ -189,16 +193,29 @@ export default function TeacherDashboard() {
     'daily_answers'
   ];
 
+  const formatTime = (date) =>
+  date.toLocaleString('vi-VN', {
+    hour12: false,
+    weekday: 'long',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+
   return (
     <div style={{ display: 'flex', height: '100vh', marginTop: '-15px' }}>
       {/* Sidebar */}
       <div style={{
         width: 425,
-        backgroundColor: 'rgba(0, 51, 102, 0.95)',  // Màu nền mới
+        backgroundColor: 'rgba(0, 51, 102, 0.95)',
         color: 'white',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',  // Căn giữa nội dung ngang
+        alignItems: 'center',
         paddingTop: 20,
         paddingBottom: 20,
       }}>
@@ -208,7 +225,7 @@ export default function TeacherDashboard() {
             key={key}
             onClick={() => setActiveTab(key)}
             onMouseEnter={(e) => {
-              if (activeTab !== key) e.currentTarget.style.backgroundColor = '#1e3a8a'; // hover màu
+              if (activeTab !== key) e.currentTarget.style.backgroundColor = '#1e3a8a';
             }}
             onMouseLeave={(e) => {
               if (activeTab !== key) e.currentTarget.style.backgroundColor = 'transparent';
@@ -229,16 +246,14 @@ export default function TeacherDashboard() {
               borderRadius: 8,
               fontWeight: activeTab === key ? 'bold' : 'normal',
               userSelect: 'none',
-              transition: 'background-color 0.3s ease', // thêm mượt
+              transition: 'background-color 0.3s ease',
             }}
             title={label}
           >
             <span>{icon}</span> <span>{label}</span>
           </button>
-
         ))}
       </div>
-
 
       {/* Content area */}
       <div style={{
@@ -250,6 +265,18 @@ export default function TeacherDashboard() {
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
       }}>
+        {/* ⏰ Clock Header */}
+        <div style={{
+          width: '100%',
+          fontSize: 20,
+          fontWeight: 'bold',
+          textAlign: 'left',
+          marginBottom: 12,
+          color: '003366'
+        }}>
+          🕒 {formatTime(currentTime)}
+        </div>
+
         {(activeTab === 'tab1' ? chartsTab1 : chartsTab2).map(chart =>
           chartDataMap[chart] ? (
             <ChartCard
