@@ -2,103 +2,118 @@ import React, { useEffect, useState } from "react";
 import TeacherForumLayout from "../Layout";
 
 function TeacherForumTag() {
-  const [data, setData] = useState(null);
-  const [timeFilter, setTimeFilter] = useState("Newest");
-  const [bountyFilter, setBountyFilter] = useState("Bountied");
-  const [interestFilter, setInterestFilter] = useState("Active");
-  const [qualityFilter, setQualityFilter] = useState("Score");
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch("http://localhost:8000/api/teacher/teacher_forum/teacher_tag/")
+  const fetchTags = (filter) => {
+    setLoading(true);
+    fetch(`http://localhost:8000/api/student/student_forum/student_tag/student_show_tags/?filter=${filter}`)
       .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched data:", data);
-        setData(Array.isArray(data) ? data : data ? [data] : []);
+      .then((res) => {
+        const tags = Array.isArray(res.tags) ? res.tags : [];
+        setData(tags);
+        setFilteredData(tags);
+        setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        console.error("❌ Lỗi khi fetch:", error);
         setData([]);
+        setFilteredData([]);
+        setLoading(false);
       });
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchTags(activeFilter);
+  }, [activeFilter]);
+
+  useEffect(() => {
+    const filtered = data.filter((tag) =>
+      tag.tag_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredData(filtered);
+  }, [searchQuery, data]);
 
   return (
     <TeacherForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
-          <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
-          <button style={askButtonStyle}>Đặt câu hỏi</button>
-        </div>
-        <div style={contentStyle}>
-          <div style={questionCountStyle}>
-            Tổng số câu hỏi: {data ? data.length : "..."}
-          </div>
-          <div style={filterContainerStyle}>
-            <div style={filterBoxStyle}>
-              <style>{globalStyle}</style>
-              <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} style={dropdownStyle}>
-                <option value="Newest">Newest</option>
-                <option value="Week">Week</option>
-                <option value="Month">Month</option>
-              </select>
-              <select value={bountyFilter} onChange={(e) => setBountyFilter(e.target.value)} style={dropdownStyle}>
-                <option value="Bountied">Bountied</option>
-              </select>
-              <select value={interestFilter} onChange={(e) => setInterestFilter(e.target.value)} style={dropdownStyle}>
-                <option value="Trending">Trending</option>
-                <option value="Hot">Hot</option>
-                <option value="Frequent">Frequent</option>
-                <option value="Active">Active</option>
-              </select>
-              <select value={qualityFilter} onChange={(e) => setQualityFilter(e.target.value)} style={dropdownStyle}>
-                <option value="Interesting">Interesting</option>
-                <option value="Score">Score</option>
-              </select>
+          <h2 style={{ color: "#003366" }}>Chủ đề</h2>
+          <div style={topControlsStyle}>
+            <div style={searchContainerStyle}>
+              <input
+                type="text"
+                placeholder="Tìm kiếm chủ đề..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={searchInputStyle}
+              />
+              <span style={searchIconStyle}>🔍</span>
             </div>
+            <div style={filterButtonGroupStyle}>
+              <button
+                style={activeFilter === "All" ? askButtonStyle : inactiveButtonStyle}
+                onClick={() => setActiveFilter("All")}
+              >
+                Tất cả
+              </button>
+              <button
+                style={activeFilter === "Popular" ? askButtonStyle : inactiveButtonStyle}
+                onClick={() => setActiveFilter("Popular")}
+              >
+                Phổ biến
+              </button>
+              <button
+                style={activeFilter === "Newest" ? askButtonStyle : inactiveButtonStyle}
+                onClick={() => setActiveFilter("Newest")}
+              >
+                Mới nhất
+              </button>
+            </div>
+          </div>
+          <div style={{ color: "#003366", fontWeight: "bold", marginTop: "10px" }}>
+            Số chủ đề tìm thấy: {filteredData.length}
           </div>
         </div>
       </div>
 
-      <div style={questionListStyle}>
-        {data === null ? (
-          <p>Đang tải dữ liệu...</p>
-        ) : data.length > 0 ? (
-          <ul style={{ listStyleType: "none", padding: 0 }}>
-            {data.map((question) => {
-              let contentText = "Nội dung không hợp lệ";
-              if (typeof question.content === "string") {
-                contentText = question.content.split(",").map((line, index) => (
-                  <span key={index}>
-                    {line}
-                    <br />
-                  </span>
-                ));
-              } else if (Array.isArray(question.content)) {
-                contentText = question.content.map((line, index) => (
-                  <span key={index}>
-                    {String(line)}
-                    <br />
-                  </span>
-                ));
-              } else if (question.content && typeof question.content === "object") {
-                contentText = <pre>{JSON.stringify(question.content, null, 2)}</pre>;
-              }
+      <div style={tagListStyle}>
+        {loading ? (
+          <p style={{ marginLeft: "160px" }}>Đang tải dữ liệu...</p>
+        ) : filteredData.length > 0 ? (
+          filteredData.map((tag, index) => {
+            const alternatingStyle = {
+              backgroundColor: index % 2 === 0 ? "#003366" : "#ffffff",
+              color: index % 2 === 0 ? "#ffffff" : "#003366",
+              border: "1px solid #ccc",
+              padding: "15px",
+              borderRadius: "8px",
+              fontSize: "15px",
+            };
 
-              return (
-                <li key={question.id} style={questionItemStyle}>
-                  <p>{contentText}</p>
-                </li>
-              );
-            })}
-          </ul>
+            return (
+              <div key={tag.id} style={alternatingStyle}>
+                <h3>{tag.tag_name}</h3>
+                <p><strong>Tổng câu hỏi:</strong> {tag.total_questions}</p>
+                <p><strong>Hôm nay:</strong> {tag.questions_today}</p>
+                <p><strong>Tuần này:</strong> {tag.questions_this_week}</p>
+              </div>
+            );
+          })
         ) : (
-          <p>Không có câu hỏi nào.</p>
+          <p style={{ marginLeft: "160px" }}>Không có dữ liệu.</p>
         )}
       </div>
     </TeacherForumLayout>
   );
 }
 
-// 🎨 Styling
+export default TeacherForumTag;
+
+// === Style ===
 const containerStyle = {
   backgroundColor: "#f8f9fa",
   padding: "15px",
@@ -106,12 +121,18 @@ const containerStyle = {
   border: "1px solid #ddd",
   marginBottom: "30px",
   marginTop: "15px",
-  marginLeft:"160px",
-  height: "135px",
+  marginLeft: "160px",
+  height: "auto",
   width: "1020px",
 };
 
 const headerStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+};
+
+const topControlsStyle = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -128,79 +149,54 @@ const askButtonStyle = {
   fontSize: "15px",
 };
 
-const contentStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "10px",
+const inactiveButtonStyle = {
+  backgroundColor: "white",
+  color: "#003366",
+  border: "1px solid #003366",
+  padding: "8px 12px",
+  borderRadius: "5px",
+  cursor: "pointer",
+  fontWeight: "bold",
+  fontSize: "15px",
 };
 
-const questionCountStyle = {
+const filterButtonGroupStyle = {
+  display: "flex",
+  gap: "10px",
+};
+
+const searchContainerStyle = {
+  position: "relative",
+};
+
+const searchInputStyle = {
+  padding: "8px 35px 8px 12px",
+  border: "1px solid #ccc",
+  borderRadius: "5px",
+  fontSize: "15px",
+  width: "250px",
+};
+
+const searchIconStyle = {
+  position: "absolute",
+  right: "10px",
+  top: "50%",
+  transform: "translateY(-50%)",
   fontSize: "16px",
-  fontWeight: "bold",
   color: "#003366",
 };
 
-const filterContainerStyle = {
+const tagListStyle = {
   backgroundColor: "#ffffff",
-  padding: "8px",
-  borderRadius: "8px",
-  border: "1px solid #ddd",
-};
-
-const filterBoxStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, 1fr)",
-  gap: "8px",
-};
-
-const dropdownStyle = {
-  padding: "6px",
-  borderRadius: "4px",
-  border: "1px solid #003366",
-  cursor: "pointer",
-  width: "100%",
-  minWidth: "120px",
-  backgroundColor: "#003366",
-  color: "white",
-};
-
-// CSS global để xử lý hiệu ứng hover
-const globalStyle = `
-  select option {
-    background-color: white !important;
-    color: #003366 !important;
-  }
-
-  select:hover, select:focus {
-    background-color: #003366 !important;
-    color: white !important;
-    border-color: #003366 !important;
-  }
-
-  select option:hover {
-    background-color: #003366 !important;
-    color: white !important;
-  }
-`;
-
-const questionListStyle = {
-  backgroundColor: "#ffffff",
-  padding: "20px", // Giảm padding để hiển thị đẹp hơn
+  padding: "20px",
   borderRadius: "8px",
   border: "1px solid #ddd",
   marginTop: "20px",
   maxHeight: "500px",
-  overflowY: "auto", // Thêm thanh cuộn nếu quá nhiều câu hỏi
+  overflowY: "auto",
   width: "1010px",
   marginLeft: "160px",
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+  gap: "20px",
 };
-
-const questionItemStyle = {
-  padding: "12px",
-  borderBottom: "1px solid #ddd",
-  fontSize: "16px",
-  lineHeight: "1.5",
-};
-
-export default TeacherForumTag;

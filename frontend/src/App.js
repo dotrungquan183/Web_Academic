@@ -54,9 +54,15 @@ import TeacherIntroTab from "./components/teacher/Tabs/TeacherIntroTab";
 import TeacherDocsTab from "./components/teacher/Tabs/TeacherDocsTab"
 import TeacherForumTab from "./components/teacher/Tabs/TeacherForumTab/Menu"
 import TeacherForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/Question"
-import TeacherForumUnanswer from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswer"
+import TeacherAskQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/AskQuestion"
 import TeacherForumTag from "./components/teacher/Tabs/TeacherForumTab/Tabs/Tag"
 import TeacherForumSave from "./components/teacher/Tabs/TeacherForumTab/Tabs/Save"
+import TeacherForumQuestionDetail from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/DetailQuestion"
+
+import TeacherUnanswersAskQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswers/AskQuestion"
+import TeacherUnanswersForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswers/Question"
+import TeacherUnanswersForumQuestionDetail from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswers/DetailQuestion"
+
 import TeacherResultTab from "./components/teacher/Tabs/TeacherResultTab"
 import TeacherHomeworkTab from "./components/teacher/Tabs/TeacherHomeworkTab"
 import TeacherContactTab from "./components/teacher/Tabs/TeacherContactTab";
@@ -65,10 +71,20 @@ import TeacherAddCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/
 import TeacherDetailCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/DetailCourses";
 import TeacherPost from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Post";
 import TeacherRoadmap from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Roadmap";
-import TeacherAskQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/AskQuestion"
-import TeacherForumQuestionDetail from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/DetailQuestion"
 import TeacherProfileCourses from "./components/teacher/Profile/Tabs/ProfileCourses";
 import TeacherProfileForum from "./components/teacher/Profile/Tabs/ProfileForum";
+
+import AdminMenu from "./components/admin/AdminMenu";
+import AdminForumTab from "./components/admin/Tabs/AdminForumTab/Menu"
+import AdminForumQuestion from "./components/admin/Tabs/AdminForumTab/Tabs/Questions/Question"
+import AdminForumUnanswer from "./components/admin/Tabs/AdminForumTab/Tabs/Unanswer"
+import AdminForumTag from "./components/admin/Tabs/AdminForumTab/Tabs/Tag"
+import AdminForumSave from "./components/admin/Tabs/AdminForumTab/Tabs/Save"
+import AdminResultTab from "./components/admin/Tabs/AdminResultTab"
+import AdminListCourses from "./components/admin/Tabs/AdminCoursesTab/Tabs/Courses/ListCourses"; 
+import AdminDetailCourses from "./components/admin/Tabs/AdminCoursesTab/Tabs/Courses/DetailCourses";
+import AdminPost from "./components/admin/Tabs/AdminCoursesTab/Tabs/Post";
+import AdminForumQuestionDetail from "./components/admin/Tabs/AdminForumTab/Tabs/Questions/DetailQuestion"
 
 function NormalUserLayout({ children }) {
   return (
@@ -95,6 +111,15 @@ function TeacherLayout({ children }) {
       <TeacherMenu />
       {children}
       <TeacherFooter />
+    </>
+  );
+}
+
+function AdminLayout({ children }) {
+  return (
+    <>
+      <AdminMenu />
+      {children}
     </>
   );
 }
@@ -216,11 +241,25 @@ function App() {
         <Route path="/teacherforum/question" element={<TeacherLayout><TeacherForumQuestion /></TeacherLayout>} />
         <Route path="/teacherforum/question/askquestion" element={<TeacherLayout><TeacherAskQuestion /></TeacherLayout>} />
         <Route path="/teacherforum/question/:id" element={<TeacherLayout><TeacherForumQuestionDetail /></TeacherLayout>} />
-        <Route path="/teacherforum/unanswer" element={<TeacherLayout><TeacherForumUnanswer /></TeacherLayout>} />
+        <Route path="/teacherforum/unanswers" element={<TeacherLayout><TeacherUnanswersForumQuestion /></TeacherLayout>} />
+        <Route path="/teacherforum/unanswers/askquestion" element={<TeacherLayout><TeacherUnanswersAskQuestion /></TeacherLayout>} />
+        <Route path="/teacherforum/unanswers/:id" element={<TeacherLayout><TeacherUnanswersForumQuestionDetail /></TeacherLayout>} />
         <Route path="/teacherforum/tag" element={<TeacherLayout><TeacherForumTag /></TeacherLayout>} />
         <Route path="/teacherforum/save" element={<TeacherLayout><TeacherForumSave /></TeacherLayout>} />
         <Route path="/teacherprofile/courses" element={<TeacherLayout><TeacherProfileCourses /></TeacherLayout>} />
         <Route path="/teacherprofile/forum" element={<TeacherLayout><TeacherProfileForum /></TeacherLayout>} />
+
+        <Route path="/admin" element={<AdminLayout><AdminResultTab /></AdminLayout>} />
+        <Route path="/admincourses/listcourses" element={<AdminLayout><AdminListCourses /></AdminLayout>} />
+        <Route path="/admincourses/listcourses/:courseId" element={<AdminLayout><AdminDetailCourses /></AdminLayout>} />
+        <Route path="/admincourses/post" element={<AdminLayout><AdminPost /></AdminLayout>} />
+        <Route path="/adminforum" element={<AdminLayout><AdminForumTab /></AdminLayout>} />
+        <Route path="/adminresult" element={<AdminLayout><AdminResultTab /></AdminLayout>} />
+        <Route path="/adminforum/question" element={<AdminLayout><AdminForumQuestion /></AdminLayout>} />
+        <Route path="/adminforum/question/:id" element={<AdminLayout><AdminForumQuestionDetail /></AdminLayout>} />
+        <Route path="/adminforum/unanswer" element={<AdminLayout><AdminForumUnanswer /></AdminLayout>} />
+        <Route path="/adminforum/tag" element={<AdminLayout><AdminForumTag /></AdminLayout>} />
+        <Route path="/adminforum/save" element={<AdminLayout><AdminForumSave /></AdminLayout>} />
 
         {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />
@@ -242,6 +281,9 @@ function App() {
 
         {/* Giáo viên */}
         <Route path="/teacher" element={userRole === "teacher" ? <TeacherMenu /> : <LoginHandler setUserRole={setUserRole} />} />
+
+        {/* Admin */}
+        <Route path="/admin" element={userRole === "admin" ? <AdminMenu /> : <LoginHandler setUserRole={setUserRole} />} />
 
       </Routes>
     </BrowserRouter>

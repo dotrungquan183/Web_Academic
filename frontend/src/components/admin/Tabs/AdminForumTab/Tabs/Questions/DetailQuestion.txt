@@ -1,0 +1,319 @@
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import StudentForumLayout from "../../Layout";
+import { getToken } from "../../../../../auth/authHelper";
+
+function StudentForumQuestionDetail() {
+  const { id } = useParams();
+  const [question, setQuestion] = useState(null);
+  const [answers, setAnswers] = useState([]);
+  const [userVoteQuestion, setUserVoteQuestion] = useState(0);
+  const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState("");
+  const [newAnswer, setNewAnswer] = useState("");
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUserId(payload.user_id);
+        setUserName(payload.username || "Người dùng ẩn danh");
+      } catch (err) {
+        console.error("Invalid token");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
+      .then((res) => res.json())
+      .then((data) => {
+        const selectedQuestion = data.find((q) => q.id.toString() === id);
+        if (selectedQuestion) {
+          setQuestion(selectedQuestion);
+        }
+      });
+
+    const mockAnswers = [
+      {
+        id: 1,
+        username: "Nguyễn Văn A",
+        content: "Mình nghĩ bạn nên thử dùng useEffect để gọi API nhé!",
+        created_at: new Date().toISOString(),
+        userVote: 0,
+      },
+      {
+        id: 2,
+        username: "Trần Thị B",
+        content: "Bạn có thể thử kiểm tra token bằng thư viện jwt-decode sẽ rõ hơn đó.",
+        created_at: new Date().toISOString(),
+        userVote: 0,
+      },
+    ];
+    setAnswers(mockAnswers);
+  }, [id]);
+
+  useEffect(() => {
+    if (userId) {
+      const voteKey = `question_vote_${id}-${userId}`;
+      const storedVote = localStorage.getItem(voteKey);
+      setUserVoteQuestion(storedVote ? parseInt(storedVote, 10) : 0);
+    }
+  }, [id, userId]);
+
+  const handleVote = (action, type = "question", contentId = null) => {
+    if (!userId) return;
+
+    const voteKey = `${type}_vote_${contentId}-${userId}`;
+    const currentVote = type === "question" ? userVoteQuestion : answers.find(a => a.id === contentId)?.userVote || 0;
+    const isLike = action === "like";
+
+    let newVote = 0;
+    if (currentVote === 1 && isLike) newVote = 0;
+    else if (currentVote === -1 && !isLike) newVote = 0;
+    else newVote = isLike ? 1 : -1;
+
+    const voteData = {
+      vote_type: isLike ? "like" : "dislike",
+      vote_for: type,
+      content_id: contentId,
+    };
+
+    localStorage.setItem(voteKey, newVote.toString());
+
+    if (type === "question") {
+      setUserVoteQuestion(newVote);
+    } else {
+      setAnswers((prev) =>
+        prev.map((ans) =>
+          ans.id === contentId ? { ...ans, userVote: newVote } : ans
+        )
+      );
+    }
+
+    const token = getToken();
+    fetch("http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(voteData),
+    }).catch((error) => console.error("Error during vote:", error));
+  };
+
+  const handlePostAnswer = () => {
+    if (!newAnswer.trim()) return;
+    const newAns = {
+      id: Date.now(),
+      username: userName,
+      content: newAnswer,
+      created_at: new Date().toISOString(),
+      userVote: 0,
+    };
+    setAnswers(prev => [newAns, ...prev]);
+    setNewAnswer("");
+  };
+
+  if (!question) return <p>Đang tải dữ liệu...</p>;
+
+  return (
+    <StudentForumLayout>
+      <div style={containerStyle}>
+        <div style={questionContainerStyle}>
+          <div style={questionContentStyle}>
+            <h2>{question.title}</h2>
+            <div style={metaContainerStyle}>
+              <div style={{ display: "flex", gap: "4px" }}>
+                <button
+                  onClick={() => handleVote("like", "question", question.id)}
+                  style={{
+                    ...voteButton,
+                    backgroundColor: userVoteQuestion === 1 ? "#003366" : "#eee",
+                    color: userVoteQuestion === 1 ? "#fff" : "#000",
+                  }}
+                >
+                  👍
+                </button>
+                <button
+                  onClick={() => handleVote("dislike", "question", question.id)}
+                  style={{
+                    ...voteButton,
+                    backgroundColor: userVoteQuestion === -1 ? "#003366" : "#eee",
+                    color: userVoteQuestion === -1 ? "#fff" : "#000",
+                  }}
+                >
+                  👎
+                </button>
+              </div>
+              <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
+              <span>🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}</span>
+            </div>
+            <p>{question.content}</p>
+          </div>
+        </div>
+
+        <div style={answerContainer}>
+          <label style={answerCountLabel}>Tổng số câu trả lời: {answers.length}</label>
+          {answers.length > 0 ? (
+            <ul>
+              {answers.map((ans) => (
+                <li key={ans.id} style={answerItemStyle}>
+                  <div style={singleAnswerBox}>
+                    <p><strong>{ans.username}</strong></p>
+                    <p>{ans.content}</p>
+                    <div style={metaContainerStyle}>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button
+                          onClick={() => handleVote("like", "answer", ans.id)}
+                          style={{
+                            ...voteButton,
+                            backgroundColor: ans.userVote === 1 ? "#003366" : "#eee",
+                            color: ans.userVote === 1 ? "#fff" : "#000",
+                          }}
+                        >
+                          👍
+                        </button>
+                        <button
+                          onClick={() => handleVote("dislike", "answer", ans.id)}
+                          style={{
+                            ...voteButton,
+                            backgroundColor: ans.userVote === -1 ? "#003366" : "#eee",
+                            color: ans.userVote === -1 ? "#fff" : "#000",
+                          }}
+                        >
+                          👎
+                        </button>
+                      </div>
+                      <span>🕒 {new Date(ans.created_at).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Chưa có câu trả lời nào.</p>
+          )}
+        </div>
+
+        {/* Khung nhập câu trả lời */}
+        <div style={answerInputContainer}>
+          <label htmlFor="answer" style={answerCountLabel}>Câu trả lời của bạn:</label>
+          <textarea
+            id="answer"
+            value={newAnswer}
+            onChange={(e) => setNewAnswer(e.target.value)}
+            style={textAreaStyle}
+            placeholder="Nhập câu trả lời của bạn tại đây..."
+          />
+          <button style={submitButtonStyle} onClick={handlePostAnswer}>
+            Đăng câu trả lời
+          </button>
+        </div>
+      </div>
+    </StudentForumLayout>
+  );
+}
+
+// CSS styles
+const containerStyle = {
+  backgroundColor: "#f8f9fa",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  marginBottom: "30px",
+  marginTop: "15px",
+  marginLeft: "160px",
+  width: "1020px",
+  color: "#003366",
+};
+
+const questionContainerStyle = {
+  backgroundColor: "#ffffff",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+  display: "flex",
+  marginBottom: "20px",
+};
+
+const voteButton = {
+  padding: "4px 8px",
+  fontSize: "16px",
+  border: "1px solid #99ccff",
+  borderRadius: "4px",
+  cursor: "pointer",
+  transition: "background-color 0.2s ease",
+};
+
+const questionContentStyle = {
+  flex: 1,
+};
+
+const metaContainerStyle = {
+  fontSize: "14px",
+  color: "#003366",
+  marginBottom: "10px",
+  display: "flex",
+  gap: "30px",
+  alignItems: "center",
+  flexWrap: "wrap",
+};
+
+const answerContainer = {
+  backgroundColor: "#fff",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+  marginBottom: "20px",
+};
+
+const answerCountLabel = {
+  fontWeight: "bold",
+  fontSize: "16px",
+  marginBottom: "10px",
+  display: "block",
+};
+
+const answerItemStyle = {
+  marginBottom: "15px",
+  listStyle: "none",
+};
+
+const singleAnswerBox = {
+  border: "1px solid #ddd",
+  borderRadius: "6px",
+  padding: "10px",
+  backgroundColor: "#f0f8ff",
+};
+
+const answerInputContainer = {
+  backgroundColor: "#ffffff",
+  padding: "15px",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+};
+
+const textAreaStyle = {
+  width: "97.5%",
+  height: "200px",
+  borderRadius: "6px",
+  border: "2px solid #003366",
+  padding: "10px",
+  fontSize: "16px",
+  marginBottom: "10px",
+};
+
+const submitButtonStyle = {
+  backgroundColor: "#003366",
+  color: "#fff",
+  border: "none",
+  padding: "10px 20px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "16px",
+  fontWeight: "bold",
+};
+
+export default StudentForumQuestionDetail;

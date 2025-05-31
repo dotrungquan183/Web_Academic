@@ -1,10 +1,10 @@
-import React, { useState, useEffect} from "react";
-import { useParams,  useNavigate  } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
 import TeacherCoursesLayout from "../../Layout";
 import { FaEdit } from "react-icons/fa";
-
+import StudentListModal from "./StudentListModal";
 import {
   FaMoneyBillWave,
   FaClock,
@@ -27,20 +27,21 @@ const TeacherDetailCourses = () => {
   const [videoURL, setVideoURL] = useState("");
   const [introVideoURL, setIntroVideoURL] = useState("");
   const [expandedChapters, setExpandedChapters] = useState({});
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-  const fetchCourse = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`);
-      console.log("Dữ liệu khóa học nhận được:", res.data);
-      setCourse(res.data);
-      setIntroVideoURL(res.data.intro_video); // <-- chỉ cần lấy trực tiếp
-    } catch (error) {
-      console.error("Lỗi khi tải dữ liệu khóa học:", error);
-    }
-  };
-  fetchCourse();
-}, [courseId]);
+    const fetchCourse = async () => {
+      try {
+        const res = await axios.get(`${BASE_URL}/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`);
+        console.log("Dữ liệu khóa học nhận được:", res.data);
+        setCourse(res.data);
+        setIntroVideoURL(res.data.intro_video); // <-- chỉ cần lấy trực tiếp
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu khóa học:", error);
+      }
+    };
+    fetchCourse();
+  }, [courseId]);
 
   useEffect(() => {
     const fetchLatestCourses = async () => {
@@ -72,15 +73,15 @@ const TeacherDetailCourses = () => {
     }));
   };
 
-const handleLessonClick = (lesson) => {
-  const videoLink = lesson.video; // Đã là link đầy đủ từ backend
-  // Kiểm tra xem video có link hợp lệ hay không
-  if (videoLink) {
-    setVideoURL((prev) => (prev === videoLink ? "" : videoLink)); // toggle video
-  } else {
-    console.log("Không có video cho bài học này.");
-  }
-};
+  const handleLessonClick = (lesson) => {
+    const videoLink = lesson.video; // Đã là link đầy đủ từ backend
+    // Kiểm tra xem video có link hợp lệ hay không
+    if (videoLink) {
+      setVideoURL((prev) => (prev === videoLink ? "" : videoLink)); // toggle video
+    } else {
+      console.log("Không có video cho bài học này.");
+    }
+  };
 
 
   if (!course) return <div>Đang tải...</div>;
@@ -91,14 +92,38 @@ const handleLessonClick = (lesson) => {
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
             <h2 style={{ textTransform: "uppercase", margin: 0 }}>{course.title}</h2>
-            <button
-              style={styles.editButton}
-              onClick={() => navigate(`/teachercourses/listcourses/addcourses/${course.id}`, { state: { course } })}
-            >
-              <FaEdit style={{ marginRight: "6px" }} />
-              Chỉnh sửa
-            </button>
+
+            {/* Nhóm 2 nút ở góc trên bên phải */}
+            <div>
+              <button
+                style={styles.editButton}
+                onClick={() =>
+                  navigate(`/teachercourses/listcourses/addcourses/${course.id}`, {
+                    state: { course },
+                  })
+                }
+              >
+                <FaEdit style={{ marginRight: "10px" }} />
+                Chỉnh sửa
+              </button>
+
+              <button
+                style={{ ...styles.editButton, marginLeft: "10px" }}
+                onClick={() => setModalOpen(true)}
+              >
+                <FaEdit style={{ marginRight: "6px" }} />
+                Danh sách học viên
+              </button>
+
+              {/* Hiển thị modal */}
+              <StudentListModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+              />
+            </div>
+
           </div>
+
           <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
 
           <div style={styles.courseContentWrapper}>
@@ -202,7 +227,7 @@ const handleLessonClick = (lesson) => {
 
                               {/* Hiển thị tài liệu nếu có */}
                               {lesson.document_link && (
-                                <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366"}}>
+                                <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366" }}>
                                   📚 Tài liệu:{" "}
                                   <a
                                     href={`${BASE_URL}${lesson.document_link}`}
@@ -341,7 +366,7 @@ const styles = {
     padding: "16px",
     borderRadius: "10px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-    color:"#003366",
+    color: "#003366",
   },
   sidebarTitle: {
     display: "flex",
@@ -349,7 +374,7 @@ const styles = {
     gap: "8px",
     marginBottom: "10px",
     fontSize: "18px",
-    color: "#003366", 
+    color: "#003366",
   },
   editButton: {
     padding: "8px 12px",
@@ -361,6 +386,7 @@ const styles = {
     fontWeight: "bold",
     fontSize: "15px"
   },
+
 };
 
 export default TeacherDetailCourses;

@@ -10,12 +10,12 @@ from api.views.student.student_homework.student_homework import StudentHomeworkV
 from api.views.student.student_support.student_support import StudentSupportView
 from api.views.student.student_contact.student_contact import StudentContactView
 from api.views.student.student_forum.student_question.student_showquestion import StudentShowQuestionView
+from api.views.student.student_forum.student_question.student_showquestion_unanswers import StudentShowUnanswersQuestionView
 from api.views.student.student_forum.student_question.student_askquestion import StudentAskQuestionView
 from api.views.student.student_forum.student_question.student_detailquestion import StudentDetailQuestionView
 from api.views.student.student_forum.student_question.student_ansquestion import StudentAnsQuestionView
 from api.views.student.student_forum.student_question.student_comment import StudentCommentView
-from api.views.student.student_forum.student_unanswer import StudentUnanswerView
-from api.views.student.student_forum.student_tag import StudentTagView
+from api.views.student.student_forum.student_tag.student_show_tags import StudentShowTagsView
 from api.views.student.student_forum.student_save import StudentSaveView
 from api.views.student.student_forum.student_question.student_relatedquestion import StudentRelatedQuestionView
 from api.views.student.student_forum.student_question.student_hotquestion import StudentHotQuestionView
@@ -51,6 +51,7 @@ urlpatterns = [
     path('student/student_docs/student_docs/', StudentDocView.as_view(), name='student_docs'),
     path('student/student_homework/student_homework/', StudentHomeworkView.as_view(), name='student_homework'),
     path('student/student_contact/student_contact/', StudentContactView.as_view(), name='student_contact'),
+    path('student/student_forum/student_question/student_showquestion_unanswers/', StudentShowUnanswersQuestionView.as_view(), name='student_showquestion_unanswers'),
     path('student/student_forum/student_question/student_showquestion/', StudentShowQuestionView.as_view(), name='student_showquestion'),
     path('student/student_forum/student_question/student_showquestion/<int:question_id>/', StudentShowQuestionView.as_view(), name='student_showquestion_id'),
     path('student/student_forum/student_question/student_askquestion/', StudentAskQuestionView.as_view(), name='student_askquestion'),
@@ -61,8 +62,7 @@ urlpatterns = [
     path('student/student_forum/student_question/student_ansquestion/<int:answer_id>/', StudentAnsQuestionView.as_view()),
     path('student/student_forum/student_question/student_comment/', StudentCommentView.as_view(), name='student_comment'),
     path('student/student_forum/student_question/student_comment/<int:comment_id>/', StudentCommentView.as_view(), name='student_comment'),
-    path('student/student_forum/student_unanswer/', StudentUnanswerView.as_view(), name='student_unanswer'),
-    path('student/student_forum/student_tag/', StudentTagView.as_view(), name='student_tag'),
+    path('student/student_forum/student_tag/student_show_tags/', StudentShowTagsView.as_view(), name='student_show_tags'),
     path('student/student_forum/student_save/', StudentSaveView.as_view(), name='student_save'),
     path('student/student_support/student_support/', StudentSupportView.as_view(), name='student_support'),
     path("student/student_forum/student_question/<int:question_id>/", StudentAskQuestionView.as_view()),

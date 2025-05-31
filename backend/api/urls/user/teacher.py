@@ -24,6 +24,7 @@ from api.views.teacher.teacher_profile.teacher_stat import TeacherProfileStatVie
 from api.views.teacher.teacher_profile.teacher_vote import TeacherProfileVoteView
 from api.views.teacher.teacher_profile.teacher_account import TeacherProfileAccountView
 from api.views.teacher.teacher_insight.teacher_insight_forum import TeacherInsightDataView
+from api.views.teacher.teacher_courses.teacher_listregistrycourses import TeacherListRegistryCoursesView
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
 from api.views.auth.register import register_view
@@ -41,6 +42,8 @@ urlpatterns = [
     path('teacher/teacher_courses/teacher_bestcourses/', TeacherBestCoursesView.as_view(), name='teacher_bestcourses'),
     path('teacher/teacher_courses/teacher_detailcourses/', TeacherDetailCoursesView.as_view(), name='teacher_detailcourses'),
     path('teacher/teacher_courses/teacher_detailcourses/<int:pk>/', TeacherDetailCoursesView.as_view(), name='teacher_detailcourses_id'),
+    path('teacher/teacher_courses/teacher_listregistrycourses/', TeacherListRegistryCoursesView.as_view(), name='teacher_listregistrycourses'),
+    path('teacher/teacher_courses/teacher_listregistrycourses/<int:course_id>/', TeacherListRegistryCoursesView.as_view(), name='teacher_listregistrycourses_id'),
     path('teacher/teacher_docs/teacher_docs/', TeacherDocView.as_view(), name='teacher_docs'),
     path('teacher/teacher_homework/teacher_homework/', TeacherHomeworkView.as_view(), name='teacher_homework'),
     path('teacher/teacher_contact/teacher_contact/', TeacherContactView.as_view(), name='teacher_contact'),

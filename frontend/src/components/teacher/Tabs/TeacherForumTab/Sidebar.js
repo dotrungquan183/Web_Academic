@@ -25,7 +25,7 @@ function Sidebar() {
         </button>
       </Link>
 
-      <Link to="/teacherforum/unanswer" style={styles.link}>
+      <Link to="/teacherforum/unanswers" style={styles.link}>
         <button
           style={{
             ...styles.button,
