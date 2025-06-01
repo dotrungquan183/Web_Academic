@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
+import { FiHelpCircle, FiXCircle, FiTag, FiHome } from "react-icons/fi";
 
 function Sidebar() {
   const location = useLocation();
@@ -9,7 +9,7 @@ function Sidebar() {
   const isUnansweredTab = location.pathname.startsWith("/teacherforum/unanswer");
   const isQuestionTab = isQuestionPath && !isUnansweredTab;
   const isTagTab = location.pathname.startsWith("/teacherforum/tag");
-  const isSaveTab = location.pathname.startsWith("/teacherforum/save");
+  const isHomeTab = location.pathname.startsWith("/teacherforum/home");
 
   return (
     <div style={styles.sidebar}>
@@ -49,15 +49,15 @@ function Sidebar() {
         </button>
       </Link>
 
-      <Link to="/teacherforum/save" style={styles.link}>
+      <Link to="/teacherforum/home" style={styles.link}>
         <button
           style={{
             ...styles.button,
-            backgroundColor: isSaveTab ? "#003366" : "transparent",
-            color: isSaveTab ? "white" : "#003366",
+            backgroundColor: isHomeTab ? "#003366" : "transparent",
+            color: isHomeTab ? "white" : "#003366",
           }}
         >
-          <FiSave style={styles.icon} /> Lưu trữ
+          <FiHome style={styles.icon} /> Câu hỏi của bạn
         </button>
       </Link>
     </div>

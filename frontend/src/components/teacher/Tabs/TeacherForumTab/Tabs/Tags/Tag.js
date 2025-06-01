@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import TeacherForumLayout from "../Layout";
+import { useNavigate } from "react-router-dom";
+import TeacherForumLayout from "../../Layout";
 
 function TeacherForumTag() {
   const [data, setData] = useState([]);
@@ -7,6 +8,8 @@ function TeacherForumTag() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const fetchTags = (filter) => {
     setLoading(true);
@@ -92,10 +95,18 @@ function TeacherForumTag() {
               padding: "15px",
               borderRadius: "8px",
               fontSize: "15px",
+              cursor: "pointer",
+              transition: "transform 0.2s",
             };
 
             return (
-              <div key={tag.id} style={alternatingStyle}>
+              <div
+                key={tag.id}
+                style={alternatingStyle}
+                onClick={() => navigate(`/teacherforum/tag/${tag.id}`)}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
                 <h3>{tag.tag_name}</h3>
                 <p><strong>Tổng câu hỏi:</strong> {tag.total_questions}</p>
                 <p><strong>Hôm nay:</strong> {tag.questions_today}</p>
@@ -184,6 +195,7 @@ const searchIconStyle = {
   transform: "translateY(-50%)",
   fontSize: "16px",
   color: "#003366",
+  pointerEvents: "none",
 };
 
 const tagListStyle = {

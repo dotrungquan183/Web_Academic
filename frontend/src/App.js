@@ -55,13 +55,15 @@ import TeacherDocsTab from "./components/teacher/Tabs/TeacherDocsTab"
 import TeacherForumTab from "./components/teacher/Tabs/TeacherForumTab/Menu"
 import TeacherForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/Question"
 import TeacherAskQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/AskQuestion"
-import TeacherForumTag from "./components/teacher/Tabs/TeacherForumTab/Tabs/Tag"
-import TeacherForumSave from "./components/teacher/Tabs/TeacherForumTab/Tabs/Save"
+import TeacherForumHome from "./components/teacher/Tabs/TeacherForumTab/Tabs/Home"
 import TeacherForumQuestionDetail from "./components/teacher/Tabs/TeacherForumTab/Tabs/Questions/DetailQuestion"
 
 import TeacherUnanswersAskQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswers/AskQuestion"
 import TeacherUnanswersForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswers/Question"
 import TeacherUnanswersForumQuestionDetail from "./components/teacher/Tabs/TeacherForumTab/Tabs/Unanswers/DetailQuestion"
+
+import TeacherForumTag from "./components/teacher/Tabs/TeacherForumTab/Tabs/Tags/Tag"
+import TeacherTagsForumQuestion from "./components/teacher/Tabs/TeacherForumTab/Tabs/Tags/Question";
 
 import TeacherResultTab from "./components/teacher/Tabs/TeacherResultTab"
 import TeacherHomeworkTab from "./components/teacher/Tabs/TeacherHomeworkTab"
@@ -69,7 +71,6 @@ import TeacherContactTab from "./components/teacher/Tabs/TeacherContactTab";
 import TeacherListCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/ListCourses"; 
 import TeacherAddCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/AddCourses";
 import TeacherDetailCourses from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Courses/DetailCourses";
-import TeacherPost from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Post";
 import TeacherRoadmap from "./components/teacher/Tabs/TeacherCoursesTab/Tabs/Roadmap";
 import TeacherProfileCourses from "./components/teacher/Profile/Tabs/ProfileCourses";
 import TeacherProfileForum from "./components/teacher/Profile/Tabs/ProfileForum";
@@ -231,7 +232,6 @@ function App() {
         <Route path="/teachercourses/listcourses/:courseId" element={<TeacherLayout><TeacherDetailCourses /></TeacherLayout>} />
         <Route path="/teachercourses/listcourses/addcourses" element={<TeacherLayout><TeacherAddCourses /></TeacherLayout>} />
         <Route path="/teachercourses/listcourses/addcourses/:id" element={<TeacherLayout><TeacherAddCourses /></TeacherLayout>} />
-        <Route path="/teachercourses/post" element={<TeacherLayout><TeacherPost /></TeacherLayout>} />
         <Route path="/teachercourses/roadmap" element={<TeacherLayout><TeacherRoadmap /></TeacherLayout>} />
         <Route path="/teacherdocs" element={<TeacherLayout><TeacherDocsTab /></TeacherLayout>} />
         <Route path="/teacherforum" element={<TeacherLayout><TeacherForumTab /></TeacherLayout>} />
@@ -245,7 +245,8 @@ function App() {
         <Route path="/teacherforum/unanswers/askquestion" element={<TeacherLayout><TeacherUnanswersAskQuestion /></TeacherLayout>} />
         <Route path="/teacherforum/unanswers/:id" element={<TeacherLayout><TeacherUnanswersForumQuestionDetail /></TeacherLayout>} />
         <Route path="/teacherforum/tag" element={<TeacherLayout><TeacherForumTag /></TeacherLayout>} />
-        <Route path="/teacherforum/save" element={<TeacherLayout><TeacherForumSave /></TeacherLayout>} />
+        <Route path="/teacherforum/tag/:tagId" element={<TeacherLayout><TeacherTagsForumQuestion /></TeacherLayout>} />
+        <Route path="/teacherforum/home" element={<TeacherLayout><TeacherForumHome /></TeacherLayout>} />
         <Route path="/teacherprofile/courses" element={<TeacherLayout><TeacherProfileCourses /></TeacherLayout>} />
         <Route path="/teacherprofile/forum" element={<TeacherLayout><TeacherProfileForum /></TeacherLayout>} />
 

@@ -16,7 +16,8 @@ from api.views.student.student_forum.student_question.student_detailquestion imp
 from api.views.student.student_forum.student_question.student_ansquestion import StudentAnsQuestionView
 from api.views.student.student_forum.student_question.student_comment import StudentCommentView
 from api.views.student.student_forum.student_tag.student_show_tags import StudentShowTagsView
-from api.views.student.student_forum.student_save import StudentSaveView
+from api.views.student.student_forum.student_tag.student_showquestion_tags import StudentShowQuestionByTagView
+from api.views.student.student_forum.student_home import StudentHomeView
 from api.views.student.student_forum.student_question.student_relatedquestion import StudentRelatedQuestionView
 from api.views.student.student_forum.student_question.student_hotquestion import StudentHotQuestionView
 from api.views.student.student_courses.student_addcourses import StudentAddCoursesView
@@ -63,7 +64,9 @@ urlpatterns = [
     path('student/student_forum/student_question/student_comment/', StudentCommentView.as_view(), name='student_comment'),
     path('student/student_forum/student_question/student_comment/<int:comment_id>/', StudentCommentView.as_view(), name='student_comment'),
     path('student/student_forum/student_tag/student_show_tags/', StudentShowTagsView.as_view(), name='student_show_tags'),
-    path('student/student_forum/student_save/', StudentSaveView.as_view(), name='student_save'),
+    path('student/student_forum/student_tag/student_showquestion_tags/<int:id>', StudentShowQuestionByTagView.as_view(), name='student_show_question_by_tags'),
+    path('student/student_forum/student_home/', StudentHomeView.as_view(), name='student_home'),
+    path('student/student_forum/student_home/<int:id>', StudentHomeView.as_view(), name='student_home'),
     path('student/student_support/student_support/', StudentSupportView.as_view(), name='student_support'),
     path("student/student_forum/student_question/<int:question_id>/", StudentAskQuestionView.as_view()),
     path('student/student_forum/student_question/student_relatedquestion/<int:question_id>/', StudentRelatedQuestionView.as_view(), name='student_related_questions'),

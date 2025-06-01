@@ -10,12 +10,12 @@ from api.views.auth.authHelper import get_authenticated_user
 from django.utils import timezone
 from django.db.models import Exists, OuterRef, Count, Sum, F, Q
 from datetime import timedelta
-class StudentShowQuestionByTagView(APIView):
-    def get(self, request, id):
+class StudentHomeView(APIView):
+    def get(self, request, id):  # id ở đây là user_id
         try:
             unanswered_param = request.GET.get('unanswered')
-            unanswered = unanswered_param.lower() == 'true' if unanswered_param else False  # default False hoặc True tùy bạn
-            
+            unanswered = unanswered_param.lower() == 'true' if unanswered_param else False
+
             time_filter = request.GET.get("time")
             bounty_filter = request.GET.get("bounty")
             interest_filter = request.GET.get("interest")
@@ -23,18 +23,14 @@ class StudentShowQuestionByTagView(APIView):
 
             now = timezone.now()
 
-            # Lọc các câu hỏi có tag_id = id
-            questions = Question.objects.filter(
-                questiontagmap__tag_id=id
-            )
+            # Lọc theo user_id
+            questions = Question.objects.filter(user_id=id)
 
-            # Lọc những câu hỏi chưa có câu trả lời nếu được yêu cầu
             if unanswered:
                 questions = questions.annotate(
                     has_answer=Exists(Answer.objects.filter(question=OuterRef('pk')))
                 ).filter(has_answer=False)
 
-            # Tối ưu select_related và prefetch_related
             questions = questions.select_related('user').prefetch_related(
                 Prefetch(
                     'questiontagmap_set',
@@ -107,8 +103,8 @@ class StudentShowQuestionByTagView(APIView):
 
             return Response(question_list, status=status.HTTP_200_OK)
 
-        except QuestionTag.DoesNotExist:
-            return Response({"error": "Tag not found"}, status=status.HTTP_404_NOT_FOUND)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
    
     def post(self, request):

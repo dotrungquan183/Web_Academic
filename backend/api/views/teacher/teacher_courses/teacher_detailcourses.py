@@ -12,3 +12,15 @@ class TeacherDetailCoursesView(APIView):
         # Serialize khóa học và trả về dữ liệu
         serializer = CourseSerializer(course)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        # Tìm khóa học theo ID, nếu không có sẽ trả 404
+        course = get_object_or_404(Course, pk=pk)
+        
+        # Xóa khóa học
+        course.delete()
+        
+        return Response(
+            {"message": f"✅ Khóa học với id {pk} đã được xóa thành công."},
+            status=status.HTTP_204_NO_CONTENT
+        )

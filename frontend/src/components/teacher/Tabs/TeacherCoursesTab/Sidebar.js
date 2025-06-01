@@ -1,13 +1,12 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaBook, FaRoad, FaPen } from "react-icons/fa";
+import { FaBook, FaRoad} from "react-icons/fa";
 
 function Sidebar() {
   const location = useLocation();
 
   const isCoursesTab = location.pathname.startsWith("/teachercourses/listcourses");
   const isRoadmapTab= location.pathname.startsWith("/teachercourses/roadmap");
-  const isPostTab = location.pathname.startsWith("/teachercourses/post");
 
   return (
     <div style={styles.sidebar}>
@@ -32,18 +31,6 @@ function Sidebar() {
           }}
         >
           <FaRoad style={styles.icon} /> Lộ trình
-        </button>
-      </Link>
-
-      <Link to="/teachercourses/post" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: isPostTab ? "#003366" : "transparent",
-            color: isPostTab ? "white" : "#003366",
-          }}
-        >
-          <FaPen style={styles.icon} /> Bài viết
         </button>
       </Link>
     </div>

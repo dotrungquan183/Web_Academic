@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
 import TeacherCoursesLayout from "../../Layout";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import StudentListModal from "./StudentListModal";
 import {
   FaMoneyBillWave,
@@ -15,6 +15,8 @@ import {
   FaPlus,
   FaMinus
 } from "react-icons/fa";
+import { jwtDecode } from "jwt-decode";
+// Lấy userId từ token
 
 const BASE_URL = "http://localhost:8000";
 
@@ -28,7 +30,49 @@ const TeacherDetailCourses = () => {
   const [introVideoURL, setIntroVideoURL] = useState("");
   const [expandedChapters, setExpandedChapters] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
+  const token = getToken();
+  let userId = null;
 
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      userId = decoded.user_id;
+    } catch (error) {
+      console.error("❌ Token không hợp lệ:", error);
+    }
+  }
+  const handleDelete = async (courseId) => {
+    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa khóa học này?");
+    if (!confirmDelete) return;
+
+    try {
+      const token = getToken(); // Lấy token để xác thực
+      const response = await fetch(`http://localhost:8000/api/teacher/teacher_courses/teacher_detailcourses/${courseId}/`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        alert("✅ Xóa khóa học thành công!");
+
+        // 👉 Điều hướng đến trang danh sách khóa học
+        navigate("/teachercourses/listcourses");
+
+        // Nếu dùng state:
+        // setCourses(prev => prev.filter(course => course.id !== courseId));
+      } else {
+        const errorData = await response.json();
+        console.error("❌ Lỗi khi xóa:", errorData);
+        alert("❌ Xóa thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi gửi request:", error);
+      alert("❌ Đã xảy ra lỗi khi xóa.");
+    }
+  };
   useEffect(() => {
     const fetchCourse = async () => {
       try {
@@ -85,7 +129,8 @@ const TeacherDetailCourses = () => {
 
 
   if (!course) return <div>Đang tải...</div>;
-
+  console.log("🔐 userId từ token:", userId);
+  console.log("📚 userId của khóa học:", course.user);
   return (
     <TeacherCoursesLayout>
       <div style={styles.pageLayout}>
@@ -95,6 +140,16 @@ const TeacherDetailCourses = () => {
 
             {/* Nhóm 2 nút ở góc trên bên phải */}
             <div>
+              {userId === course.user && (
+                <button
+                  style={{ ...styles.editButton, marginRight: "10px", backgroundColor: "#003366" }}
+                  onClick={() => handleDelete(course.id)}
+                >
+                  <FaTrash style={{ marginRight: "6px" }} />
+                  Xóa
+                </button>
+              )}
+
               <button
                 style={styles.editButton}
                 onClick={() =>
@@ -115,7 +170,6 @@ const TeacherDetailCourses = () => {
                 Danh sách học viên
               </button>
 
-              {/* Hiển thị modal */}
               <StudentListModal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}

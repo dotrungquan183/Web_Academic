@@ -34,10 +34,11 @@ function TeacherMenu() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("token");   // xóa token
+    localStorage.removeItem("user");    // xóa user (nếu có)
     setUser(null);
     window.location.replace("/");
-  };
+};
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
