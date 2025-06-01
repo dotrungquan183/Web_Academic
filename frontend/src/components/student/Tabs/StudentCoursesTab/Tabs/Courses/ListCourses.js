@@ -192,7 +192,7 @@ const StudentListCourses = () => {
                   </div>
                   <div style={styles.courseInfoWrapper}>
                     <h3 style={styles.courseTitle}>{course.title}</h3>
-                    <p style={styles.coursePrice}>${course.fee}</p>
+                    <p style={styles.coursePrice}>{course.fee} VNĐ</p>
                     <p style={styles.courseInfo}>
                       <FaUserTie style={{ marginRight: "4px" }} /> {course.student}
                       <span style={{ marginLeft: "12px" }}>🎬 {course.video_count} video</span>

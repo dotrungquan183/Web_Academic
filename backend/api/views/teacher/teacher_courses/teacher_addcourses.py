@@ -101,6 +101,11 @@ class TeacherAddCoursesView(APIView):
                     embed_url = self.convert_to_embed_url(video_url) if video_url else ''
                     duration = self.get_youtube_duration(video_url) if video_url else timedelta()
 
+                    # Cộng dồn duration và tăng video_count nếu có video
+                    if video_url:
+                        total_duration += duration
+                        video_count += 1
+
                     # Lấy file theo thứ tự
                     document_file = None
                     if file_pointer < len(document_files):
@@ -114,6 +119,7 @@ class TeacherAddCoursesView(APIView):
                         duration=duration,
                         document_link=document_file
                     )
+
 
 
             course.total_duration = total_duration

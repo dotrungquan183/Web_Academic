@@ -201,7 +201,7 @@ const TeacherDetailCourses = () => {
               <div style={styles.additionalInfoWrapper}>
                 <div style={styles.additionalInfoItem}>
                   <FaMoneyBillWave style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Phí: </span>${course.fee}
+                  <span style={{ fontWeight: "bold" }}>Phí: </span>{course.fee} VNĐ
                 </div>
                 <div style={styles.additionalInfoItem}>
                   <FaClock style={styles.iconStyle} />

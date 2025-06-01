@@ -291,7 +291,7 @@ const handleDocumentView = async (lesson) => {
                   Nội dung chuyển khoản: {paymentContent}
                 </p>
                 <p style={{ marginTop: "12px", fontWeight: "bold", color: "#003366" }}>
-                  Học phí : {course.fee} đồng
+                  Học phí : {course.fee} VNĐ
                 </p>
                 <p style={{ color: "#ff0000" }}>
                   * Vui lòng chuyển khoản đúng nội dung để hệ thống xác nhận!
@@ -322,7 +322,7 @@ const handleDocumentView = async (lesson) => {
               <div style={styles.additionalInfoWrapper}>
                 <div style={styles.additionalInfoItem}>
                   <FaMoneyBillWave style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Phí: </span>${course.fee}
+                  <span style={{ fontWeight: "bold" }}>Phí: </span> {course.fee} VNĐ
                 </div>
                 <div style={styles.additionalInfoItem}>
                   <FaClock style={styles.iconStyle} />

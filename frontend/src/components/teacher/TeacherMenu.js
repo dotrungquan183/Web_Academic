@@ -65,8 +65,8 @@ function TeacherMenu() {
           <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
           <span className="header-text black">Toán </span>
           <span className="header-text black">Học </span>
-          <span className="header-text blue">Sinh </span>
-          <span className="header-text blue">Viên </span>
+          <span className="header-text blue">Phổ </span>
+          <span className="header-text blue">Thông </span>
         </div>
       </h1>
       </div>

@@ -750,6 +750,7 @@ const handleDeleteQuestion = (questionId) => {
       fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
         .then((res) => res.json())
         .then((data) => {
+          console.log("📥 Raw API data:", data); // 🧪 Log tại đây
           const formattedAnswers = data.map((ans) => {
             const voteKey = `answer_vote_${ans.id}-${userId}`;
             const storedVote = localStorage.getItem(voteKey);
@@ -762,6 +763,7 @@ const handleDeleteQuestion = (questionId) => {
               userVote,
               like: ans.like,
               dislike: ans.dislike,
+              user_id: ans.user_id,
               totalVote: ans.totalVote,
             };
           });
@@ -838,6 +840,7 @@ const handleDeleteQuestion = (questionId) => {
               username: ans.username,
               content: ans.content,
               created_at: ans.created_at,
+              user_id: ans.user_id,
               userVote,
               like: ans.like,
               dislike: ans.dislike,
