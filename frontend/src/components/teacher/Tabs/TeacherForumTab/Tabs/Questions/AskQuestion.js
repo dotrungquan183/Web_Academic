@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import TeacherForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
-
+import LatexInputKaTeX from "../../LatexInputKaTeX";
 function TeacherAskQuestion() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,6 +56,9 @@ function TeacherAskQuestion() {
     }
   }, [location.state, navigate]);
 
+  const handleDescriptionChange = (value) => {
+    setFormData(prev => ({ ...prev, description: value }));
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "bounty_amount" && (isNaN(value) || Number(value) < 0)) {
@@ -138,14 +141,15 @@ function TeacherAskQuestion() {
                   onChange={handleChange}
                   style={styles.input}
                 />
-                <textarea
-                  name="description"
-                  placeholder="Mô tả câu hỏi"
-                  required
+
+                {/* Thay textarea mô tả bằng LatexInputKaTeX */}
+                <LatexInputKaTeX
                   value={formData.description}
-                  onChange={handleChange}
-                  style={styles.textarea}
+                  onChange={handleDescriptionChange}
+                  placeholder="Mô tả câu hỏi (hỗ trợ LaTeX)"
+                  style={{ width: "100%", minHeight: 120 }}
                 />
+
                 <input
                   type="text"
                   name="tags"
@@ -164,7 +168,7 @@ function TeacherAskQuestion() {
                   style={styles.input}
                 />
                 <button type="submit" style={styles.button}>
-                  {location.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
+                  {location?.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
                 </button>
               </div>
               <div style={styles.rightSection}>
@@ -191,7 +195,7 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     padding: "15px 0", // Thay vì 85vh, dùng padding cho hiển thị tốt hơn với sidebar
-    marginLeft:"108px",
+    marginLeft: "108px",
   },
   formContainer: {
     width: "1000px",
