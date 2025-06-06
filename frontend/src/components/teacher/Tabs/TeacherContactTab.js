@@ -1,19 +1,20 @@
 const containerStyle = {
-  backgroundColor: "#ffffff",
+  backgroundColor: "rgba(255, 255, 255, 0.95)", // nền trong suốt nhẹ
   padding: "40px 60px",
-  borderRadius: "12px",
-  border: "1px solid #ccc",
-  margin: "50px auto",
-  width: "1300px",
-  maxWidth: "95vw",
+  borderRadius: "0px", // góc vuông
+  border: "none", // bỏ viền nếu không cần
+  margin: "0 auto",
+  width: "100vw", // chiếm toàn bộ chiều ngang
+  maxWidth: "100vw",
   color: "#003366",
-  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
   fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
   lineHeight: "1.8",
   display: "flex",
   gap: "60px",
   minHeight: "400px",
   justifyContent: "center",
+  boxSizing: "border-box", // tránh tràn layout
 };
 
 const leftBoxStyle = {
@@ -45,23 +46,22 @@ const paragraphStyle = {
 const listStyle = {
   listStyleType: "none",
   paddingLeft: 0,
-  fontSize: "16px",    // tăng font chữ giống bên trái
-  lineHeight: 1.8,     // dòng cao như bên trái
+  fontSize: "16px",
+  lineHeight: 1.8,
 };
 
 const listItemStyle = {
-  marginBottom: "16px",  // tăng marginBottom giống paragraph bên trái
+  marginBottom: "28px",
   display: "flex",
-  alignItems: "flex-start", // align top để text không bị lệch
+  alignItems: "flex-start",
 };
 
 const iconStyle = {
   marginRight: "18px",
-  fontSize: "16px",
+  fontSize: "18px",
   flexShrink: 0,
-  marginTop: "4px", // căn icon cho thẳng hàng text
+  marginTop: "4px",
 };
-
 
 const listTextStyle = {
   lineHeight: 1.3,
@@ -71,7 +71,7 @@ function TeacherContactTab() {
   return (
     <div style={containerStyle}>
       <div style={leftBoxStyle}>
-        <h2 style={titleStyle}>📞 Liên hệ hỗ trợ và chăm sóc khách hàng</h2>
+        <h2 style={titleStyle}>📞 Chăm sóc khách hàng</h2>
         <p style={paragraphStyle}>
           Chúng tôi hiểu rằng việc sử dụng hệ thống quản lý giáo dục trực tuyến đôi khi có thể phát sinh những thắc mắc hoặc vấn đề cần hỗ trợ kịp thời. Đội ngũ hỗ trợ khách hàng của chúng tôi luôn sẵn sàng đồng hành cùng bạn để đảm bảo trải nghiệm sử dụng suôn sẻ và hiệu quả nhất.
         </p>

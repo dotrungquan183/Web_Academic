@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaSearch, FaHome, FaBook, FaChalkboardTeacher } from "react-icons/fa"; 
+import { FaSearch} from "react-icons/fa"; 
 import "./menu.css";
 
 function Menu() {
@@ -8,11 +8,11 @@ function Menu() {
       {/* Header */}
       <h1 className="header-title">
         <div className="header">
-        <img src="/geometry.png" class="header-icon-math" alt="Calculator" />
+          <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
           <span className="header-text black">Toán </span>
           <span className="header-text black">Học </span>
-          <span className="header-text blue">Sinh </span>
-          <span className="header-text blue">Viên </span>
+          <span className="header-text blue">Phổ </span>
+          <span className="header-text blue">Thông </span>
         </div>
 
         {/* 🔎 Thanh tìm kiếm */}
@@ -28,41 +28,21 @@ function Menu() {
         </div>
       </h1>
 
-      {/* Menu Navigation */}
+      {/*
       <ul className="nav">
         <li className="has-submenu">
-        <Link
-          to="/student"
-          className="menu-item no-underline"
-          style={{ textDecoration: 'none' }}
-          onMouseEnter={(e) => {
-            e.preventDefault();
-            e.target.style.textDecoration = 'none';
-          }}
-          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-        >
-          TRANG CHỦ ▾
-        </Link>
-          <ul className="submenu">
-            <li>
-              <Link to="/home1">
-                <FaHome className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home1</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/home2">
-                <FaBook className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home2</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/home3">
-                <FaChalkboardTeacher className="submenu-icon" />
-                <span style={{ marginLeft: "10px" }}>Home3</span>
-              </Link>
-            </li>
-          </ul>
+          <Link
+            to="/"
+            className="menu-item no-underline"
+            style={{ textDecoration: 'none' }}
+            onMouseEnter={(e) => {
+              e.preventDefault();
+              e.target.style.textDecoration = 'none';
+            }}
+            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+          >
+            TRANG CHỦ
+          </Link>
         </li>
         <li><Link to="/intro">GIỚI THIỆU</Link></li>
         <li><Link to="/courses">KHÓA HỌC</Link></li>
@@ -72,6 +52,7 @@ function Menu() {
         <li><Link to="/parents_corner">GÓC PHỤ HUYNH</Link></li>
         <li><Link to="/contact">LIÊN HỆ</Link></li>
       </ul>
+      */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   FaCalculator, FaSearch, FaBell, FaCog, FaQuestionCircle,
-  FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome
+  FaUser, FaSignOutAlt, FaWrench
 } from "react-icons/fa";
 import "./teachermenu.css";
 import { useState, useEffect } from "react";
@@ -38,7 +38,7 @@ function TeacherMenu() {
     localStorage.removeItem("user");    // xóa user (nếu có)
     setUser(null);
     window.location.replace("/");
-};
+  };
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -60,15 +60,15 @@ function TeacherMenu() {
   return (
     <div className="menu-container">
       <div className="header">
-      <h1 className="header-title" style={{ marginBottom: "23px", fontSize: "28px"}}>
-        <div className="header">
-          <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
-          <span className="header-text black">Toán </span>
-          <span className="header-text black">Học </span>
-          <span className="header-text blue">Phổ </span>
-          <span className="header-text blue">Thông </span>
-        </div>
-      </h1>
+        <h1 className="header-title" style={{ marginBottom: "23px", fontSize: "28px" }}>
+          <div className="header">
+            <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
+            <span className="header-text black">Toán </span>
+            <span className="header-text black">Học </span>
+            <span className="header-text blue">Phổ </span>
+            <span className="header-text blue">Thông </span>
+          </div>
+        </h1>
       </div>
       <div className="search-bar-container">
         <div className="search-bar">
@@ -127,29 +127,32 @@ function TeacherMenu() {
 
       {/* ======== NAVIGATION MENU ======== */}
       <ul className="nav">
-        <li className="menu-item-container">
-        <Link to="/teacher" className="menu-item no-underline">
-          TRANG CHỦ ▾
-        </Link>
+        {/* 
+<li className="menu-item-container">
+  <Link to="/teacher" className="menu-item no-underline">
+    TRANG CHỦ ▾
+  </Link>
 
-          <ul className="submenu">
-            <li className={location.pathname === "/teacherhome1" ? "active" : ""}>
-              <Link to="/teacherhome1">
-                <FaHome className="submenu-icon" /> Home1
-              </Link>
-            </li>
-            <li className={location.pathname === "/teacherhome2" ? "active" : ""}>
-              <Link to="/teacherhome2">
-                <FaBook className="submenu-icon" /> Home2
-              </Link>
-            </li>
-            <li className={location.pathname === "/teacherhome3" ? "active" : ""}>
-              <Link to="/teacherhome3">
-                <FaChalkboardTeacher className="submenu-icon" /> Home3
-              </Link>
-            </li>
-          </ul>
-        </li>
+  <ul className="submenu">
+    <li className={location.pathname === "/teacherhome1" ? "active" : ""}>
+      <Link to="/teacherhome1">
+        <FaHome className="submenu-icon" /> Home1
+      </Link>
+    </li>
+    <li className={location.pathname === "/teacherhome2" ? "active" : ""}>
+      <Link to="/teacherhome2">
+        <FaBook className="submenu-icon" /> Home2
+      </Link>
+    </li>
+    <li className={location.pathname === "/teacherhome3" ? "active" : ""}>
+      <Link to="/teacherhome3">
+        <FaChalkboardTeacher className="submenu-icon" /> Home3
+      </Link>
+    </li>
+  </ul>
+</li>
+*/}
+
 
         <li className={location.pathname === "/teacherintro" ? "active" : ""}>
           <Link to="/teacherintro">GIỚI THIỆU</Link>

@@ -1,12 +1,17 @@
 import React from "react";
-import Home1 from "./Home/Home1";
-
+import HeroSection from "./Home/HeroSection";
+import TrendingDiscussions from "./Home/TrendingDiscussions";
+import UpcomingCourses from "./Home/UpcomingCourses";
+ 
 function HomeTab() {
   return (
     <div>
-      <Home1 /> {/* Hiển thị mặc định Home1 */}
+      <HeroSection />
+      <TrendingDiscussions />
+      <UpcomingCourses />
     </div>
   );
 }
-
+ 
 export default HomeTab;
+ 

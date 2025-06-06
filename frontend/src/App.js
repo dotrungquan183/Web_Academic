@@ -6,9 +6,6 @@ import AccountPage from "./components/auth/Account";
 import ForgotPassword from "./components/auth/Forgotpassword";
 
 import HomeTab from "./components/normal_users/Tabs/HomeTab";
-import Home1 from "./components/normal_users/Tabs/Home/Home1";
-import Home2 from "./components/normal_users/Tabs/Home/Home2";
-import Home3 from "./components/normal_users/Tabs/Home/Home3";
 import IntroTab from "./components/normal_users/Tabs/IntroTab";
 import CoursesTab from "./components/normal_users/Tabs/CoursesTab";
 import TeachersTab from "./components/normal_users/Tabs/TeachersTab";
@@ -39,7 +36,6 @@ import StudentContactTab from "./components/student/Tabs/StudentContactTab";
 import StudentListCourses from "./components/student/Tabs/StudentCoursesTab/Tabs/Courses/ListCourses"; 
 import StudentAddCourses from "./components/student/Tabs/StudentCoursesTab/Tabs/Courses/AddCourses";
 import StudentDetailCourses from "./components/student/Tabs/StudentCoursesTab/Tabs/Courses/DetailCourses";
-import StudentPost from "./components/student/Tabs/StudentCoursesTab/Tabs/Post";
 import StudentRoadmap from "./components/student/Tabs/StudentCoursesTab/Tabs/Roadmap";
 import StudentProfileCourses from "./components/student/Profile/Tabs/ProfileCourses";
 import StudentProfileForum from "./components/student/Profile/Tabs/ProfileForum";
@@ -146,10 +142,10 @@ function LoginHandler({ setUserRole }) {
     // Điều hướng dựa trên vai trò
     switch (role) {
         case "student":
-            navigate("/student", { replace: true });
+            navigate("/studentintro", { replace: true });
             break;
         case "teacher":
-            navigate("/teacher", { replace: true });
+            navigate("/teacherintro", { replace: true });
             break;
         case "admin":
             navigate("/admin", { replace: true });
@@ -187,9 +183,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<NormalUserLayout><HomeTab /></NormalUserLayout>} />
-        <Route path="/home1" element={<NormalUserLayout><Home1 /></NormalUserLayout>} />
-        <Route path="/home2" element={<NormalUserLayout><Home2 /></NormalUserLayout>} />
-        <Route path="/home3" element={<NormalUserLayout><Home3 /></NormalUserLayout>} />
         <Route path="/intro" element={<NormalUserLayout><IntroTab /></NormalUserLayout>} />
         <Route path="/courses" element={<NormalUserLayout><CoursesTab /></NormalUserLayout>} />
         <Route path="/teachers" element={<NormalUserLayout><TeachersTab /></NormalUserLayout>} />
@@ -207,7 +200,6 @@ function App() {
         <Route path="/studentcourses/listcourses/:courseId" element={<StudentLayout><StudentDetailCourses /></StudentLayout>} />
         <Route path="/studentcourses/listcourses/addcourses" element={<StudentLayout><StudentAddCourses /></StudentLayout>} />
         <Route path="/studentcourses/listcourses/addcourses/:id" element={<StudentLayout><StudentAddCourses /></StudentLayout>} />
-        <Route path="/studentcourses/post" element={<StudentLayout><StudentPost /></StudentLayout>} />
         <Route path="/studentcourses/roadmap" element={<StudentLayout><StudentRoadmap /></StudentLayout>} />
         <Route path="/studentdocs" element={<StudentLayout><StudentDocsTab /></StudentLayout>} />
         <Route path="/studentforum" element={<StudentLayout><StudentForumTab /></StudentLayout>} />

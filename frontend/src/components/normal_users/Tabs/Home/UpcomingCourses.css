@@ -1,0 +1,161 @@
+.upcoming-section {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 3rem 1.5rem;
+}
+
+.upcoming-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.upcoming-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.upcoming-icon {
+  width: 2rem;
+  height: 2rem;
+  background-color: #2563eb; /* blue-600 */
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-white {
+  color: white;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.upcoming-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827; /* gray-900 */
+}
+
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.course-card {
+  background-color: white;
+  border: 1px solid #e5e7eb; /* gray-200 */
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.course-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.course-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.course-thumbnail img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.course-content {
+  padding: 1.5rem;
+}
+
+.course-title {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.course-desc {
+  font-size: 0.875rem;
+  color: #6b7280; /* gray-600 */
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.course-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.time-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.course-btn {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.btn-blue {
+  background-color: #2563eb;
+}
+
+.btn-blue:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-purple {
+  background-color: #7c3aed;
+}
+
+.btn-purple:hover {
+  background-color: #6d28d9;
+}
+
+.btn-cyan {
+  background-color: #06b6d4;
+}
+
+.btn-cyan:hover {
+  background-color: #0891b2;
+}
+
+.btn-indigo {
+  background-color: #4f46e5;
+}
+
+.btn-indigo:hover {
+  background-color: #4338ca;
+}
+
+.calendar-button-container {
+  text-align: center;
+}
+
+.calendar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid #2563eb;
+  color: #2563eb;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.calendar-button:hover {
+  background-color: #eff6ff;
+}

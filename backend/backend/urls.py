@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from api.views.generate import generate_view
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls.auth.login')),
@@ -30,6 +31,8 @@ urlpatterns = [
     path('api/', include('api.urls.user.normal_users')),
     path('api/', include('api.urls.user.student')),
     path('api/', include('api.urls.user.teacher')),
+
+    path('api/generate/', generate_view, name='generate'),
 ]
 """Thêm đường dẫn này để lấy được ảnh"""
 if settings.DEBUG:

@@ -80,7 +80,7 @@ function Login({ onLoginSuccess }) {
             marginBottom: "10px",
           }}
         >
-          <FaUserGraduate size={28} color="#003366" /> Toán học sinh viên{" "}
+          <FaUserGraduate size={28} color="#003366" /> Toán học phổ thông{" "}
           <FaUserGraduate size={28} color="#003366" />
         </h2>
 

@@ -10,7 +10,7 @@ from api.serializers import CourseListSerializer
 from urllib.parse import unquote
 import re
 import yt_dlp
-
+from decimal import Decimal, InvalidOperation
 
 class TeacherAddCoursesView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -62,7 +62,11 @@ class TeacherAddCoursesView(APIView):
             title = request.data.get('title')
             description = request.data.get('description', '')
             tags = request.data.get('tags', '')
-            price = request.data.get('price', 0)
+            price_str = request.data.get('price', '0')
+            try:
+                price = Decimal(price_str)
+            except InvalidOperation:
+                return Response({'error': 'Giá trị phí không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
             level = request.data.get('courseLevel', '')
             intro_video = request.data.get('introVideo', '')  # chỉ là link
             chapters_data = request.data.get('chapters')
@@ -146,7 +150,11 @@ class TeacherAddCoursesView(APIView):
             title = request.data.get('title')
             description = request.data.get('description', '')
             tags = request.data.get('tags', '')
-            price = request.data.get('price', 0)
+            price_str = request.data.get('price', '0')
+            try:
+                price = Decimal(price_str)
+            except InvalidOperation:
+                return Response({'error': 'Giá trị phí không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
             level = request.data.get('courseLevel', course.level)
             intro_video = request.data.get('introVideo', course.intro_video)
             chapters_data = request.data.get('chapters')

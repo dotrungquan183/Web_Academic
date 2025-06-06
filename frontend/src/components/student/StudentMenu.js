@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   FaCalculator, FaSearch, FaBell, FaCog, FaQuestionCircle,
-  FaUser, FaSignOutAlt, FaWrench, FaChalkboardTeacher, FaBook, FaHome
+  FaUser, FaSignOutAlt, FaWrench
 } from "react-icons/fa";
 import "./studentmenu.css";
 import { useState, useEffect } from "react";
@@ -14,6 +14,7 @@ function StudentMenu() {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTimeout, setSearchTimeout] = useState(null);
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -38,6 +39,7 @@ function StudentMenu() {
     setUser(null);
     window.location.replace("/");
   };
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -56,6 +58,7 @@ function StudentMenu() {
       window.find(searchTerm, false, false, true, false, false);
     }
   };
+
   return (
     <div className="menu-container">
       <div className="header">
@@ -64,8 +67,8 @@ function StudentMenu() {
           <img src="/geometry.png" className="header-icon-math" alt="Calculator" />
           <span className="header-text black">Toán </span>
           <span className="header-text black">Học </span>
-          <span className="header-text blue">Sinh </span>
-          <span className="header-text blue">Viên </span>
+          <span className="header-text blue">Phổ </span>
+          <span className="header-text blue">Thông </span>
         </div>
       </h1>
       </div>
@@ -126,10 +129,11 @@ function StudentMenu() {
 
       {/* ======== NAVIGATION MENU ======== */}
       <ul className="nav">
+        {/*
         <li className="menu-item-container">
-        <Link to="/student" className="menu-item no-underline">
-          TRANG CHỦ ▾
-        </Link>
+          <Link to="/student" className="menu-item no-underline">
+            TRANG CHỦ ▾
+          </Link>
 
           <ul className="submenu">
             <li className={location.pathname === "/studenthome1" ? "active" : ""}>
@@ -149,6 +153,7 @@ function StudentMenu() {
             </li>
           </ul>
         </li>
+        */}
 
         <li className={location.pathname === "/studentintro" ? "active" : ""}>
           <Link to="/studentintro">GIỚI THIỆU</Link>

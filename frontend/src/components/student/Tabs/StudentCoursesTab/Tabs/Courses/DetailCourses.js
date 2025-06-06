@@ -25,7 +25,7 @@ const StudentDetailCourses = () => {
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [latestCourses, setLatestCourses] = useState([]);
-  const [hotCourses] = useState([]);
+  const [hotCourses, setHotCourses] = useState([]);
   const [videoURL, setVideoURL] = useState("");
   const [introVideoURL, setIntroVideoURL] = useState("");
   const [expandedChapters, setExpandedChapters] = useState({});
@@ -47,6 +47,12 @@ const StudentDetailCourses = () => {
   fetchCourse();
 }, [courseId]);
 
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}/api/student/student_courses/student_bestcourses/`)
+      .then((response) => setHotCourses(response.data))
+      .catch((error) => console.error("Lỗi khi tải khóa học nổi bật:", error));
+  }, []);
 
   useEffect(() => {
     const fetchLatestCourses = async () => {
@@ -158,7 +164,7 @@ const StudentDetailCourses = () => {
         await registerCourse();
       } else {
         // Học phí > 0 -> hiển thị thông tin thanh toán
-        const paymentNote = `DANGKY_${course.id}_${userId}`;
+        const paymentNote = `DANGKY ${course.id} ${userId}`;
         setPaymentContent(paymentNote);
         setShowPayment(true);
  
