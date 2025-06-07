@@ -147,8 +147,18 @@ function TeacherAskQuestion() {
                   value={formData.description}
                   onChange={handleDescriptionChange}
                   placeholder="Mô tả câu hỏi (hỗ trợ LaTeX)"
-                  style={{ width: "100%", minHeight: 120 }}
+                  style={{
+                    width: "100%",
+                    minHeight: 120,
+                    maxHeight: 120,
+                    overflowY: "auto",
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
                 />
+
+
 
                 <input
                   type="text"
@@ -224,10 +234,14 @@ const styles = {
   },
   leftSection: {
     flex: "1 1 48%",
+    maxWidth: "100%",         // đảm bảo max width
     backgroundColor: "rgba(200, 200, 200, 0.3)",
     padding: "20px",
     borderRadius: "8px",
+    boxSizing: "border-box", // phòng lỗi padding làm tràn
   },
+
+
   rightSection: {
     flex: "1 1 48%",
     backgroundColor: "rgba(200, 200, 200, 0.3)",

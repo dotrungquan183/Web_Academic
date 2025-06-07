@@ -7,6 +7,7 @@ import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { renderWithLatex } from "../../LatexInputKaTeX";
 
 function TeacherForumQuestionDetail() {
   const { id } = useParams();
@@ -1068,8 +1069,46 @@ function TeacherForumQuestionDetail() {
               <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} />
             </button>
             <div style={questionContentStyle}>
-              <h2>{question.title}</h2>
-              <div style={metaContainerStyle}>
+              <div
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "200px",
+                  overflow: "auto",
+                  margin: "8px 0",
+                  padding: "8px",
+                  paddingRight: "40px",  // Thêm padding bên phải để chừa chỗ icon
+                  background: "transparent",
+                  border: "none",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div
+                  style={{
+                    display: "block",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    whiteSpace: "normal",
+                    lineBreak: "anywhere",
+                  }}
+                >
+                  <h2
+                    style={{
+                      margin: 0,
+                      display: "block",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      wordBreak: "break-word",
+                      whiteSpace: "normal",
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    {renderWithLatex(question.title)}
+                  </h2>
+                </div>
+              </div>
+
+
+              <div style={{ ...metaContainerStyle, paddingLeft: "8px" }}>
                 <div style={{ display: "flex", gap: "4px" }}>
                   <button
                     disabled={parseInt(question?.user_id) === parseInt(userId)}
@@ -1098,11 +1137,13 @@ function TeacherForumQuestionDetail() {
                 </div>
                 <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
                 <span>
-                  🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}
+                  🔖 {question.tags?.length ? question.tags.join(", ") : "Không có thẻ"}
                 </span>
               </div>
 
-              <p>{question.content}</p>
+              <p style={{ paddingLeft: "8px" }}>
+                {renderWithLatex(question.content)}
+              </p>
 
               {/* Thông tin thêm về câu hỏi */}
               <div style={containerQuestionSelectStyle}>
@@ -1193,9 +1234,14 @@ function TeacherForumQuestionDetail() {
                             onClick={() => handleDeleteCommentQuestion(question.id, c.id)}
                           />
                         </div>
-                        <div style={{ marginLeft: "10px" }}>{c.content}</div>
+
+                        {/* Sử dụng renderWithLatex để hiển thị nội dung comment có công thức */}
+                        <div style={{ marginLeft: "10px" }}>
+                          {renderWithLatex(c.content)}
+                        </div>
                       </div>
                     ))}
+
 
                     {/* Nút "Hiển thị thêm bình luận" nếu còn bình luận chưa hiển thị */}
                     {comments[question.id] &&
@@ -1222,12 +1268,27 @@ function TeacherForumQuestionDetail() {
 
 
                     {/* Khung nhập bình luận */}
-                    <textarea
-                      placeholder="Nhập bình luận của bạn..."
-                      value={questionCommentText}
-                      onChange={(e) => setQuestionCommentText(e.target.value)}
-                      style={commentTextareaStyle}
-                    />
+                    <div>
+                      <textarea
+                        placeholder="Nhập bình luận của bạn..."
+                        value={questionCommentText}
+                        onChange={(e) => setQuestionCommentText(e.target.value)}
+                        style={commentTextareaStyle}
+                      />
+
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          background: "#f8f8f8",
+                          padding: "10px",
+                          minHeight: "40px",
+                          border: "1px solid #000",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {renderWithLatex(questionCommentText)}
+                      </div>
+                    </div>
                     <button
                       style={commentButtonSendStyle}
                       onClick={() => handleSubmitComment(question.id, "question")}
@@ -1296,8 +1357,24 @@ function TeacherForumQuestionDetail() {
 
                       </div>
                       <p><strong>{ans.username}</strong></p>
-                      <p>{ans.content}</p>
-
+                      <div
+                        style={{
+                          marginTop: "-5px",
+                          marginBottom: "8px",
+                          padding: "10px",
+                          backgroundColor: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "4px",
+                          overflowX: "auto",          // Cuộn ngang nếu nội dung dài
+                          wordWrap: "break-word",
+                          whiteSpace: "normal",
+                          minWidth: "106%",
+                          maxWidth: "110%",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        {renderWithLatex(ans.content)}
+                      </div>
                       {/* Vote section */}
                       <div style={metaContainerStyle}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1436,7 +1513,22 @@ function TeacherForumQuestionDetail() {
                                       onClick={() => handleDeleteCommentAnswer(ans.id, c.id)} // Hàm xử lý xóa comment
                                     />
                                   </div>
-                                  <div style={{ marginLeft: "10px" }}>{c.content}</div>
+                                  <div
+                                    style={{
+                                      marginLeft: "10px",
+                                      maxWidth: "100%",
+                                      overflowX: "auto",
+                                      overflowY: "auto",
+                                      maxHeight: "300px",
+                                      wordBreak: "break-word",
+                                      whiteSpace: "normal", // hoặc 'pre-wrap' nếu bạn muốn giữ định dạng xuống dòng
+                                      lineBreak: "anywhere", // cưỡng chế break ở mọi nơi
+                                    }}
+                                  >
+                                    {renderWithLatex(c.content)}
+                                  </div>
+
+
                                 </div>
                               ))}
 
@@ -1464,14 +1556,35 @@ function TeacherForumQuestionDetail() {
                                 )}
 
                               {/* Khung nhập bình luận */}
-                              <textarea
-                                placeholder="Nhập bình luận của bạn..."
-                                value={answerCommentText[ans.id] || ""}
-                                onChange={(e) =>
-                                  setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
-                                }
-                                style={commentTextareaStyle}
-                              />
+                              <div>
+                                <textarea
+                                  placeholder="Nhập bình luận của bạn..."
+                                  value={answerCommentText[ans.id] || ""}
+                                  onChange={(e) =>
+                                    setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
+                                  }
+                                  style={commentTextareaStyle}
+                                />
+
+                                <div
+                                  style={{
+                                    marginTop: "10px",
+                                    background: "#f8f8f8",
+                                    padding: "10px",
+                                    minHeight: "40px",
+                                    maxHeight: "200px",        // Giới hạn chiều cao khung preview
+                                    border: "1px solid #000",
+                                    borderRadius: "4px",
+                                    overflowY: "auto",         // Scroll nếu nội dung dài
+                                    wordBreak: "break-word",
+                                    overflowWrap: "break-word",
+                                    whiteSpace: "pre-wrap",    // Giữ định dạng xuống dòng
+                                  }}
+                                >
+                                  {renderWithLatex(answerCommentText[ans.id] || "")}
+                                </div>
+                              </div>
+
                               <button
                                 style={commentButtonSendStyle}
                                 onClick={() => handleSubmitComment(ans.id, "answer")}
@@ -1496,15 +1609,36 @@ function TeacherForumQuestionDetail() {
                 {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
               </label>
 
-              <textarea
-                id="answer"
-                value={isEditing ? editContent : newAnswer}
-                onChange={(e) =>
-                  isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
-                }
-                style={textAreaStyle}
-                placeholder="Nhập câu trả lời tại đây..."
-              />
+              <div>
+                <textarea
+                  id="answer"
+                  value={isEditing ? editContent : newAnswer}
+                  onChange={(e) =>
+                    isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
+                  }
+                  style={textAreaStyle}
+                  placeholder="Nhập câu trả lời tại đây..."
+                />
+
+                {/* Preview nội dung có công thức LaTeX */}
+                <div
+                  style={{
+                    marginTop: "10px",
+                    background: "#f8f8f8",
+                    padding: "10px",
+                    minHeight: "40px",
+                    border: "1px solid #eee",
+                    borderRadius: "4px",
+                    overflowX: "auto",              // Cho phép cuộn ngang nếu cần
+                    wordWrap: "break-word",         // Ngắt từ dài
+                    whiteSpace: "normal",           // Cho phép xuống dòng
+                    maxWidth: "100%",               // Không cho vượt chiều rộng
+                    boxSizing: "border-box"
+                  }}
+                >
+                  {renderWithLatex(isEditing ? editContent : newAnswer)}
+                </div>
+              </div>
 
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                 {isEditing ? (
@@ -1613,7 +1747,12 @@ const voteButton = {
 
 const questionContentStyle = {
   flex: 1,
+  minWidth: 0,               // 🔑 NGĂN FLEXBOX giãn tràn
+  maxWidth: "100%",          // Không vượt quá vùng cha
+  overflow: "auto",          // Cho phép cuộn nếu dài
+  wordBreak: "break-word",   // Ngắt từ nếu dài
 };
+
 
 const metaContainerStyle = {
   fontSize: "14px",

@@ -51,8 +51,10 @@ const StudentSupportTab = () => {
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+    if (messages.length > 0 && messages[messages.length - 1].from === 'bot') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const handleLoadHistory = (conversation) => {
     setMessages(conversation);
