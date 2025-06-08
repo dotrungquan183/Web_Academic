@@ -47,6 +47,50 @@ function TeacherForumQuestionDetail() {
   const fileInputForAnswerRef = useRef(null);
   const [selectedFilesForAnswer, setSelectedFilesForAnswer] = useState({});
   const [selectedFileNameForAnswer, setSelectedFileNameForAnswer] = useState(null);
+  const emojiPickerQuestionRef = useRef(null);
+  const emojiPickerAnswerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        emojiPickerAnswerRef.current &&
+        !emojiPickerAnswerRef.current.contains(event.target)
+      ) {
+        setShowEmojiPickerForAnswer(false);
+      }
+    }
+
+    if (showEmojiPickerForAnswer) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showEmojiPickerForAnswer]);
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        emojiPickerQuestionRef.current &&
+        !emojiPickerQuestionRef.current.contains(event.target)
+      ) {
+        setShowEmojiPickerForQuestion(false);
+      }
+    }
+
+    if (showEmojiPickerForQuestion) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    // Cleanup khi component unmount hoặc showEmojiPickerForQuestion thay đổi
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showEmojiPickerForQuestion]);
   useEffect(() => {
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_hotquestion/")
       .then((res) => {
@@ -1426,19 +1470,21 @@ function TeacherForumQuestionDetail() {
                           </span>
 
                           {showEmojiPickerForQuestion && (
-                            <div style={{ position: "absolute", zIndex: 1000 }}>
+                            <div
+                              ref={emojiPickerQuestionRef}
+                              style={{ position: "absolute", zIndex: 1000 }}
+                            >
                               <EmojiPicker
                                 onEmojiClick={(emojiData) => {
-                                  setQuestionCommentText(prev => ({
+                                  setQuestionCommentText((prev) => ({
                                     ...prev,
-                                    [question.id]: (prev[question.id] || "") + emojiData.emoji
+                                    [question.id]: (prev[question.id] || "") + emojiData.emoji,
                                   }));
                                   setShowEmojiPickerForQuestion(false);
                                 }}
                               />
                             </div>
                           )}
-
 
                         </div>
                       </div>
@@ -1852,20 +1898,21 @@ function TeacherForumQuestionDetail() {
                                       </span>
 
                                       {showEmojiPickerForAnswer && (
-                                        <div style={{ position: "absolute", zIndex: 1000 }}>
+                                        <div
+                                          ref={emojiPickerAnswerRef}
+                                          style={{ position: "absolute", zIndex: 1000 }}
+                                        >
                                           <EmojiPicker
                                             onEmojiClick={(emojiData) => {
-                                              setAnswerCommentText(prev => ({
+                                              setAnswerCommentText((prev) => ({
                                                 ...prev,
-                                                [ans.id]: (prev[ans.id] || "") + emojiData.emoji
+                                                [ans.id]: (prev[ans.id] || "") + emojiData.emoji,
                                               }));
                                               setShowEmojiPickerForAnswer(false);
                                             }}
                                           />
                                         </div>
                                       )}
-
-
                                     </div>
                                   </div>
 
