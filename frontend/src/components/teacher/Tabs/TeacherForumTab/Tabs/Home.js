@@ -5,94 +5,94 @@ import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../auth/authHelper';
 
 function TeacherForumHome() {
-  const [data, setData] = useState([]);
-  const [votesMap, setVotesMap] = useState({});
-  const [answersMap, setAnswersMap] = useState({});
-  const [timeFilter, setTimeFilter] = useState("");
-  const [bountyFilter, setBountyFilter] = useState("");
-  const [interestFilter, setInterestFilter] = useState("");
-  const [qualityFilter, setQualityFilter] = useState("");
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [, setLoading] = useState(false);
-  const navigate = useNavigate();
+    const [data, setData] = useState([]);
+    const [votesMap, setVotesMap] = useState({});
+    const [answersMap, setAnswersMap] = useState({});
+    const [timeFilter, setTimeFilter] = useState("");
+    const [bountyFilter, setBountyFilter] = useState("");
+    const [interestFilter, setInterestFilter] = useState("");
+    const [qualityFilter, setQualityFilter] = useState("");
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [, setLoading] = useState(false);
+    const navigate = useNavigate();
 
-  const fetchQuestions = useCallback(async () => {
-    const token = getToken();
-    let userId = null;
+    const fetchQuestions = useCallback(async () => {
+        const token = getToken();
+        let userId = null;
 
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        userId = decoded.user_id;
-      } catch (error) {
-        console.error("❌ Token không hợp lệ:", error);
-        return;
-      }
-    }
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                userId = decoded.user_id;
+            } catch (error) {
+                console.error("❌ Token không hợp lệ:", error);
+                return;
+            }
+        }
 
-    if (!userId) {
-      console.error("❌ User chưa đăng nhập hoặc token không hợp lệ.");
-      return;
-    }
+        if (!userId) {
+            console.error("❌ User chưa đăng nhập hoặc token không hợp lệ.");
+            return;
+        }
 
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (timeFilter) params.append("time", timeFilter);
-      if (bountyFilter) params.append("bounty", bountyFilter);
-      if (interestFilter) params.append("interest", interestFilter);
-      if (qualityFilter) params.append("quality", qualityFilter);
+        setLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (timeFilter) params.append("time", timeFilter);
+            if (bountyFilter) params.append("bounty", bountyFilter);
+            if (interestFilter) params.append("interest", interestFilter);
+            if (qualityFilter) params.append("quality", qualityFilter);
 
-      const response = await fetch(
-        `http://localhost:8000/api/student/student_forum/student_home/${userId}?${params.toString()}`
-      );
-      const result = await response.json();
-      const questions = Array.isArray(result) ? result : result ? [result] : [];
-
-      setData(questions);
-
-      const votesResults = {};
-      const answersResults = {};
-
-      await Promise.all(
-        questions.map(async (q) => {
-          try {
-            const res = await fetch(
-              `http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`
+            const response = await fetch(
+                `http://localhost:8000/api/student/student_forum/student_home/${userId}?${params.toString()}`
             );
-            const detail = await res.json();
+            const result = await response.json();
+            const questions = Array.isArray(result) ? result : result ? [result] : [];
 
-            if (detail.total_vote_score !== undefined) {
-              votesResults[q.id] = detail.total_vote_score;
-            }
+            setData(questions);
 
-            if (detail.total_answers !== undefined) {
-              answersResults[q.id] = detail.total_answers;
-            }
-          } catch (err) {
-            console.error(`❌ Lỗi khi fetch chi tiết câu hỏi ${q.id}:`, err);
-          }
-        })
-      );
+            const votesResults = {};
+            const answersResults = {};
 
-      setVotesMap(votesResults);
-      setAnswersMap(answersResults);
-    } catch (error) {
-      console.error("❌ Lỗi khi fetch câu hỏi:", error);
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
+            await Promise.all(
+                questions.map(async (q) => {
+                    try {
+                        const res = await fetch(
+                            `http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`
+                        );
+                        const detail = await res.json();
 
-  useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
+                        if (detail.total_vote_score !== undefined) {
+                            votesResults[q.id] = detail.total_vote_score;
+                        }
 
-  const filteredData = data.filter((q) =>
-    q.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-    q.content?.toLowerCase().includes(searchKeyword.toLowerCase())
-  );
+                        if (detail.total_answers !== undefined) {
+                            answersResults[q.id] = detail.total_answers;
+                        }
+                    } catch (err) {
+                        console.error(`❌ Lỗi khi fetch chi tiết câu hỏi ${q.id}:`, err);
+                    }
+                })
+            );
+
+            setVotesMap(votesResults);
+            setAnswersMap(answersResults);
+        } catch (error) {
+            console.error("❌ Lỗi khi fetch câu hỏi:", error);
+            setData([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
+
+    useEffect(() => {
+        fetchQuestions();
+    }, [fetchQuestions]);
+
+    const filteredData = data.filter((q) =>
+        q.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        q.content?.toLowerCase().includes(searchKeyword.toLowerCase())
+    );
 
 
     return (
@@ -333,6 +333,10 @@ const questionContentStyle = {
     fontWeight: "bold",
     color: "#003366",
     marginBottom: "10px",
+
+    wordBreak: "break-word",    // Cho phép ngắt từ giữa nếu từ quá dài
+    overflowWrap: "break-word", // Tương tự, đảm bảo không tràn
+    whiteSpace: "normal",       // Cho phép xuống dòng bình thường
 };
 
 const questionMetaStyle = {

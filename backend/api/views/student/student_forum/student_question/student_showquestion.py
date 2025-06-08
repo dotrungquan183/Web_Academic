@@ -18,27 +18,9 @@ logger = logging.getLogger(__name__)
 
 class StudentShowQuestionView(APIView):
     def get(self, request):
-         # 🔍 Log URL đầy đủ (bao gồm query string)
-        print("🟡 Full URL:", request.build_absolute_uri())
-
-        # ✅ In query params
-        print("🟣 Query Params:", request.GET.dict())
-
-        # ✅ Đọc tham số unanswered
-        unanswered = request.GET.get("unanswered", "false") == "true"
         
         # ✅ Lấy tất cả câu hỏi
-        questions = Question.objects.all()
-
-        # ✅ Lọc những câu hỏi chưa có câu trả lời (nếu được yêu cầu)
-        if unanswered:
-            questions = questions.annotate(
-                has_answer=Exists(Answer.objects.filter(question=OuterRef('pk')))
-            ).filter(has_answer=False)
-
-        print("✅ Đang lọc unanswered, số lượng:", questions.count())
-
-        
+        questions = Question.objects.all()  
         time_filter = request.GET.get("time")
         bounty_filter = request.GET.get("bounty")
         interest_filter = request.GET.get("interest")
@@ -113,7 +95,8 @@ class StudentShowQuestionView(APIView):
                 "views": total_views,
                 "username": question.user.username,
                 "avatar": avatar,
-                "user_id": question.user.id
+                "user_id": question.user.id,
+                "accepted_answer_id": question.accepted_answer_id
             })
 
         return Response(question_list)

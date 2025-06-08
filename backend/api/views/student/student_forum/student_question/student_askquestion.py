@@ -149,6 +149,7 @@ class StudentAskQuestionView(View):
                 QuestionTagMap.objects.filter(question=question)
                 .values_list('tag__tag_name', flat=True)
             )
+
             return JsonResponse({
                 "id": question.id,
                 "title": question.title,
@@ -157,6 +158,7 @@ class StudentAskQuestionView(View):
                 "accepted_answer_id": question.accepted_answer_id,
                 "created_at": question.created_at.isoformat(),
                 "tags": tags,
+                "user_id": question.user.id,  # 👈 Thêm dòng này
             }, status=200)
 
         except Question.DoesNotExist:

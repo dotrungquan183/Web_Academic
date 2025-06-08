@@ -144,12 +144,15 @@ class StudentAnsQuestionView(View):
                     'like': likes,
                     'dislike': dislikes,
                     'user_id': user_info.user_id if user_info else None,
+                    'question_id': ans.question_id,  # ✅ Sửa chỗ này
                 }
 
                 print(f"✅ Dữ liệu answer được append: {answer_data}")
                 answer_list.append(answer_data)
 
-            return JsonResponse(answer_list, safe=False, status=200)
+            return JsonResponse({
+                'answers': answer_list
+            }, status=200)
 
         except Exception as e:
             print("❌ Lỗi khi lấy danh sách câu trả lời:", str(e))

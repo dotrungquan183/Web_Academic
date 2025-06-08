@@ -67,7 +67,7 @@ function TeacherTagsForumQuestion() {
             console.error("Error fetching data:", error);
             setData([]);
         }
-    }, [timeFilter, bountyFilter, interestFilter, qualityFilter,  tagId]);
+    }, [timeFilter, bountyFilter, interestFilter, qualityFilter, tagId]);
 
     useEffect(() => {
         fetchQuestions();
@@ -312,6 +312,10 @@ const questionContentStyle = {
     fontWeight: "bold",
     color: "#003366",
     marginBottom: "10px",
+
+    wordBreak: "break-word",    // Cho phép ngắt từ giữa nếu từ quá dài
+    overflowWrap: "break-word", // Tương tự, đảm bảo không tràn
+    whiteSpace: "normal",       // Cho phép xuống dòng bình thường
 };
 
 const questionMetaStyle = {

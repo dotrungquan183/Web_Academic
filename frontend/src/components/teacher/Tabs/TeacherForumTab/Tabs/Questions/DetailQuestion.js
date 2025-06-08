@@ -9,6 +9,8 @@ import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { renderWithLatex } from "../../LatexInputKaTeX";
 import EmojiPicker from 'emoji-picker-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShare, faEdit, faEye } from '@fortawesome/free-solid-svg-icons';
 
 function TeacherForumQuestionDetail() {
   const { id } = useParams();
@@ -154,7 +156,7 @@ function TeacherForumQuestionDetail() {
         const selectedQuestion = data.find((q) => q.id.toString() === id);
         if (selectedQuestion) {
           setQuestion(selectedQuestion);
-          setAcceptedAnswerId(selectedQuestion.accepted_answer_id); // 👈 Thêm dòng này
+          setAcceptedAnswerId(selectedQuestion.accepted_answer_id);
         }
       });
 
@@ -173,7 +175,7 @@ function TeacherForumQuestionDetail() {
           }
         }
 
-        const formattedAnswers = data.map((ans) => {
+        const formattedAnswers = data.answers.map((ans) => {
           const voteKey = `answer_vote_${ans.id}-${localUserId}`;
           const storedVote = localStorage.getItem(voteKey);
           const userVote = storedVote ? parseInt(storedVote, 10) : 0;
@@ -187,6 +189,7 @@ function TeacherForumQuestionDetail() {
             dislike: ans.dislike, // ✅ thêm
             totalVote: ans.totalVote, // ✅ thêm
             user_id: ans.user_id, // ✅ thêm
+            question_id: ans.question_id, // ✅ thêm
           };
         });
 
@@ -1044,16 +1047,16 @@ function TeacherForumQuestionDetail() {
     const decoded = jwtDecode(token);
     const currentUserId = decoded.user_id;
 
-    if (currentUserId !== questionOwnerId) {
+    if (parseInt(currentUserId) !== parseInt(questionOwnerId)) {
       alert("❌ Bạn không có quyền đánh dấu câu trả lời đúng!");
       return;
     }
 
-    // ✅ Cập nhật trước để checkbox phản hồi ngay
     const previousAcceptedId = acceptedAnswerId;
-    setAcceptedAnswerId(answerId);
+    setAcceptedAnswerId(answerId); // ✅ Hiển thị tức thì
 
     try {
+      // ✅ Nếu bạn đã có dữ liệu câu hỏi rồi, bỏ đoạn GET này đi!
       const getQuestionRes = await fetch(
         `http://localhost:8000/api/student/student_forum/student_question/student_askquestion/${questionId}/`,
         {
@@ -1083,7 +1086,7 @@ function TeacherForumQuestionDetail() {
             content: questionData.content,
             tags: questionData.tags,
             bounty_amount: questionData.bounty_amount,
-            accepted_answer_id: answerId,
+            accepted_answer_id: answerId, // 👈 Thay đổi quan trọng
           }),
         }
       );
@@ -1093,19 +1096,16 @@ function TeacherForumQuestionDetail() {
       if (putRes.ok) {
         alert("✅ Đã đánh dấu câu trả lời là đúng!");
       } else {
-        // ❌ Rollback lại nếu lỗi
         setAcceptedAnswerId(previousAcceptedId);
-        alert(
-          `❌ Lỗi: ${putResult.error || "Không thể đánh dấu câu trả lời này."}`
-        );
+        alert(`❌ Lỗi: ${putResult.error || "Không thể đánh dấu câu trả lời này."}`);
       }
     } catch (error) {
       console.error("❌ Lỗi khi đánh dấu câu trả lời đúng:", error);
-      // ❌ Rollback lại nếu lỗi
       setAcceptedAnswerId(previousAcceptedId);
       alert("❌ Đã xảy ra lỗi.");
     }
   };
+
 
 
   const scrollToAnswerInput = () => {
@@ -1224,19 +1224,24 @@ function TeacherForumQuestionDetail() {
               <div style={containerQuestionSelectStyle}>
                 <div style={topRowStyle}>
                   <div style={buttonGroupStyle}>
-                    <button style={actionButtonStyle}>↗️</button>
+                    <button style={actionButtonStyle}>
+                      <FontAwesomeIcon icon={faShare} style={{ fontSize: "1.1em" }} />
+                    </button>
                     <button
                       style={actionButtonStyle}
                       onClick={() =>
                         navigate("/teacherforum/question/askquestion", {
-                          state: { question: question }, // 👈 truyền object câu hỏi
+                          state: { question: question },
                         })
                       }
                     >
-                      ✏️
+                      <FontAwesomeIcon icon={faEdit} style={{ fontSize: "1.1em" }} />
                     </button>
-                    <button style={actionButtonStyle}>👁️</button>
+                    <button style={actionButtonStyle}>
+                      <FontAwesomeIcon icon={faEye} style={{ fontSize: "1.1em" }} />
+                    </button>
                   </div>
+
 
                   {/* 👇 Chỗ hiển thị thời gian chỉnh sửa */}
                   <span>
@@ -1530,49 +1535,54 @@ function TeacherForumQuestionDetail() {
                   <li key={ans.id} style={answerItemStyle}>
                     <div style={{ ...singleAnswerBox, position: "relative" }}>
                       {/* Nút xoá ở góc phải trên */}
-                      <button
-                        onClick={() => handleDeleteAnswer(ans.id)}
-                        style={{
-                          position: "absolute",
-                          top: "10px",
-                          right: "10px",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: "4px",
-                          borderRadius: "4px",
-                          transition: "background-color 0.2s",
-                          fontSize: "1em",
-                        }}
-                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
-                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                        title="Xoá câu trả lời"
-                      >
-                        <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} /> {/* Thêm màu #003366 cho icon */}
-                      </button>
-                      {/* Checkbox đánh dấu là đúng */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "55px", // khoảng cách từ trên xuống dưới nút xoá
-                          right: "10px",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={acceptedAnswerId === ans.id}
-                          onChange={() =>
-                            handleMarkAsCorrect(question.id, ans.id, question.user_id)
-                          }
+                      {String(userId) === String(ans.user_id) && (
+                        <button
+                          onClick={() => handleDeleteAnswer(ans.id)}
                           style={{
-                            width: "25px",
-                            height: "25px",
-                            accentColor: "#003366",
+                            position: "absolute",
+                            top: "10px",
+                            right: "10px",
+                            background: "none",
+                            border: "none",
                             cursor: "pointer",
+                            padding: "4px",
+                            borderRadius: "4px",
+                            transition: "background-color 0.2s",
+                            fontSize: "1em",
                           }}
-                        />
+                          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
+                          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                          title="Xoá câu trả lời"
+                        >
+                          <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} />
+                        </button>
+                      )}
 
-                      </div>
+                      {/* Checkbox đánh dấu là đúng */}
+                      {parseInt(userId) === parseInt(question.user_id) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "55px", // khoảng cách từ trên xuống dưới nút xoá
+                            right: "10px",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={parseInt(acceptedAnswerId) === parseInt(ans.id)}
+                            onChange={() =>
+                              handleMarkAsCorrect(question.id, ans.id, question.user_id)
+                            }
+                            style={{
+                              width: "25px",
+                              height: "25px",
+                              accentColor: "#003366",
+                              cursor: "pointer",
+                            }}
+                          />
+                        </div>
+                      )}
+
                       <p><strong>{ans.username}</strong></p>
                       <div
                         style={{
@@ -1645,7 +1655,10 @@ function TeacherForumQuestionDetail() {
                       <div style={{ ...containerAnswerSelectStyle, marginTop: '10px' }}>
                         <div style={topRowStyle}>
                           <div style={buttonGroupStyle}>
-                            <button style={actionButtonStyle}>↗️</button>
+                            <button style={actionButtonStyle}>
+                              <FontAwesomeIcon icon={faShare} style={{ fontSize: "1.1em" }} />
+                            </button>
+
                             <button
                               style={actionButtonStyle}
                               onClick={() => {
@@ -1666,17 +1679,20 @@ function TeacherForumQuestionDetail() {
 
                                   handleEditAnswer(ans);
                                   scrollToAnswerInput();
-
                                 } catch (error) {
                                   console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
                                   alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
                                 }
                               }}
                             >
-                              ✏️
+                              <FontAwesomeIcon icon={faEdit} style={{ fontSize: "1.1em" }} />
                             </button>
-                            <button style={actionButtonStyle}>👁️</button>
+
+                            <button style={actionButtonStyle}>
+                              <FontAwesomeIcon icon={faEye} style={{ fontSize: "1.1em" }} />
+                            </button>
                           </div>
+
 
                           <span>
                             {(() => {
@@ -2210,13 +2226,18 @@ const topRowStyle = {
 
 const buttonGroupStyle = {
   display: "flex",
-  gap: "10px",
+  gap: "4px",            // Khoảng cách nhỏ giữa các nút
+  borderRadius: "8px",   // Bo góc tổng thể
+  background: "#f9f9f9", // Màu nền giống Facebook
+  padding: "4px",
+  alignItems: "center",
+  marginLeft: "-4px", // 👉 Dịch sang trái
 };
 
 const actionButtonStyle = {
-  backgroundColor: "#003366",
-  color: "#fff",
-  border: "none",
+  backgroundColor: "#f9f9f9",
+  color: "#003366",
+  border: "1px solid #003366",
   padding: "8px 20px",
   borderRadius: "4px",
   cursor: "pointer",

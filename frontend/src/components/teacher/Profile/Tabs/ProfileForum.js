@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../../../auth/authHelper";
-import StudentProfileLayout from "../Layout";
+import TeacherProfileLayout from "../Layout";
+import { renderWithLatex } from "../../Tabs/TeacherForumTab/LatexInputKaTeX";
 
 const getAvatarUrl = (user) => {
   if (user?.avatar) {
@@ -11,7 +12,7 @@ const getAvatarUrl = (user) => {
   return null;
 };
 
-const StudentProfileForum = () => {
+const TeacherProfileForum = () => {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [showAllQuestions, setShowAllQuestions] = useState(false);
@@ -24,30 +25,30 @@ const StudentProfileForum = () => {
   const [tags, setTags] = useState([]);
   const [filtertag, setFilterTag] = useState("top"); // default là top 5
   const [showAllTags, setShowAllTags] = useState(false);
-  const [stats,setStats] = useState(null);
+  const [stats, setStats] = useState(null);
   const [voteStats, setVoteStats] = useState(null);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-  const fetchUserInfo = async () => {
-    try {
-      const token = getToken();
-      const response = await axios.get(`http://localhost:8000/api/teacher/teacher_profile/teacher_account`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-      });
+    const fetchUserInfo = async () => {
+      try {
+        const token = getToken();
+        const response = await axios.get(`http://localhost:8000/api/teacher/teacher_profile/teacher_account`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+        });
 
-      console.log("Dữ liệu trả về từ API:", response.data); // ✅ Log dữ liệu tại đây
-      setUser(response.data);
-    } catch (error) {
-      console.error("Lỗi khi lấy thông tin người dùng:", error);
-    }
-  };
+        console.log("Dữ liệu trả về từ API:", response.data); // ✅ Log dữ liệu tại đây
+        setUser(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
+      }
+    };
 
-  fetchUserInfo();
-}, []);
+    fetchUserInfo();
+  }, []);
 
 
   useEffect(() => {
@@ -121,7 +122,7 @@ const StudentProfileForum = () => {
 
   const handleTagsAll = () => {
     setFilterTag("all");
-    setShowAllTags(true); 
+    setShowAllTags(true);
   };
 
   // Fetch questions
@@ -209,12 +210,8 @@ const StudentProfileForum = () => {
   const handleQuestionClick = (id) => {
     navigate(`/teacherforum/question/${id}`);
   };
-
-  const handleAnswerClick = (id) => {
-    navigate(`/teacherforum/question/${id}`);
-  };
   return (
-    <StudentProfileLayout>
+    <TeacherProfileLayout>
       <div style={styles.pageLayout}>
         {/* Top Section */}
         <div style={styles.topBox}>
@@ -244,7 +241,7 @@ const StudentProfileForum = () => {
             </>
           )}
         </div>
-  
+
         {/* Bottom Layout */}
         <div style={styles.bottomLayout}>
           {/* Main Content */}
@@ -296,16 +293,61 @@ const StudentProfileForum = () => {
                           q.vote_score > 0
                             ? "#2e7d32"
                             : q.vote_score < 0
-                            ? "#c62828"
-                            : "#003366",
+                              ? "#c62828"
+                              : "#003366",
                       }}
                     >
                       {q.vote_score}
                     </div>
-                    <div style={styles.questionText}>{q.title}</div>
-                    <div style={styles.questionDate}>
-                      {new Date(q.created_at).toLocaleDateString()}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        width: "100%",
+                        gap: "10px",
+                      }}
+                    >
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          width: "100%",
+                        }}
+                      >
+                        <div
+                          style={{
+                            whiteSpace: "normal",
+                            wordWrap: "break-word",
+                            overflowWrap: "break-word",
+                            maxWidth: "530px",
+                            overflow: "hidden",
+                            flex: 1, // cho phép title co giãn
+                            display: "flex",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                          }}
+                        >
+                          {renderWithLatex(q.title)}
+                        </div>
+
+                        <div
+                          style={{
+                            whiteSpace: "nowrap",
+                            fontSize: "0.9em",
+                            color: "#666",
+                            minWidth: "90px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {new Date(q.created_at).toLocaleDateString("vi-VN")}
+                        </div>
+                      </div>
+
                     </div>
+
                   </li>
                 ))}
               </ul>
@@ -326,7 +368,7 @@ const StudentProfileForum = () => {
                       {allQuestions.map((q) => (
                         <li
                           key={q.id}
-                          style={styles.questionRow}
+                          style={{ ...styles.questionRow, cursor: "pointer" }}
                           onClick={() => handleQuestionClick(q.id)}
                         >
                           <div
@@ -336,15 +378,38 @@ const StudentProfileForum = () => {
                                 q.vote_score > 0
                                   ? "#2e7d32"
                                   : q.vote_score < 0
-                                  ? "#c62828"
-                                  : "#003366",
+                                    ? "#c62828"
+                                    : "#003366",
                             }}
                           >
                             {q.vote_score}
                           </div>
-                          <div style={styles.questionText}>{q.title}</div>
-                          <div style={styles.questionDate}>
-                            {new Date(q.created_at).toLocaleDateString()}
+                          <div
+                            style={{
+                              whiteSpace: "normal",
+                              wordWrap: "break-word",
+                              overflowWrap: "break-word",
+                              maxWidth: "530px",
+                              overflow: "hidden",
+                              flex: 1, // cho phép title co giãn
+                              display: "flex",
+                              flexWrap: "wrap",
+                              alignItems: "center",
+                            }}
+                          >
+                            {renderWithLatex(q.title)}
+                          </div>
+
+                          <div
+                            style={{
+                              whiteSpace: "nowrap",
+                              fontSize: "0.9em",
+                              color: "#666",
+                              minWidth: "90px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {new Date(q.created_at).toLocaleDateString("vi-VN")}
                           </div>
                         </li>
                       ))}
@@ -364,7 +429,7 @@ const StudentProfileForum = () => {
                     setShowAllAnswers(true); // mở modal
                   }}
                 >
-                  Xem tất cả
+                  Xem tất cả câu trả lời
                 </button>
 
                 <div style={styles.filterBar}>
@@ -391,7 +456,7 @@ const StudentProfileForum = () => {
                   <li
                     key={a.id}
                     style={{ ...styles.questionRow, cursor: "pointer" }}
-                    onClick={() => handleAnswerClick(a.id)}
+                    onClick={() => handleQuestionClick(a.question_id)}
                   >
                     <div
                       style={{
@@ -400,15 +465,38 @@ const StudentProfileForum = () => {
                           a.vote_score > 0
                             ? "#2e7d32"
                             : a.vote_score < 0
-                            ? "#c62828"
-                            : "#003366",
+                              ? "#c62828"
+                              : "#003366",
                       }}
                     >
                       {a.vote_score}
                     </div>
-                    <div style={styles.questionText}>{a.content}</div>
-                    <div style={styles.questionDate}>
-                      {new Date(a.created_at).toLocaleDateString()}
+                    <div
+                      style={{
+                        whiteSpace: "normal",
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word",
+                        maxWidth: "530px",
+                        overflow: "hidden",
+                        flex: 1, // cho phép title co giãn
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                      }}
+                    >
+                      {renderWithLatex(a.content)}
+                    </div>
+
+                    <div
+                      style={{
+                        whiteSpace: "nowrap",
+                        fontSize: "0.9em",
+                        color: "#666",
+                        minWidth: "90px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {new Date(a.created_at).toLocaleDateString("vi-VN")}
                     </div>
                   </li>
                 ))}
@@ -430,8 +518,8 @@ const StudentProfileForum = () => {
                       {allAnswers.map((a) => (
                         <li
                           key={a.id}
-                          style={styles.questionRow}
-                          onClick={() => handleAnswerClick(a.id)}
+                          style={{ ...styles.questionRow, cursor: "pointer" }}
+                          onClick={() => handleQuestionClick(a.question_id)}
                         >
                           <div
                             style={{
@@ -440,15 +528,38 @@ const StudentProfileForum = () => {
                                 a.vote_score > 0
                                   ? "#2e7d32"
                                   : a.vote_score < 0
-                                  ? "#c62828"
-                                  : "#003366",
+                                    ? "#c62828"
+                                    : "#003366",
                             }}
                           >
                             {a.vote_score}
                           </div>
-                          <div style={styles.questionText}>{a.content}</div>
-                          <div style={styles.questionDate}>
-                            {new Date(a.created_at).toLocaleDateString()}
+                          <div
+                            style={{
+                              whiteSpace: "normal",
+                              wordWrap: "break-word",
+                              overflowWrap: "break-word",
+                              maxWidth: "530px",
+                              overflow: "hidden",
+                              flex: 1, // cho phép title co giãn
+                              display: "flex",
+                              flexWrap: "wrap",
+                              alignItems: "center",
+                            }}
+                          >
+                            {renderWithLatex(a.content)}
+                          </div>
+
+                          <div
+                            style={{
+                              whiteSpace: "nowrap",
+                              fontSize: "0.9em",
+                              color: "#666",
+                              minWidth: "90px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {new Date(a.created_at).toLocaleDateString("vi-VN")}
                           </div>
                         </li>
                       ))}
@@ -457,7 +568,7 @@ const StudentProfileForum = () => {
                 </div>
               )}
             </div>
-  
+
             {/* Tags */}
             <div style={styles.section}>
               <h3 style={styles.sectionTitle}>Thẻ</h3>
@@ -467,7 +578,7 @@ const StudentProfileForum = () => {
                   style={styles.viewAllLink}
                   onClick={handleTagsAll} // Chỉ set showAllTags(true) để mở modal
                 >
-                  Xem tất cả
+                  Xem tất cả thẻ
                 </button>
               </div>
 
@@ -475,8 +586,7 @@ const StudentProfileForum = () => {
                 {tags.map((t) => (
                   <li
                     key={t.tag_id}
-                    style={{ ...styles.questionRow, cursor: "pointer" }}
-                    onClick={() => handleAnswerClick(t.tag_id)}
+                    style={styles.questionRow}
                   >
                     <div
                       style={{
@@ -485,8 +595,8 @@ const StudentProfileForum = () => {
                           t.total_vote_score > 0
                             ? "#2e7d32"
                             : t.total_vote_score < 0
-                            ? "#c62828"
-                            : "#003366",
+                              ? "#c62828"
+                              : "#003366",
                       }}
                     >
                       {t.total_vote_score}
@@ -514,7 +624,6 @@ const StudentProfileForum = () => {
                         <li
                           key={t.tag_id}
                           style={styles.questionRow}
-                          onClick={() => handleAnswerClick(t.tag_id)} // Sử dụng callback tương tự khi nhấn vào tag
                         >
                           <div
                             style={{
@@ -523,8 +632,8 @@ const StudentProfileForum = () => {
                                 t.total_vote_score > 0
                                   ? "#2e7d32"
                                   : t.total_vote_score < 0
-                                  ? "#c62828"
-                                  : "#003366",
+                                    ? "#c62828"
+                                    : "#003366",
                             }}
                           >
                             {t.total_vote_score}
@@ -539,7 +648,7 @@ const StudentProfileForum = () => {
             </div>
 
           </div>
-  
+
           {/* Sidebar */}
           <div style={styles.sidebarWrapper}>
             <div style={styles.sidebarBox}>
@@ -551,7 +660,7 @@ const StudentProfileForum = () => {
                 <p>❓ <strong>Câu hỏi:</strong> {stats?.total_questions}</p>
               </div>
             </div>
-  
+
             <div style={styles.sidebarBox}>
               <h3 style={styles.sectionTitle}>Huy hiệu</h3>
               <div style={styles.badgesRow}>
@@ -571,24 +680,24 @@ const StudentProfileForum = () => {
               <p>🥈 Silver: Yearling × 7</p>
               <p>🥉 Bronze: Teacher, Editor, Critic</p>
             </div>
-  
+
             {voteStats ? (
-            <div style={styles.sidebarBox}>
-              <h3 style={styles.sectionTitle}>Lượt vote</h3>
-              <div style={styles.infoGrid}>
-                <p>🔼 <strong>Lượt upvote:</strong> {voteStats.upvotes}</p>
-                <p>🔽 <strong>Lượt downvote:</strong> {voteStats.downvotes}</p>
-                <p>❓ <strong>Vote câu hỏi:</strong> {voteStats.question_votes}</p>
-                <p>💬 <strong>Vote câu trả lời:</strong> {voteStats.answer_votes}</p>
+              <div style={styles.sidebarBox}>
+                <h3 style={styles.sectionTitle}>Lượt vote</h3>
+                <div style={styles.infoGrid}>
+                  <p>🔼 <strong>Lượt upvote:</strong> {voteStats.upvotes}</p>
+                  <p>🔽 <strong>Lượt downvote:</strong> {voteStats.downvotes}</p>
+                  <p>❓ <strong>Vote câu hỏi:</strong> {voteStats.question_votes}</p>
+                  <p>💬 <strong>Vote câu trả lời:</strong> {voteStats.answer_votes}</p>
+                </div>
               </div>
-            </div>
             ) : (
               <p>Đang tải thống kê votes...</p>
             )}
           </div>
         </div>
       </div>
-    </StudentProfileLayout>
+    </TeacherProfileLayout>
   );
 }
 const styles = {
@@ -737,7 +846,7 @@ const styles = {
     marginLeft: "12px",
     whiteSpace: "nowrap",
   },
-    modalOverlay: {
+  modalOverlay: {
     position: 'fixed',
     top: '0',
     left: '0',
@@ -783,4 +892,4 @@ const styles = {
   },
 };
 
-export default StudentProfileForum;
+export default TeacherProfileForum;
