@@ -8,6 +8,7 @@ import axios from "axios";
 import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { renderWithLatex } from "../../LatexInputKaTeX";
+import EmojiPicker from 'emoji-picker-react';
 
 function TeacherForumQuestionDetail() {
   const { id } = useParams();
@@ -23,7 +24,7 @@ function TeacherForumQuestionDetail() {
   const token = localStorage.getItem("token");
   const answerInputRef = useRef(null);
   const [showCommentInputId, setShowCommentInputId] = useState(null);
-  const [questionCommentText, setQuestionCommentText] = useState("");
+  const [questionCommentText, setQuestionCommentText] = useState({});
   const [answerCommentText, setAnswerCommentText] = useState({});
   const [activeAnswerId, setActiveAnswerId] = useState(null);
   // Comment của câu hỏi
@@ -37,7 +38,15 @@ function TeacherForumQuestionDetail() {
   const [relatedQuestions, setRelatedQuestions] = useState([]);
   const [hotQuestions, setHotQuestions] = useState([]);
 
+  const [showEmojiPickerForAnswer, setShowEmojiPickerForAnswer] = useState(false);
+  const [showEmojiPickerForQuestion, setShowEmojiPickerForQuestion] = useState(false);
+  const fileInputForQuestionRef = useRef(null);
+  const [selectedFilesForQuestion, setSelectedFilesForQuestion] = useState({});
+  const [selectedFileNameForQuestion, setSelectedFileNameForQuestion] = useState(null);
 
+  const fileInputForAnswerRef = useRef(null);
+  const [selectedFilesForAnswer, setSelectedFilesForAnswer] = useState({});
+  const [selectedFileNameForAnswer, setSelectedFileNameForAnswer] = useState(null);
   useEffect(() => {
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_hotquestion/")
       .then((res) => {
@@ -180,6 +189,9 @@ function TeacherForumQuestionDetail() {
       const res = await axios.get(
         `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=answer&content_id=${answerId}`
       );
+
+      //console.log("Dữ liệu comment trả về:", res.data); // 👉 LOG ở đây
+
       setAnswerComments((prev) => ({
         ...prev,
         [answerId]: res.data.comments,
@@ -278,12 +290,13 @@ function TeacherForumQuestionDetail() {
   };
   // Sử dụng useEffect để gọi handleOpenComment khi vào trang
 
+
   const handleSubmitComment = async (contentId, type) => {
     try {
       const isQuestion = type === "question";
 
       const comment = isQuestion
-        ? questionCommentText.trim()
+        ? questionCommentText[contentId]?.trim()
         : answerCommentText[contentId]?.trim();
 
       if (!comment) {
@@ -293,17 +306,27 @@ function TeacherForumQuestionDetail() {
 
       const token = getToken();
 
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("content_id", contentId);
+      formData.append("type_comment", type);
+      formData.append("content", comment);
+
+      // ✅ Gắn file nếu có
+      const file = isQuestion
+        ? selectedFilesForQuestion[contentId]
+        : selectedFilesForAnswer[contentId];
+
+      if (file) {
+        formData.append("comments", file); // khớp với field trong Django model
+      }
+
       const response = await fetch("http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`, // KHÔNG set Content-Type khi dùng FormData
         },
-        body: JSON.stringify({
-          content_id: contentId,
-          type_comment: type,
-          content: comment,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -312,20 +335,26 @@ function TeacherForumQuestionDetail() {
         throw new Error("Không gửi được bình luận");
       }
 
-      // 👇 Reset input nhưng KHÔNG đóng lại comment box
+      // ✅ Reset nội dung và fetch lại comment
       if (isQuestion) {
-        setQuestionCommentText("");
-
-        // ✅ Fetch lại danh sách comment mới nhất
+        setQuestionCommentText((prev) => ({
+          ...prev,
+          [contentId]: ""
+        }));
         fetchComments(contentId);
+
+        setSelectedFilesForQuestion(null);
       } else {
         setAnswerCommentText((prev) => ({
           ...prev,
           [contentId]: "",
         }));
-
-        // ✅ Fetch lại comment câu trả lời nếu bạn có hàm fetch riêng
         fetchAnswerComments(contentId);
+
+        setSelectedFilesForAnswer((prev) => ({
+          ...prev,
+          [contentId]: null,
+        }));
       }
 
       alert("✅ Bình luận đã được gửi thành công!");
@@ -334,6 +363,8 @@ function TeacherForumQuestionDetail() {
       alert("⚠️ Có lỗi xảy ra khi gửi bình luận.");
     }
   };
+
+
 
 
   const handleEditCommentAnswer = (answerId, commentId) => {
@@ -1238,6 +1269,27 @@ function TeacherForumQuestionDetail() {
                         {/* Sử dụng renderWithLatex để hiển thị nội dung comment có công thức */}
                         <div style={{ marginLeft: "10px" }}>
                           {renderWithLatex(c.content)}
+                          {c.file_url && (() => {
+                            const ext = c.file_name?.split('.').pop().toLowerCase();
+                            const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+
+                            if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                              return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
+                            }
+                            if (["mp4", "webm", "ogg"].includes(ext)) {
+                              return (
+                                <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                                  <source src={fullFileUrl} type={`video/${ext}`} />
+                                  Your browser does not support the video tag.
+                                </video>
+                              );
+                            }
+                            return (
+                              <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
+                                Xem trước
+                              </a>
+                            );
+                          })()}
                         </div>
                       </div>
                     ))}
@@ -1269,26 +1321,145 @@ function TeacherForumQuestionDetail() {
 
                     {/* Khung nhập bình luận */}
                     <div>
-                      <textarea
-                        placeholder="Nhập bình luận của bạn..."
-                        value={questionCommentText}
-                        onChange={(e) => setQuestionCommentText(e.target.value)}
-                        style={commentTextareaStyle}
-                      />
-
+                      {/* Khung nhập bình luận + tiện ích (90/10) */}
                       <div
                         style={{
-                          marginTop: "10px",
+                          background: "#fff",
+                          border: "1px solid #000",
+                          borderRadius: "4px",
+                          height: "200px",
+                          display: "flex",
+                          flexDirection: "column",
+                          padding: "10px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        {/* Textarea chiếm 90% */}
+                        <textarea
+                          placeholder="Nhập bình luận của bạn..."
+                          value={questionCommentText[question.id] || ""}
+                          onChange={(e) =>
+                            setQuestionCommentText((prev) => ({
+                              ...prev,
+                              [question.id]: e.target.value,
+                            }))
+                          }
+                          style={{
+                            flex: 9,
+                            resize: "none",
+                            border: "none",
+                            outline: "none",
+                            background: "transparent",
+                            fontSize: "14px",
+                            fontFamily: "inherit",
+                          }}
+                        />
+
+
+                        {/* Tiện ích chiếm 10% */}
+                        <div
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            borderTop: "1px solid #ccc",
+                            paddingTop: "5px",
+                          }}
+                        >
+                          <input
+                            type="file"
+                            ref={fileInputForQuestionRef}
+                            style={{ display: "none" }}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                alert(`Đã chọn file: ${file.name}`);
+                              }
+                            }}
+                          />
+
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <input
+                              type="file"
+                              ref={fileInputForQuestionRef}
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  setSelectedFilesForQuestion((prev) => ({
+                                    ...prev,
+                                    [question.id]: file, // ⬅️ Lưu file theo contentId
+                                  }));
+                                  setSelectedFileNameForQuestion((prev) => ({
+                                    ...prev,
+                                    [question.id]: file.name, // ⬅️ Lưu tên hiển thị
+                                  }));
+                                }
+                              }}
+                            />
+
+                            <span
+                              title="Thêm file"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => fileInputForQuestionRef.current.click()}
+                            >
+                              📎
+                            </span>
+
+                            {/* 👉 Hiển thị tên file sau khi chọn */}
+                            {selectedFileNameForQuestion && selectedFileNameForQuestion[question.id] && (
+                              <span style={{ fontStyle: "italic", color: "gray" }}>
+                                {selectedFileNameForQuestion[question.id]}
+                              </span>
+                            )}
+
+                          </div>
+
+
+                          <span
+                            title="Thêm emoji"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => setShowEmojiPickerForQuestion(!showEmojiPickerForQuestion)}
+                          >
+                            😊
+                          </span>
+
+                          {showEmojiPickerForQuestion && (
+                            <div style={{ position: "absolute", zIndex: 1000 }}>
+                              <EmojiPicker
+                                onEmojiClick={(emojiData) => {
+                                  setQuestionCommentText(prev => ({
+                                    ...prev,
+                                    [question.id]: (prev[question.id] || "") + emojiData.emoji
+                                  }));
+                                  setShowEmojiPickerForQuestion(false);
+                                }}
+                              />
+                            </div>
+                          )}
+
+
+                        </div>
+                      </div>
+
+                      {/* Khung preview hiển thị nội dung bình luận */}
+                      <div
+                        style={{
                           background: "#f8f8f8",
                           padding: "10px",
                           minHeight: "40px",
                           border: "1px solid #000",
                           borderRadius: "4px",
+                          wordBreak: "break-word",
+                          overflowWrap: "break-word",
+                          whiteSpace: "pre-wrap",
                         }}
                       >
-                        {renderWithLatex(questionCommentText)}
+                        {renderWithLatex(questionCommentText[question.id] || "")}
                       </div>
                     </div>
+
                     <button
                       style={commentButtonSendStyle}
                       onClick={() => handleSubmitComment(question.id, "question")}
@@ -1510,7 +1681,7 @@ function TeacherForumQuestionDetail() {
                                     />
                                     <FaTrash
                                       style={{ cursor: "pointer", color: "#003366" }}
-                                      onClick={() => handleDeleteCommentAnswer(ans.id, c.id)} // Hàm xử lý xóa comment
+                                      onClick={() => handleDeleteCommentAnswer(ans.id, c.id)}
                                     />
                                   </div>
                                   <div
@@ -1521,16 +1692,37 @@ function TeacherForumQuestionDetail() {
                                       overflowY: "auto",
                                       maxHeight: "300px",
                                       wordBreak: "break-word",
-                                      whiteSpace: "normal", // hoặc 'pre-wrap' nếu bạn muốn giữ định dạng xuống dòng
-                                      lineBreak: "anywhere", // cưỡng chế break ở mọi nơi
+                                      whiteSpace: "normal",
+                                      lineBreak: "anywhere",
                                     }}
                                   >
                                     {renderWithLatex(c.content)}
+
+                                    {c.file_url && (() => {
+                                      const ext = c.file_name?.split('.').pop().toLowerCase();
+                                      const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+
+                                      if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                                        return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
+                                      }
+                                      if (["mp4", "webm", "ogg"].includes(ext)) {
+                                        return (
+                                          <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                                            <source src={fullFileUrl} type={`video/${ext}`} />
+                                            Your browser does not support the video tag.
+                                          </video>
+                                        );
+                                      }
+                                      return (
+                                        <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
+                                          Xem trước
+                                        </a>
+                                      );
+                                    })()}
                                   </div>
-
-
                                 </div>
                               ))}
+
 
                               {/* Nút hiển thị thêm bình luận */}
                               {answerComments[ans.id] &&
@@ -1557,33 +1749,148 @@ function TeacherForumQuestionDetail() {
 
                               {/* Khung nhập bình luận */}
                               <div>
-                                <textarea
-                                  placeholder="Nhập bình luận của bạn..."
-                                  value={answerCommentText[ans.id] || ""}
-                                  onChange={(e) =>
-                                    setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
-                                  }
-                                  style={commentTextareaStyle}
-                                />
+                                {/* Khung preview chia 90% nội dung - 10% tiện ích */}
+                                <div>
+                                  {/* Khung nhập bình luận với tiện ích (90/10) */}
+                                  <div
+                                    style={{
+                                      marginTop: "10px",
+                                      background: "#fff",
+                                      border: "1px solid #000",
+                                      borderRadius: "4px",
+                                      height: "200px", // Tổng chiều cao khung nhập
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      padding: "10px",
+                                    }}
+                                  >
+                                    {/* Ô nhập bình luận (chiếm 90%) */}
+                                    <textarea
+                                      placeholder="Nhập bình luận của bạn..."
+                                      value={answerCommentText[ans.id] || ""}
+                                      onChange={(e) =>
+                                        setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
+                                      }
+                                      style={{
+                                        flex: 9,
+                                        resize: "none",
+                                        border: "none",
+                                        outline: "none",
+                                        background: "transparent",
+                                        fontSize: "14px",
+                                        fontFamily: "inherit",
+                                      }}
+                                    />
 
-                                <div
-                                  style={{
-                                    marginTop: "10px",
-                                    background: "#f8f8f8",
-                                    padding: "10px",
-                                    minHeight: "40px",
-                                    maxHeight: "200px",        // Giới hạn chiều cao khung preview
-                                    border: "1px solid #000",
-                                    borderRadius: "4px",
-                                    overflowY: "auto",         // Scroll nếu nội dung dài
-                                    wordBreak: "break-word",
-                                    overflowWrap: "break-word",
-                                    whiteSpace: "pre-wrap",    // Giữ định dạng xuống dòng
-                                  }}
-                                >
-                                  {renderWithLatex(answerCommentText[ans.id] || "")}
+                                    {/* Tiện ích (chiếm 10%) */}
+                                    <div
+                                      style={{
+                                        flex: 1,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        borderTop: "1px solid #ccc",
+                                        paddingTop: "5px",
+                                      }}
+                                    >
+                                      <input
+                                        type="file"
+                                        ref={fileInputForAnswerRef}
+                                        style={{ display: "none" }}
+                                        onChange={(e) => {
+                                          const file = e.target.files[0];
+                                          if (file) {
+                                            alert(`Đã chọn file: ${file.name}`);
+                                          }
+                                        }}
+                                      />
+
+                                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <input
+                                          type="file"
+                                          ref={fileInputForAnswerRef}
+                                          style={{ display: "none" }}
+                                          onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                              setSelectedFilesForAnswer((prev) => ({
+                                                ...prev,
+                                                [ans.id]: file, // ⬅️ Lưu file theo contentId
+                                              }));
+                                              setSelectedFileNameForAnswer((prev) => ({
+                                                ...prev,
+                                                [ans.id]: file.name, // ⬅️ Lưu tên hiển thị
+                                              }));
+                                            }
+                                          }}
+                                        />
+
+                                        <span
+                                          title="Thêm file"
+                                          style={{ cursor: "pointer" }}
+                                          onClick={() => fileInputForAnswerRef.current.click()}
+                                        >
+                                          📎
+                                        </span>
+
+                                        {/* 👉 Hiển thị tên file sau khi chọn */}
+                                        {selectedFileNameForAnswer && selectedFileNameForAnswer[ans.id] && (
+                                          <span style={{ fontStyle: "italic", color: "gray" }}>
+                                            {selectedFileNameForAnswer[ans.id]}
+                                          </span>
+                                        )}
+
+                                      </div>
+
+
+                                      <span
+                                        title="Thêm emoji"
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => setShowEmojiPickerForAnswer(!showEmojiPickerForAnswer)}
+                                      >
+                                        😊
+                                      </span>
+
+                                      {showEmojiPickerForAnswer && (
+                                        <div style={{ position: "absolute", zIndex: 1000 }}>
+                                          <EmojiPicker
+                                            onEmojiClick={(emojiData) => {
+                                              setAnswerCommentText(prev => ({
+                                                ...prev,
+                                                [ans.id]: (prev[ans.id] || "") + emojiData.emoji
+                                              }));
+                                              setShowEmojiPickerForAnswer(false);
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+
+
+                                    </div>
+                                  </div>
+
+                                  {/* Khung render preview */}
+                                  <div
+                                    style={{
+                                      marginTop: "10px",
+                                      background: "#f8f8f8",
+                                      padding: "10px",
+                                      minHeight: "40px",
+                                      maxHeight: "200px",
+                                      border: "1px solid #000",
+                                      borderRadius: "4px",
+                                      overflowY: "auto",
+                                      wordBreak: "break-word",
+                                      overflowWrap: "break-word",
+                                      whiteSpace: "pre-wrap",
+                                    }}
+                                  >
+                                    {renderWithLatex(answerCommentText[ans.id] || "")}
+                                  </div>
                                 </div>
+
                               </div>
+
 
                               <button
                                 style={commentButtonSendStyle}
@@ -1886,16 +2193,25 @@ const commentButtonStyle = {
   width: "100%",
 };
 
-const commentTextareaStyle = {
-  width: "98%",
-  padding: "8px",
-  borderRadius: "6px",
-  border: "1px solid #003366",
-  fontSize: "14px",
-  resize: "vertical",
-  height: "100px", // ✅ Chiều cao lớn hơn
-};
+// const commentTextareaStyleForAnswer = {
+//   width: "97%",
+//   padding: "8px",
+//   borderRadius: "6px",
+//   border: "1px solid #003366",
+//   fontSize: "14px",
+//   resize: "vertical",
+//   height: "100px",
+// };
 
+// const commentTextareaStyleForQuestion = {
+//   width: "97.5%",
+//   padding: "8px",
+//   borderRadius: "6px",
+//   border: "1px solid #003366",
+//   fontSize: "14px",
+//   resize: "vertical",
+//   height: "100px",
+// };
 
 const commentButtonSendStyle = {
   marginTop: "6px",

@@ -251,6 +251,13 @@ class Comment(models.Model):
     content_id = models.IntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
+    file = models.FileField(
+        upload_to='comments/',
+        null=True,
+        blank=True,
+        verbose_name="Tệp đính kèm"
+    )  # 🔥 Chỉ cần thêm dòng này
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

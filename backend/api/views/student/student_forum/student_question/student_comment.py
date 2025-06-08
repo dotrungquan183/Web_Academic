@@ -16,21 +16,21 @@ class StudentCommentView(View):
             if error_response:
                 return error_response
 
-            data = json.loads(request.body)
-            print("Received data:", data)
-
-            type_comment = data.get("type_comment")
-            content_id = data.get("content_id")
-            content = data.get("content")
+            # Lấy dữ liệu từ request.POST (dữ liệu text) và request.FILES (file upload)
+            type_comment = request.POST.get("type_comment")
+            content_id = request.POST.get("content_id")
+            content = request.POST.get("content")
+            uploaded_file = request.FILES.get("comments")  # Tên 'comments' trùng với formData.append("comments", file)
 
             if not all([type_comment, content_id, content]):
                 return JsonResponse({"error": "Missing fields"}, status=400)
 
             comment = Comment.objects.create(
                 type_comment=type_comment,
-                content_id=content_id,
+                content_id=int(content_id),  # Chuyển về int nếu cần
                 content=content,
                 user=user,
+                file=uploaded_file if uploaded_file else None,
             )
 
             return JsonResponse({
@@ -41,6 +41,7 @@ class StudentCommentView(View):
         except Exception as e:
             print("Error occurred:", str(e))
             return JsonResponse({"error": str(e)}, status=500)
+
 
     def get(self, request, *args, **kwargs):
         try:
@@ -62,6 +63,8 @@ class StudentCommentView(View):
                     "username": c.user.username,
                     "content": c.content,
                     "created_at": c.created_at.strftime("%d/%m/%Y %H:%M"),
+                    "file_url": c.file.url if c.file else None,  # Thêm URL file (nếu có)
+                    "file_name": c.file.name.split('/')[-1] if c.file else None,
                 }
                 for c in comments
             ]
@@ -71,6 +74,7 @@ class StudentCommentView(View):
         except Exception as e:
             print("Error on GET:", str(e))
             return JsonResponse({"error": str(e)}, status=500)
+
 
     def put(self, request, comment_id=None, *args, **kwargs):
         # Giả sử get_authenticated_user trả về một tuple gồm user và error_response
