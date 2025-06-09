@@ -141,11 +141,19 @@ function AdminMenu() {
         }}
       >
         <li
-          className={location.pathname === "/adminresult" ? "active" : ""}
+          className={location.pathname === "/adminmanage" ? "active" : ""}
           style={{ fontWeight: "bold" }}
         >
-          <Link to="/adminresult" style={{ textDecoration: "none", color: "black" }}>
-            GIÁM SÁT HỆ THỐNG
+          <Link to="/adminmanage" style={{ textDecoration: "none", color: "black" }}>
+            QUẢN LÝ TÀI KHOẢN
+          </Link>
+        </li>
+        <li
+          className={location.pathname === "/adminmanagedetail" ? "active" : ""}
+          style={{ fontWeight: "bold" }}
+        >
+          <Link to="/adminmanagedetail" style={{ textDecoration: "none", color: "black" }}>
+            QUẢN LÝ CHI TIẾT
           </Link>
         </li>
         <li
@@ -153,7 +161,7 @@ function AdminMenu() {
           style={{ fontWeight: "bold" }}
         >
           <Link to="/admincourses/listcourses" style={{ textDecoration: "none", color: "black" }}>
-            DANH SÁCH KHÓA HỌC
+            QUẢN LÝ KHÓA HỌC
           </Link>
         </li>
         <li
@@ -161,7 +169,15 @@ function AdminMenu() {
           style={{ fontWeight: "bold" }}
         >
           <Link to="/adminforum" style={{ textDecoration: "none", color: "black" }}>
-            DIỄN ĐÀN HỌC TẬP
+            QUẢN LÝ DIỄN ĐÀN
+          </Link>
+        </li>
+        <li
+          className={location.pathname === "/adminresult" ? "active" : ""}
+          style={{ fontWeight: "bold" }}
+        >
+          <Link to="/adminresult" style={{ textDecoration: "none", color: "black" }}>
+            BÁO CÁO THỐNG KÊ
           </Link>
         </li>
       </ul>

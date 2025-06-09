@@ -82,6 +82,8 @@ import AdminListCourses from "./components/admin/Tabs/AdminCoursesTab/Tabs/Cours
 import AdminDetailCourses from "./components/admin/Tabs/AdminCoursesTab/Tabs/Courses/DetailCourses";
 import AdminPost from "./components/admin/Tabs/AdminCoursesTab/Tabs/Post";
 import AdminForumQuestionDetail from "./components/admin/Tabs/AdminForumTab/Tabs/Questions/DetailQuestion"
+import AdminManageAccount from "./components/admin/Tabs/AdminManageTab/AdminManageAccount";
+import AdminManageDetailAccount from "./components/admin/Tabs/AdminManageTab/AdminManageDetailAccount";
 
 function NormalUserLayout({ children }) {
   return (
@@ -253,7 +255,8 @@ function App() {
         <Route path="/adminforum/unanswer" element={<AdminLayout><AdminForumUnanswer /></AdminLayout>} />
         <Route path="/adminforum/tag" element={<AdminLayout><AdminForumTag /></AdminLayout>} />
         <Route path="/adminforum/save" element={<AdminLayout><AdminForumSave /></AdminLayout>} />
-
+        <Route path="/adminmanage" element={<AdminLayout><AdminManageAccount /></AdminLayout>} />
+        <Route path="/adminmanagedetail" element={<AdminLayout><AdminManageDetailAccount /></AdminLayout>} />
         {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />
         {/* Đăng ký */}
