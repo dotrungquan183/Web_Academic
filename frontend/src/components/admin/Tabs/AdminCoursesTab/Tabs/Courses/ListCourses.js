@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminCoursesLayout from "../../Layout";
+import TeacherCoursesLayout from "../../Layout";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../../../../auth/authHelper";
-import { FaBookOpen, FaFire, FaUserTie, FaUsers, FaClock } from "react-icons/fa";
+import { FaBookOpen, FaFire, FaUserTie, FaUsers, FaClock, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import axios from 'axios';
 
 const AdminListCourses = () => {
@@ -13,9 +13,10 @@ const AdminListCourses = () => {
   const [visibleFreeCount, setVisibleFreeCount] = useState(6);
   const [latestCourses, setLatestCourses] = useState([]);
   const [hotCourses, setHotCourses] = useState([]);
-  const [selectedFilter, ] = useState("all");
-  const [startDateTime, setStartDateTime] = useState("");
-  const [endDateTime, setEndDateTime] = useState("");
+  const [selectedFilter,] = useState("all");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
   const fetchUserFromToken = useCallback(() => {
     const token = getToken();
     if (token) {
@@ -30,17 +31,6 @@ const AdminListCourses = () => {
     }
   }, [navigate]);
 
-  const handleApprove = (courseId) => {
-    console.log(`Approved course: ${courseId}`);
-    // TODO: Viết logic xử lý phê duyệt sau
-  };
-
-  const handleReject = (courseId) => {
-    console.log(`Rejected course: ${courseId}`);
-    // TODO: Viết logic xử lý từ chối hoặc xóa sau
-  };
-
-
   // 🔥 Hot courses
   useEffect(() => {
     axios.get('http://localhost:8000/api/teacher/teacher_courses/teacher_bestcourses/')
@@ -52,27 +42,16 @@ const AdminListCourses = () => {
       });
   }, []);
 
-  // 🆕 Latest courses
   useEffect(() => {
-    const fetchLatestCourses = async () => {
-      try {
-        const token = getToken();
-        const response = await fetch("http://localhost:8000/api/teacher/teacher_courses/teacher_lastestcourses/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch latest courses");
-        const data = await response.json();
-        setLatestCourses(data);
-      } catch (error) {
-        console.error("Error fetching latest courses:", error);
-      }
-    };
-
-    fetchLatestCourses();
+    axios.get('http://localhost:8000/api/teacher/teacher_courses/teacher_lastestcourses/')
+      .then(response => {
+        setLatestCourses(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching latest courses:', error);
+      });
   }, []);
+
 
   // 📚 All/mine courses
   useEffect(() => {
@@ -83,28 +62,28 @@ const AdminListCourses = () => {
       try {
         const token = getToken(); // Lấy token từ helper
         console.log("Token:", token); // Log token để kiểm tra
-        
+
         const url = `http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/?filter=${selectedFilter}`;
         console.log("API URL:", url); // Log URL để kiểm tra xem filter có đúng không
-        
+
         const response = await fetch(url, {
           headers: {
             Authorization: `Bearer ${token}`, // Gửi token cùng với header
           },
         });
-    
+
         if (!response.ok) {
           throw new Error("Failed to fetch courses");
         }
-        
+
         const data = await response.json();
         console.log("Fetched courses data:", data); // Log dữ liệu trả về từ API
-    
+
         setCourses(data); // Cập nhật state với dữ liệu mới
       } catch (error) {
         console.error("Error fetching courses:", error); // Log lỗi nếu có
       }
-    };    
+    };
 
     fetchCourses();
   }, [fetchUserFromToken, selectedFilter]); // 👈 Update khi selectedFilter đổi
@@ -113,7 +92,7 @@ const AdminListCourses = () => {
   const freeCourses = courses.filter(course => parseFloat(course.fee) === 0);
 
   return (
-    <AdminCoursesLayout>
+    <TeacherCoursesLayout>
       <div style={styles.layoutStyle}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
@@ -134,39 +113,35 @@ const AdminListCourses = () => {
               }}>
                 Danh sách khóa học
               </h2>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
-                <label style={{ color: "#003366" }}>Từ:</label>
-                <input
-                  type="datetime-local"
-                  value={startDateTime}
-                  onChange={(e) => setStartDateTime(e.target.value)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "5px",
-                    border: "1px solid #ccc",
-                    fontSize: "14px",
-                    color: "#003366"
-                  }}
-                />
+            </div>
 
-                <label style={{ color: "#003366" }}>Đến:</label>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div>
+                <label htmlFor="start-time"><strong>Từ:</strong></label><br />
                 <input
                   type="datetime-local"
-                  value={endDateTime}
-                  onChange={(e) => setEndDateTime(e.target.value)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "5px",
-                    border: "1px solid #ccc",
-                    fontSize: "14px",
-                    color: "#003366"
-                  }}
+                  id="start-time"
+                  name="start-time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #ccc" }}
                 />
               </div>
 
+              <div>
+                <label htmlFor="end-time"><strong>Đến:</strong></label><br />
+                <input
+                  type="datetime-local"
+                  id="end-time"
+                  name="end-time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #ccc" }}
+                />
+              </div>
             </div>
 
-            {/* Bên phải: Nút thêm khóa học */}
+
           </div>
 
           {/* PRO COURSES */}
@@ -176,81 +151,84 @@ const AdminListCourses = () => {
               const imageUrl = course.thumbnail?.startsWith("http")
                 ? course.thumbnail
                 : `http://localhost:8000${course.thumbnail}`;
-              return (
-                  <div
-                    key={course.id}
-                    style={{
-                      ...styles.courseCard,
-                      background: course.id % 2 === 0
-                        ? "linear-gradient(to right, #0d47a1, #003366)"
-                        : "white",
-                      color: course.id % 2 === 0 ? "white" : "#003366",
-                      cursor: "pointer",
-                      position: "relative", // cần để đặt icon góc trên phải
-                    }}
-                    onClick={() => navigate(`/admincourses/listcourses/${course.id}`)}
-                  >
-                    {/* Icon nút ở góc phải */}
-                    <div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "8px", zIndex: 1 }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation(); // ngăn chặn click truyền xuống card
-                          handleApprove(course.id); // viết hàm xử lý duyệt
-                        }}
-                        style={{
-                          backgroundColor: "green",
-                          border: "none",
-                          borderRadius: "50%",
-                          color: "white",
-                          width: "28px",
-                          height: "28px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                        title="Duyệt khóa học"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReject(course.id); // viết hàm xử lý từ chối
-                        }}
-                        style={{
-                          backgroundColor: "red",
-                          border: "none",
-                          borderRadius: "50%",
-                          color: "white",
-                          width: "28px",
-                          height: "28px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                        title="Từ chối / Xóa khóa học"
-                      >
-                        ✕
-                      </button>
-                    </div>
 
-                    {/* Nội dung khóa học */}
-                    <div style={styles.courseImageWrapper}>
-                      <img
-                        src={imageUrl}
-                        alt={course.title}
-                        style={styles.courseImage}
-                        onError={(e) => (e.target.style.display = "none")}
-                      />
-                    </div>
-                    <div style={styles.courseInfoWrapper}>
-                      <h3 style={styles.courseTitle}>{course.title}</h3>
-                      <p style={styles.coursePrice}>${course.fee}</p>
-                      <p style={styles.courseInfo}>
-                        <FaUserTie style={{ marginRight: "4px" }} /> {course.teacher}
-                        <span style={{ marginLeft: "12px" }}>🎬 {course.video_count} video</span>
-                        <FaClock style={{ margin: "0 6px 0 12px" }} /> {course.total_duration}
-                      </p>
-                    </div>
+              const handleApprove = (courseId) => {
+                const confirm = window.confirm("Lưu thay đổi?");
+                if (confirm) {
+                  // TODO: gọi API hoặc xử lý backend tại đây
+                  alert("Đã đăng khóa học!");
+                }
+              };
+
+              const handleReject = (courseId) => {
+                const reason = prompt("Lý do từ chối:");
+                if (reason) {
+                  // TODO: gửi lý do từ chối tới backend
+                  alert(`Đã từ chối khóa học với lý do: ${reason}`);
+                }
+              };
+
+              return (
+                <div
+                  key={course.id}
+                  style={{
+                    ...styles.courseCard,
+                    position: "relative",
+                    background: course.id % 2 === 0
+                      ? "linear-gradient(to right, #0d47a1, #003366)"
+                      : "white",
+                    color: course.id % 2 === 0
+                      ? "white"
+                      : "#003366",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => navigate(`/admincourses/listcourses/${course.id}`)}
+                >
+                  {/* Phê duyệt / Từ chối icons */}
+                  <div style={{
+                    position: "absolute",
+                    top: "8px",
+                    right: "8px",
+                    display: "flex",
+                    gap: "10px",
+                    zIndex: 2,
+                  }}
+                    onClick={(e) => e.stopPropagation()} // Ngăn không navigate khi click icon
+                  >
+                    <FaCheckCircle
+                      size={25}
+                      color="48b169"
+                      title="Phê duyệt"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleApprove(course.id)}
+                    />
+                    <FaTimesCircle
+                      size={25}
+                      color="red"
+                      title="Từ chối"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleReject(course.id)}
+                    />
                   </div>
+
+                  <div style={styles.courseImageWrapper}>
+                    <img
+                      src={imageUrl}
+                      alt={course.title}
+                      style={styles.courseImage}
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  </div>
+                  <div style={styles.courseInfoWrapper}>
+                    <h3 style={styles.courseTitle}>{course.title}</h3>
+                    <p style={styles.coursePrice}>{course.fee} VNĐ</p>
+                    <p style={styles.courseInfo}>
+                      <FaUserTie style={{ marginRight: "4px" }} /> {course.teacher}
+                      <span style={{ marginLeft: "12px" }}>🎬 {course.video_count} video</span>
+                      <FaClock style={{ margin: "0 6px 0 12px" }} /> {course.total_duration}
+                    </p>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -279,98 +257,95 @@ const AdminListCourses = () => {
           <h2 style={{ textAlign: "center", textTransform: "uppercase", marginTop: "20px" }}>
             FREE COURSES
           </h2>
+
           <div style={styles.gridStyle}>
             {freeCourses.slice(0, visibleFreeCount).map(course => {
               const imageUrl = course.thumbnail?.startsWith("http")
                 ? course.thumbnail
                 : `http://localhost:8000${course.thumbnail}`;
-                return (
-                  <div
-                    key={course.id}
-                    style={{
-                      ...styles.courseCard,
-                      background: course.id % 2 === 0
-                        ? "linear-gradient(to right, #0d47a1, #003366)"
-                        : "white",
-                      color: course.id % 2 === 0 ? "white" : "#003366",
-                      cursor: "pointer",
-                      position: "relative", // thêm để định vị nút ở góc
-                    }}
-                    onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
-                  >
-                    {/* Nút góc trên bên phải */}
-                    <div style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      display: "flex",
-                      gap: "8px",
-                      zIndex: 2,
-                    }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation(); // ngăn chặn click truyền xuống card
-                          handleApprove(course.id); // viết hàm xử lý duyệt
-                        }}
-                        style={{
-                          backgroundColor: "green",
-                          border: "none",
-                          borderRadius: "50%",
-                          color: "white",
-                          width: "28px",
-                          height: "28px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                        title="Duyệt khóa học"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReject(course.id); // viết hàm xử lý từ chối
-                        }}
-                        style={{
-                          backgroundColor: "red",
-                          border: "none",
-                          borderRadius: "50%",
-                          color: "white",
-                          width: "28px",
-                          height: "28px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                        title="Từ chối / Xóa khóa học"
-                      >
-                        ✕
-                      </button>
-                    </div>
+              const handleApprove = (courseId) => {
+                const confirm = window.confirm("Lưu thay đổi?");
+                if (confirm) {
+                  // TODO: gọi API hoặc xử lý backend tại đây
+                  alert("Đã đăng khóa học!");
+                }
+              };
 
-                    <div style={styles.courseImageWrapper}>
-                      <img
-                        src={imageUrl}
-                        alt={course.title}
-                        style={styles.courseImage}
-                        onError={(e) => (e.target.style.display = "none")}
-                      />
-                    </div>
-                    <div style={styles.courseInfoWrapper}>
-                      <h3 style={styles.courseTitle}>{course.title}</h3>
-                      <p style={styles.courseInfo}>
-                        <div style={{ display: "inline-flex", alignItems: "center" }}>
-                          <FaUsers style={{ marginRight: "4px" }} /> {course.students} students
-                          <span style={{ marginLeft: "12px" }}>
-                            🎬 {course.video_count} video
-                          </span>
-                          <FaClock style={{ marginRight: "4px", marginLeft: "12px" }} />
-                          {course.total_duration}
-                        </div>
-                      </p>
-                    </div>
+              const handleReject = (courseId) => {
+                const reason = prompt("Lý do từ chối:");
+                if (reason) {
+                  // TODO: gửi lý do từ chối tới backend
+                  alert(`Đã từ chối khóa học với lý do: ${reason}`);
+                }
+              };
+              return (
+                <div
+                  key={course.id}
+                  style={{
+                    ...styles.courseCard,
+                    background: course.id % 2 === 0
+                      ? "linear-gradient(to right, #0d47a1, #003366)"
+                      : "white",
+                    color: course.id % 2 === 0
+                      ? "white"
+                      : "#003366",
+                    cursor: "pointer",
+                    position: "relative", // cần để hiển thị icon ở góc
+                  }}
+                  onClick={() => navigate(`/admincourses/listcourses/${course.id}`)}
+                >
+                  {/* ICON Phê duyệt và Từ chối */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "8px",
+                      right: "8px",
+                      display: "flex",
+                      gap: "10px",
+                      zIndex: 2,
+                    }}
+                    onClick={(e) => e.stopPropagation()} // Ngăn chặn điều hướng khi click icon
+                  >
+                    <FaCheckCircle
+                      size={25}
+                      color="#48b169"
+                      title="Phê duyệt"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleApprove(course.id)}
+                    />
+                    <FaTimesCircle
+                      size={25}
+                      color="red"
+                      title="Từ chối"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleReject(course.id)}
+                    />
                   </div>
 
-                );
+                  {/* Hình và thông tin */}
+                  <div style={styles.courseImageWrapper}>
+                    <img
+                      src={imageUrl}
+                      alt={course.title}
+                      style={styles.courseImage}
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  </div>
+                  <div style={styles.courseInfoWrapper}>
+                    <h3 style={styles.courseTitle}>{course.title}</h3>
+                    <p style={styles.courseInfo}>
+                      <div style={{ display: "inline-flex", alignItems: "center" }}>
+                        <FaUsers style={{ marginRight: "4px" }} /> {course.students} students
+                        <span style={{ marginLeft: "12px" }}>
+                          🎬 {course.video_count} video
+                        </span>
+                        <FaClock style={{ marginRight: "4px", marginLeft: "12px" }} />
+                        {course.total_duration}
+                      </div>
+                    </p>
+                  </div>
+                </div>
+              );
             })}
           </div>
           {freeCourses.length > 6 && (
@@ -405,7 +380,7 @@ const AdminListCourses = () => {
               {latestCourses.map((course) => (
                 <li
                   key={course.id}
-                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)} // Điều hướng khi click
+                  onClick={() => navigate(`/admincourses/listcourses/${course.id}`)} // Điều hướng khi click
                   style={{ ...styles.linkStyle, cursor: 'pointer' }} // Đảm bảo có con trỏ khi hover
                 >
                   {course.title}
@@ -422,7 +397,7 @@ const AdminListCourses = () => {
               {hotCourses.map(course => (
                 <li
                   key={course.id}
-                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)} // Điều hướng khi click
+                  onClick={() => navigate(`/admincourses/listcourses/${course.id}`)} // Điều hướng khi click
                   style={{ ...styles.linkStyle, cursor: 'pointer' }} // Đảm bảo có con trỏ khi hover
                 >
                   {course.title}
@@ -432,7 +407,7 @@ const AdminListCourses = () => {
           </div>
         </div>
       </div>
-    </AdminCoursesLayout>
+    </TeacherCoursesLayout>
   );
 };
 
@@ -444,15 +419,15 @@ const styles = {
     marginLeft: "160px",
     alignItems: "flex-start",
     loadMoreButton: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "10px 16px",
-    fontSize: "14px",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
+      backgroundColor: "#4CAF50",
+      color: "white",
+      padding: "10px 16px",
+      fontSize: "14px",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      marginTop: "10px",
+    },
   },
   containerStyle: {
     backgroundColor: "#ffffff",

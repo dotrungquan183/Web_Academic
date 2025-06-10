@@ -1692,8 +1692,6 @@ function TeacherForumQuestionDetail() {
                               <FontAwesomeIcon icon={faEye} style={{ fontSize: "1.1em" }} />
                             </button>
                           </div>
-
-
                           <span>
                             {(() => {
                               const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);

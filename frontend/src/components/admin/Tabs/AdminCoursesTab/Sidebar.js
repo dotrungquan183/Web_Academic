@@ -29,7 +29,7 @@ function Sidebar() {
             color: isPostTab ? "white" : "#003366",
           }}
         >
-          <FaPen style={styles.icon} /> Bài viết
+          <FaPen style={styles.icon} /> Lộ trình
         </button>
       </Link>
     </div>

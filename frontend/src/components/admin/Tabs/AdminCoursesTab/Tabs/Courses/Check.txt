@@ -1,0 +1,40 @@
+<div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "8px", zIndex: 1 }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // ngăn chặn click truyền xuống card
+                          handleApprove(course.id); // viết hàm xử lý duyệt
+                        }}
+                        style={{
+                          backgroundColor: "green",
+                          border: "none",
+                          borderRadius: "50%",
+                          color: "white",
+                          width: "28px",
+                          height: "28px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                        title="Duyệt khóa học"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReject(course.id); // viết hàm xử lý từ chối
+                        }}
+                        style={{
+                          backgroundColor: "red",
+                          border: "none",
+                          borderRadius: "50%",
+                          color: "white",
+                          width: "28px",
+                          height: "28px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                        title="Từ chối / Xóa khóa học"
+                      >
+                        ✕
+                      </button>
+                    </div>

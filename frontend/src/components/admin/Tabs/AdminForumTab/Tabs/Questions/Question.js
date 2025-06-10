@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminForumLayout from "../../Layout";
+import TeacherForumLayout from "../../Layout";
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../../auth/authHelper';
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 function AdminForumQuestion() {
   const [data, setData] = useState(null);
@@ -13,13 +14,17 @@ function AdminForumQuestion() {
   const [interestFilter, setInterestFilter] = useState("");
   const [qualityFilter, setQualityFilter] = useState("");
   const navigate = useNavigate();
-  const handleApprove = (id) => {
-    console.log("Approved question:", id);
-  };
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  // Lọc dữ liệu theo từ khóa
+  const filteredData = data
+    ? data.filter((q) =>
+      q.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      q.content?.toLowerCase().includes(searchKeyword.toLowerCase())
+    )
+    : [];
 
-  const handleReject = (id) => {
-    console.log("Rejected question:", id);
-  };
   const fetchQuestions = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -62,16 +67,52 @@ function AdminForumQuestion() {
     }
   }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
 
-  // ✅ useEffect không còn warning nữa
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
 
+
   return (
-    <AdminForumLayout>
+    <TeacherForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div>
+              <label htmlFor="start-time"><strong>Từ:</strong></label><br />
+              <input
+                type="datetime-local"
+                id="start-time"
+                name="start-time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  width: "237px" // 👈 chỉnh độ rộng ở đây
+                }}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="end-time"><strong>Đến:</strong></label><br />
+              <input
+                type="datetime-local"
+                id="end-time"
+                name="end-time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  width: "237px" // 👈 chỉnh độ rộng ở đây
+                }}
+              />
+            </div>
+
+          </div>
         </div>
         <div style={contentStyle}>
           <div style={questionCountStyle}>
@@ -107,14 +148,37 @@ function AdminForumQuestion() {
       </div>
 
       <div style={questionListStyle}>
+        <div style={{ position: "relative", display: "inline-block", width: "300px" }}>
+          <input
+            type="text"
+            placeholder="Tìm kiếm câu hỏi..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            style={{
+              ...searchInputStyle,
+              width: "85%",
+              paddingRight: "30px", // chừa chỗ cho icon bên phải
+            }}
+          />
+          <span style={{
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+            color: "#888"
+          }}>
+            🔍
+          </span>
+        </div>
         {data === null ? (
           <p>Đang tải dữ liệu...</p>
-        ) : data.length > 0 ? (
+        ) : filteredData.length > 0 ? (
           <ul style={{ listStyleType: "none", padding: 0 }}>
-            {data.map((question) => (
+            {filteredData.map((question) => (
               <li
                 key={question.id}
-                style={{ ...questionContainerStyle, position: "relative" }} // thêm position: relative
+                style={questionContainerStyle}
                 onClick={async () => {
                   const token = getToken();
                   let userId = null;
@@ -151,81 +215,67 @@ function AdminForumQuestion() {
                   navigate(`/adminforum/question/${question.id}`);
                 }}
               >
-                {/* Nút duyệt và từ chối */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "8px",
-                    right: "8px",
-                    display: "flex",
-                    gap: "6px",
-                    zIndex: 1,
-                  }}
-                  onClick={(e) => e.stopPropagation()} // tránh trigger navigate khi click nút
-                >
-                  <button
-                    onClick={() => handleApprove(question.id)}
+                <div style={{ position: "relative", border: "1px solid #ccc", padding: "16px", borderRadius: "8px", marginBottom: "16px" }}>
+                  {/* Nút Phê duyệt và Từ chối */}
+                  <div
                     style={{
-                      backgroundColor: "green",
-                      border: "none",
-                      borderRadius: "50%",
-                      color: "white",
-                      width: "28px",
-                      height: "28px",
-                      cursor: "pointer",
-                      fontWeight: "bold",
+                      position: "absolute",
+                      top: "8px",
+                      right: "8px",
+                      display: "flex",
+                      gap: "10px",
+                      zIndex: 2,
                     }}
-                    title="Duyệt câu hỏi"
+                    onClick={(e) => e.stopPropagation()} // Ngăn không navigate khi click icon
                   >
-                    ✓
-                  </button>
-                  <button
-                    onClick={() => handleReject(question.id)}
-                    style={{
-                      backgroundColor: "red",
-                      border: "none",
-                      borderRadius: "50%",
-                      color: "white",
-                      width: "28px",
-                      height: "28px",
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                    }}
-                    title="Từ chối / Xóa câu hỏi"
-                  >
-                    ✕
-                  </button>
+                    <FaCheckCircle
+                      size={25}
+                      color="#48b169"
+                      title="Phê duyệt"
+                      style={{ cursor: "pointer" }}
+                      
+                    />
+                    <FaTimesCircle
+                      size={25}
+                      color="red"
+                      title="Từ chối"
+                      style={{ cursor: "pointer" }}
+                    />
+                  </div>
+
+                  {/* Nội dung câu hỏi */}
+                  <div style={questionContentStyle}>
+                    <h3>{question.title}</h3>
+                  </div>
+
+                  {/* Metadata */}
+                  <div style={questionMetaStyle}>
+                    <span>👤 {question.username}</span>
+                    <span>👀 {question.views || 0}</span>
+                    <span>👍 {votesMap[question.id] ?? 0}</span>
+                    <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
+                    <span>
+                      🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
+                      {new Date(question.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </span>
+                    <span>🔖 {question.tags && question.tags.length > 0 ? question.tags.join(", ") : "No tags"}</span>
+                    <span>💰 {question.bounty_amount || 0}</span>
+                  </div>
                 </div>
 
-                {/* Nội dung câu hỏi */}
-                <div style={questionContentStyle}>
-                  <h3>{question.title}</h3>
-                </div>
-                <div style={questionMetaStyle}>
-                  <span>👤 {question.username}</span>
-                  <span>👀 {question.views || 0}</span>
-                  <span>👍 {votesMap[question.id] ?? 0}</span>
-                  <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
-                  <span>
-                    🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
-                    {new Date(question.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </span>
-                  <span>🔖 {question.tags?.length > 0 ? question.tags.join(", ") : "No tags"}</span>
-                  <span>💰 {question.bounty_amount || 0}</span>
-                </div>
               </li>
-
             ))}
           </ul>
         ) : (
           <p>Không có câu hỏi nào.</p>
         )}
+
       </div>
-    </AdminForumLayout>
+    </TeacherForumLayout>
   );
 }
 
@@ -248,7 +298,6 @@ const headerStyle = {
   justifyContent: "space-between",
   alignItems: "center",
 };
-
 
 const contentStyle = {
   display: "flex",
@@ -313,6 +362,10 @@ const questionContentStyle = {
   fontWeight: "bold",
   color: "#003366",
   marginBottom: "10px",
+
+  wordBreak: "break-word",    // Cho phép ngắt từ giữa nếu từ quá dài
+  overflowWrap: "break-word", // Tương tự, đảm bảo không tràn
+  whiteSpace: "normal",       // Cho phép xuống dòng bình thường
 };
 
 const questionMetaStyle = {
@@ -323,6 +376,13 @@ const questionMetaStyle = {
   color: "#666",
   alignItems: "center",  // thêm dòng này
   lineHeight: "1.4",
+};
+const searchInputStyle = {
+  padding: "8px",
+  marginRight: "10px",
+  borderRadius: "5px",
+  border: "1px solid #ccc",
+  width: "250px"
 };
 
 export default AdminForumQuestion;

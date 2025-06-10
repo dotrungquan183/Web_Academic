@@ -1,0 +1,497 @@
+.aduserman-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  display: inline-block;
+}
+ 
+/* Admin */
+.aduserman-tag.admin {
+  background-color: #fee2e2; /* red-100 */
+  color: #991b1b;            /* red-800 */
+}
+ 
+/* Giáo viên */
+.aduserman-tag.teacher {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e3a8a;            /* blue-800 */
+}
+ 
+/* Học sinh */
+.aduserman-tag.student {
+  background-color: #d1fae5; /* green-100 */
+  color: #065f46;            /* green-800 */
+}
+ 
+/* Mặc định */
+.aduserman-tag.default {
+  background-color: #f3f4f6; /* gray-100 */
+  color: #1f2937;            /* gray-800 */
+}
+ 
+.aduserman-page-wrapper {
+  background-color: #ffffff;        /* hoặc #f9fafb nếu muốn nhẹ hơn */
+  padding: 2rem;
+  border-radius: 0rem;           /* rounded-lg */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  width: 100vw;                     /* full chiều rộng màn hình */
+  height: 100vh;                    /* full chiều cao màn hình */
+  margin: 0;                        /* bỏ căn giữa */
+  box-sizing: border-box;          /* tránh tràn do padding */
+  overflow: auto;                  /* scroll nếu nội dung vượt */
+}
+
+ 
+.aduserman-content-container {
+  width: 100%;
+}
+ 
+ 
+.aduserman-filter-box {
+  background-color: #ffffff;
+  border: 1px solid #003366;         /* Thêm viền màu xanh đậm */
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(40, 4, 79, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto; /* để tránh vỡ layout trên mobile */
+}
+
+.aduserman-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap; /* có thể wrap nếu hẹp */
+  gap: 1rem;
+}
+ 
+.aduserman-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+ 
+.aduserman-search-wrapper {
+  position: relative;
+}
+ 
+.aduserman-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  width: 1rem;
+  height: 1rem;
+}
+ 
+.aduserman-search-input {
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  width: 12rem; /* ↓ giảm từ 16rem */
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+ 
+.aduserman-search-input:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+ 
+.aduserman-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+ 
+.aduserman-select:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+ 
+.aduserman-add-button {
+  padding: 0.5rem 1rem;
+  background-color: #2563eb; /* blue-600 */
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+ 
+.aduserman-add-button:hover {
+  background-color: #1d4ed8; /* blue-700 */
+}
+ 
+ 
+.aduserman-add-user-btn {
+  background-color: #2563eb; /* blue-600 */
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+ 
+.aduserman-add-user-btn:hover {
+  background-color: #1d4ed8; /* blue-700 */
+}
+ 
+.aduserman-plus-icon {
+  width: 1rem;
+  height: 1rem;
+  font-weight: bold;
+}
+ 
+.aduserman-table-wrapper {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(164, 8, 159, 0.05);
+  overflow: hidden;
+}
+ 
+.aduserman-table-scroll {
+  overflow-x: auto;
+}
+ 
+.aduserman-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #003366; /* viền ngoài bảng */
+}
+ 
+.aduserman-table-head th {
+  background-color: #f9fafb;
+  padding: 0.75rem 1.5rem;
+  font-size: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+ 
+.aduserman-table-body td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  background-color: #fff;
+  border-top: 1px solid #003366; /* viền đậm xanh navy */
+}
+ 
+.aduserman-row-hover:hover {
+  background-color: #f9fafb;
+}
+ 
+.aduserman-user-info {
+  display: flex;
+  align-items: center;
+}
+ 
+.aduserman-avatar {
+  height: 40px;
+  width: 40px;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+}
+ 
+.aduserman-user-text {
+  margin-left: 1rem;
+}
+ 
+.aduserman-user-name {
+  font-weight: 500;
+  color: #111827;
+}
+ 
+.aduserman-username {
+  color: #6b7280;
+  font-size: 14px;
+}
+ 
+.aduserman-text-dark {
+  color: #111827;
+}
+ 
+.aduserman-text-light {
+  color: #6b7280;
+  font-size: 14px;
+}
+ 
+.aduserman-user-type {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+ 
+.aduserman-reputation {
+  display: flex;
+  align-items: center;
+}
+ 
+.aduserman-reputation-score {
+  font-size: 14px;
+  color: #111827;
+}
+ 
+.aduserman-reputation-bar {
+  margin-left: 0.5rem;
+  width: 64px;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+}
+ 
+.aduserman-reputation-fill {
+  background-color: #2563eb;
+  height: 100%;
+  border-radius: 9999px;
+}
+ 
+.aduserman-status-btn {
+  font-size: 12px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+ 
+.aduserman-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+ 
+.aduserman-active:hover {
+  background-color: #a7f3d0;
+}
+ 
+.aduserman-inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+ 
+.aduserman-inactive:hover {
+  background-color: #fecaca;
+}
+ 
+.aduserman-icon {
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+}
+ 
+.aduserman-actions {
+  text-align: right;
+  font-size: 14px;
+}
+ 
+.aduserman-btn-view,
+.aduserman-btn-edit,
+.aduserman-btn-delete {
+  padding: 7px;
+  border: none;
+  background-color: white;
+}
+ 
+.aduserman-btn-view:hover {
+  color: #1d4ed8;
+}
+ 
+.aduserman-btn-edit:hover {
+  color: #047857;
+}
+ 
+.aduserman-btn-delete:hover {
+  color: #b91c1c;
+}
+ 
+.aduserman-icon-sm {
+  width: 16px;
+  height: 16px;
+}
+ 
+.aduserman-pagination-wrapper {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+ 
+.aduserman-pagination-mobile {
+  display: flex;
+  justify-content: space-between;
+}
+ 
+.aduserman-pagination-desktop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+ 
+.aduserman-pagination-nav button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  color: #6b7280;
+  font-size: 14px;
+  border-radius: 0.25rem;
+  margin-left: 0.25rem;
+}
+ 
+.aduserman-page-active {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+ 
+.aduserman-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(75, 85, 99, 0.5); /* tương đương bg-gray-600 bg-opacity-50 */
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  z-index: 50;
+}
+ 
+.aduserman-modal-container {
+  position: relative;
+  top: 5rem;
+  margin: 0 auto;
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  max-width: 42rem; /* tương đương max-w-2xl */
+  background-color: white;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+ 
+.aduserman-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+ 
+.aduserman-modal-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+}
+ 
+.aduserman-close-button {
+  color: #9ca3af;
+  transition: color 0.2s ease-in-out;
+}
+.aduserman-close-button:hover {
+  color: #4b5563;
+}
+ 
+.aduserman-form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+@media (min-width: 768px) {
+  .aduserman-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+ 
+.aduserman-form-group {
+  display: flex;
+  flex-direction: column;
+}
+ 
+.aduserman-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+ 
+.aduserman-input,
+.aduserman-select,
+.aduserman-textarea {
+  width: 90%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  outline: none;
+}
+.aduserman-input:focus,
+.aduserman-select:focus,
+.aduserman-textarea:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+.aduserman-input:disabled,
+.aduserman-select:disabled,
+.aduserman-textarea:disabled {
+  background-color: #f9fafb;
+}
+ 
+.aduserman-checkbox-label {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  font-size: 0.875rem;
+  color: #374151;
+}
+ 
+.aduserman-checkbox {
+  margin-right: 0.5rem;
+}
+ 
+.aduserman-button-group {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+ 
+.aduserman-button-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+.aduserman-button-cancel:hover {
+  background-color: #e5e7eb;
+}
+ 
+.aduserman-button-save {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: #2563eb;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+.aduserman-button-save:hover {
+  background-color: #1d4ed8;
+}

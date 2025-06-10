@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag, FiSave } from "react-icons/fi";
+import { FiHelpCircle, FiXCircle, FiTag } from "react-icons/fi";
 
 function Sidebar() {
   const location = useLocation();
@@ -8,8 +8,6 @@ function Sidebar() {
   const isUnansweredTab = location.pathname.startsWith("/adminforum/unanswer");
   const isQuestionTab = isQuestionPath && !isUnansweredTab;
   const isTagTab = location.pathname.startsWith("/adminforum/tag");
-  const isSaveTab = location.pathname.startsWith("/adminforum/save");
-
   return (
     <div style={styles.sidebar}>
       <Link to="/adminforum/question" style={styles.link}>
@@ -45,18 +43,6 @@ function Sidebar() {
           }}
         >
           <FiTag style={styles.icon} /> Thẻ
-        </button>
-      </Link>
-
-      <Link to="/adminforum/save" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: isSaveTab ? "#003366" : "transparent",
-            color: isSaveTab ? "white" : "#003366",
-          }}
-        >
-          <FiSave style={styles.icon} /> Lưu trữ
         </button>
       </Link>
     </div>
