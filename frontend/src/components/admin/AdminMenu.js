@@ -141,19 +141,19 @@ function AdminMenu() {
         }}
       >
         <li
+          className={location.pathname === "/adminmanagesystem" ? "active" : ""}
+          style={{ fontWeight: "bold" }}
+        >
+          <Link to="/adminmanagesystem" style={{ textDecoration: "none", color: "black" }}>
+            QUẢN LÝ HỆ THỐNG
+          </Link>
+        </li>
+        <li
           className={location.pathname === "/adminmanage" ? "active" : ""}
           style={{ fontWeight: "bold" }}
         >
           <Link to="/adminmanage" style={{ textDecoration: "none", color: "black" }}>
             QUẢN LÝ TÀI KHOẢN
-          </Link>
-        </li>
-        <li
-          className={location.pathname === "/adminmanagedetail" ? "active" : ""}
-          style={{ fontWeight: "bold" }}
-        >
-          <Link to="/adminmanagedetail" style={{ textDecoration: "none", color: "black" }}>
-            QUẢN LÝ CHI TIẾT
           </Link>
         </li>
         <li

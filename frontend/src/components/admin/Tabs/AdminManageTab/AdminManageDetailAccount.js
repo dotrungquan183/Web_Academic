@@ -1,257 +1,329 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 
-const containerStyle = {
-  backgroundColor: "#ffffff",
-  padding: "15px",
-  borderRadius: "8px",
-  border: "1px solid #ddd",
-  marginBottom: "30px",
-  marginTop: "15px",
-  marginLeft: "-70px",
-  width: "850px",
-  color: "#003366",
-  fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+const styles = {
+  pageWrapper: {
+    background: "#fff",
+    minHeight: "100vh",
+    padding: "30px",
+    fontFamily: "Arial, sans-serif",
+  },
+  section: {
+    marginBottom: "30px",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    padding: "20px",
+    background: "#fafafa",
+  },
+  sectionTitle: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    marginBottom: "20px",
+    color: "#003366",
+  },
+  formRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "30px",
+  },
+  column: {
+    flex: "1",
+    minWidth: "300px",
+  },
+  inputGroup: {
+    display: "flex",
+    flexDirection: "column",
+    marginBottom: "15px",
+  },
+  label: {
+    fontSize: "14px",
+    marginBottom: "5px",
+    color: "#333",
+    fontWeight: "500",
+  },
+  input: {
+    padding: "8px",
+    fontSize: "14px",
+    borderRadius: "4px",
+    border: "1px solid #ccc",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  button: {
+    padding: "10px 20px",
+    backgroundColor: "#007bff",
+    color: "#fff",
+    fontWeight: "bold",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    marginTop: "20px",
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "15px",
+  },
+  statCard: {
+    background: "#f9f9f9",
+    padding: "15px",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    textAlign: "center",
+  },
+  statTitle: {
+    fontSize: "14px",
+    color: "#666",
+    marginBottom: "5px",
+  },
+  statValue: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    color: "#222",
+  },
+  dateFilter: {
+    display: "flex",
+    gap: "15px",
+    marginBottom: "15px",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  logoPreview: {
+    maxWidth: "150px",
+    maxHeight: "150px",
+    marginTop: "10px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+  },
 };
 
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-};
-
-const thStyle = {
-  borderBottom: "2px solid #003366",
-  padding: "10px",
-  textAlign: "left",
-  backgroundColor: "#e6f0ff",
-  color: "#003366",
-};
-
-const tdStyle = {
-  padding: "8px",
-  borderBottom: "1px solid #ddd",
-};
-
-const buttonStyle = {
-  backgroundColor: "#003366",
-  color: "white",
-  border: "none",
-  padding: "6px 12px",
-  marginRight: "8px",
-  borderRadius: "4px",
-  cursor: "pointer",
-  fontWeight: "600",
-};
-
-const filterContainerStyle = {
-  marginBottom: "20px",
-  display: "flex",
-  gap: "20px",
-  alignItems: "center",
-};
-
-const selectStyle = {
-  padding: "6px 10px",
-  borderRadius: "4px",
-  border: "1px solid #ccc",
-  color: "#003366",
-  fontWeight: "600",
-};
-
-const inputStyle = {
-  padding: "6px 10px",
-  borderRadius: "4px",
-  border: "1px solid #ccc",
-  color: "#003366",
-  fontWeight: "600",
-};
 
 const AdminManageDetailAccount = () => {
-  // Dữ liệu giả lập auth_user
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      username: "nguyenvanA",
-      email: "nguyenvanA@example.com",
-      role: "Học sinh",
-      createdAt: "2023-04-15",
-      status: "Active",
-    },
-    {
-      id: 2,
-      username: "phamthib",
-      email: "phamthib@example.com",
-      role: "Giáo viên",
-      createdAt: "2023-05-20",
-      status: "Inactive",
-    },
-    {
-      id: 3,
-      username: "tranminh",
-      email: "tranminh@example.com",
-      role: "Học sinh",
-      createdAt: "2023-06-01",
-      status: "Active",
-    },
-    {
-      id: 4,
-      username: "lethuhuong",
-      email: "lethuhuong@example.com",
-      role: "Giáo viên",
-      createdAt: "2023-01-10",
-      status: "Active",
-    },
-  ]);
+  const [systemInfo, setSystemInfo] = useState({
+    name: "EduConnect Portal",
+    description: "Trang quản trị hệ thống giáo dục nội bộ",
+    email: "support@educonnect.vn",
+    hotline: "1800 6868",
+    address: "12 Nguyễn Văn Bảo, Q. Gò Vấp, TP. Hồ Chí Minh",
+    logo: "", // This will store the actual File object
+  });
 
-  // State filter
-  const [filterRole, setFilterRole] = useState("Tất cả");
-  const [filterStatus, setFilterStatus] = useState("Tất cả");
-  const [filterFromDate, setFilterFromDate] = useState("");
-  const [filterToDate, setFilterToDate] = useState("");
+  const [logoPreview, setLogoPreview] = useState(null); // For preview
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [maintenance, setMaintenance] = useState({ from: "", to: "", note: "" });
 
-  // Xử lý filter dữ liệu
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      // Filter role
-      if (filterRole !== "Tất cả" && user.role !== filterRole) {
-        return false;
-      }
-      // Filter status
-      if (filterStatus !== "Tất cả" && user.status !== filterStatus) {
-        return false;
-      }
-      // Filter from date
-      if (filterFromDate && new Date(user.createdAt) < new Date(filterFromDate)) {
-        return false;
-      }
-      // Filter to date
-      if (filterToDate && new Date(user.createdAt) > new Date(filterToDate)) {
-        return false;
-      }
-      return true;
-    });
-  }, [users, filterRole, filterStatus, filterFromDate, filterToDate]);
+  const stats = [
+    { title: "Tổng số người dùng", value: 1240 },
+    { title: "Tổng request trong ngày", value: 30892 },
+    { title: "Sử dụng CPU", value: "35%" },
+    { title: "Sử dụng RAM", value: "62%" },
+    { title: "Tổng số bài đăng", value: 894 },
+    { title: "Báo cáo gần đây", value: 12 },
+  ];
 
-  // Các thao tác admin
-  const handleEdit = (id) => {
-    alert(`Bạn muốn sửa tài khoản ID: ${id}`);
-    // Xử lý sửa ở đây
+  const handleInputChange = (field, value) => {
+    setSystemInfo((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm(`Bạn có chắc muốn xóa tài khoản ID: ${id}?`)) {
-      setUsers((prev) => prev.filter((user) => user.id !== id));
+  const handleDateChange = (field, value) => {
+    setDateRange((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleMaintenanceChange = (field, value) => {
+    setMaintenance((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSystemInfo((prev) => ({ ...prev, logo: file }));
+      setLogoPreview(URL.createObjectURL(file)); // Create URL for preview
     }
   };
 
-  const handleResetPassword = (id) => {
-    alert(`Bạn muốn reset mật khẩu cho tài khoản ID: ${id}`);
-    // Xử lý reset mật khẩu
+  const handleBackup = () => {
+    alert("Đã tiến hành backup dữ liệu hệ thống.");
+  };
+
+  const handleSaveMaintenance = () => {
+    alert(`Đã lưu lịch bảo trì từ ${maintenance.from} đến ${maintenance.to}`);
   };
 
   return (
-    <div style={containerStyle}>
-      <h2 style={{ color: "#003366", marginBottom: "15px" }}>Quản lý tài khoản Admin</h2>
-
-      {/* Bộ lọc */}
-      <div style={filterContainerStyle}>
-        <label>
-          Lọc đối tượng:
-          <select
-            style={selectStyle}
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-          >
-            <option>Tất cả</option>
-            <option>Học sinh</option>
-            <option>Giáo viên</option>
-          </select>
-        </label>
-
-        <label>
-          Trạng thái:
-          <select
-            style={selectStyle}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option>Tất cả</option>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-        </label>
-
-        <label>
-          Từ ngày:
-          <input
-            style={inputStyle}
-            type="date"
-            value={filterFromDate}
-            onChange={(e) => setFilterFromDate(e.target.value)}
-          />
-        </label>
-
-        <label>
-          Đến ngày:
-          <input
-            style={inputStyle}
-            type="date"
-            value={filterToDate}
-            onChange={(e) => setFilterToDate(e.target.value)}
-          />
-        </label>
+    <div style={styles.pageWrapper}>
+      {/* Bộ lọc thống kê */}
+      <div style={styles.section}>
+        <div style={styles.dateFilter}>
+          <div>
+            <label style={styles.label}>Từ ngày:</label>
+            <input
+              type="date"
+              value={dateRange.from}
+              onChange={(e) => handleDateChange("from", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+          <div>
+            <label style={styles.label}>Đến ngày:</label>
+            <input
+              type="date"
+              value={dateRange.to}
+              onChange={(e) => handleDateChange("to", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+        </div>
+        <div style={styles.sectionTitle}>Cấu hình máy chủ</div>
+        <div style={styles.statsGrid}>
+          {stats.map((stat, idx) => {
+            const cardColors = [
+              "#d1ecf1", "#d4edda", "#fff3cd", "#f8d7da", "#e2e3e5", "#fefefe",
+            ];
+            const bgColor = cardColors[idx % cardColors.length];
+            return (
+              <div
+                key={idx}
+                style={{
+                  ...styles.statCard,
+                  backgroundColor: bgColor,
+                  border: "1px solid #ccc",
+                }}
+              >
+                <div style={styles.statTitle}>{stat.title}</div>
+                <div style={styles.statValue}>{stat.value}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {/* Thống kê dữ liệu */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Dữ liệu</div>
+        <div style={styles.statsGrid}>
+          {[
+            { title: "Dung lượng cơ sở dữ liệu", value: "524 MB" },
+            { title: "Tổng số bảng", value: 37 },
+            { title: "Tổng số bản ghi", value: "2,481,943" },
+            { title: "Bảng lớn nhất", value: "orders (1.2M bản ghi)" },
+            { title: "Tốc độ tăng trưởng dữ liệu", value: "12% / tháng" },
+          ].map((stat, idx) => {
+            const cardColors = [
+              "#f0f9ff", "#fef3c7", "#ecfccb", "#fde2e4", "#e0f2fe", "#ede9fe", "#fff7ed",
+            ];
+            const bgColor = cardColors[idx % cardColors.length];
+            return (
+              <div
+                key={idx}
+                style={{
+                  ...styles.statCard,
+                  backgroundColor: bgColor,
+                  border: "1px solid #ccc",
+                }}
+              >
+                <div style={styles.statTitle}>{stat.title}</div>
+                <div style={styles.statValue}>{stat.value}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Bảng */}
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={thStyle}>ID</th>
-            <th style={thStyle}>Tên đăng nhập</th>
-            <th style={thStyle}>Email</th>
-            <th style={thStyle}>Đối tượng</th>
-            <th style={thStyle}>Ngày tạo</th>
-            <th style={thStyle}>Trạng thái</th>
-            <th style={thStyle}>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredUsers.length === 0 ? (
-            <tr>
-              <td colSpan="7" style={{ ...tdStyle, textAlign: "center", fontStyle: "italic" }}>
-                Không tìm thấy tài khoản phù hợp
-              </td>
-            </tr>
-          ) : (
-            filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td style={tdStyle}>{user.id}</td>
-                <td style={tdStyle}>{user.username}</td>
-                <td style={tdStyle}>{user.email}</td>
-                <td style={tdStyle}>{user.role}</td>
-                <td style={tdStyle}>{user.createdAt}</td>
-                <td style={tdStyle}>{user.status}</td>
-                <td style={tdStyle}>
-                  <button style={buttonStyle} onClick={() => handleEdit(user.id)}>
-                    Sửa
-                  </button>
-                  <button
-                    style={{ ...buttonStyle, backgroundColor: "#cc3333" }}
-                    onClick={() => handleDelete(user.id)}
-                  >
-                    Xóa
-                  </button>
-                  <button
-                    style={{ ...buttonStyle, backgroundColor: "#0066cc" }}
-                    onClick={() => handleResetPassword(user.id)}
-                  >
-                    Reset MK
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Thông tin hệ thống</div>
+        <div style={styles.formRow}>
+          {/* Cột trái */}
+          <div style={styles.column}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Tên hệ thống:</label>
+              <input
+                type="text"
+                value={systemInfo.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Giới thiệu:</label>
+              <textarea
+                value={systemInfo.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                style={{ ...styles.input, height: "80px", resize: "vertical" }}
+              />
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Email liên hệ:</label>
+              <input
+                type="email"
+                value={systemInfo.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Hotline:</label>
+              <input
+                type="text"
+                value={systemInfo.hotline}
+                onChange={(e) => handleInputChange("hotline", e.target.value)}
+                style={styles.input}
+              />
+            </div>
+          </div>
+
+          {/* Cột phải */}
+          <div style={styles.column}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Tải lên Logo:</label>
+              <input type="file" accept="image/*" onChange={handleLogoChange} style={styles.input} />
+              {logoPreview && (
+                <img src={logoPreview} alt="Logo Preview" style={styles.logoPreview} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button style={styles.button}>Cập nhật thông tin</button>
+      </div>
+
+
+      {/* Bảo trì hệ thống */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Bảo trì hệ thống</div>
+        <div style={styles.dateFilter}>
+          <div>
+            <label style={styles.label}>Từ ngày:</label>
+            <input
+              type="date"
+              value={maintenance.from}
+              onChange={(e) => handleMaintenanceChange("from", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+          <div>
+            <label style={styles.label}>Đến ngày:</label>
+            <input
+              type="date"
+              value={maintenance.to}
+              onChange={(e) => handleMaintenanceChange("to", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+        </div>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Lý do bảo trì:</label>
+          <textarea
+            value={maintenance.note}
+            onChange={(e) => handleMaintenanceChange("note", e.target.value)}
+            style={{ ...styles.input, height: "80px", resize: "vertical" }}
+          />
+        </div>
+        <button style={styles.button} onClick={handleBackup}>Backup dữ liệu</button>
+        <button
+          style={{ ...styles.button, backgroundColor: "#28a745" }}
+          onClick={handleSaveMaintenance}
+        >
+          Lưu lịch bảo trì
+        </button>
+      </div>
     </div>
   );
 };

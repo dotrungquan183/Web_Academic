@@ -495,3 +495,15 @@
 .aduserman-button-save:hover {
   background-color: #1d4ed8;
 }
+.dashboard-wrapper {
+  padding: 1.5rem;
+  background-color: #f9fafb;
+}
+
+.summary-cards .card {
+  transition: transform 0.2s ease;
+}
+
+.summary-cards .card:hover {
+  transform: translateY(-2px);
+}

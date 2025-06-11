@@ -50,7 +50,7 @@ const chartTypes = {
   vote_ratio: 'doughnut',
   top_questions_by_views: 'bar',
   accepted_answers: 'bar',
-  avg_votes_per_question: 'bar',
+ avg_votes_per_question: 'bar',
   daily_questions: 'line',
   tag_question_count: 'bar',
   bounty_distribution: 'polarArea',

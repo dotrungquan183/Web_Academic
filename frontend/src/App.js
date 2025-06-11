@@ -256,7 +256,7 @@ function App() {
         <Route path="/adminforum/tag" element={<AdminLayout><AdminForumTag /></AdminLayout>} />
         <Route path="/adminforum/save" element={<AdminLayout><AdminForumSave /></AdminLayout>} />
         <Route path="/adminmanage" element={<AdminLayout><AdminManageAccount /></AdminLayout>} />
-        <Route path="/adminmanagedetail" element={<AdminLayout><AdminManageDetailAccount /></AdminLayout>} />
+        <Route path="/adminmanagesystem" element={<AdminLayout><AdminManageDetailAccount /></AdminLayout>} />
         {/* Đăng nhập */}
         <Route path="/login" element={<LoginHandler setUserRole={setUserRole} />} />
         {/* Đăng ký */}
