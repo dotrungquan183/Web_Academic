@@ -39,7 +39,7 @@ const StudentProfileCourses = () => {
         },
       });
 
-      console.log("Dữ liệu trả về từ API:", response.data); // ✅ Log dữ liệu tại đây
+      console.log("Dữ liệu trả về từ API:", response.data);
       setUser(response.data);
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người dùng:", error);
@@ -69,7 +69,6 @@ const StudentProfileCourses = () => {
     fetchVoteStats();
   }, []);
 
-  // ✅ useEffect này luôn được gọi
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -93,13 +92,13 @@ const StudentProfileCourses = () => {
   }, []);
 
   const handleCloseModal = () => {
-    setShowAllTags(false); // Đóng modal
+    setShowAllTags(false);
   };
 
   // Fetch tags
   const fetchTags = useCallback(async () => {
     try {
-      const token = getToken(); // lấy token từ localStorage hoặc context
+      const token = getToken(); 
       const response = await axios.get(
         `http://localhost:8000/api/teacher/teacher_profile/teacher_tag?filter=${filtertag}`,
         {

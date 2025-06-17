@@ -375,3 +375,50 @@ nav {
     background-position: center;
     background-attachment: fixed;
   }
+.notification-dropdown {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  width: 300px;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+  border-radius: 5px;
+  z-index: 100;
+  padding: 0; /* bỏ padding chung để header gọn */
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #003366;
+  color: white;
+  padding: 10px 15px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.notification-title {
+  font-weight: bold;
+}
+
+.notification-close {
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.notification-item {
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
