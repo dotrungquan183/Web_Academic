@@ -223,3 +223,14 @@ try:
         f.write(frontend_config_content)
 except Exception as e:
     print(f"Không thể tạo file frontend config: {e}")
+
+INSTALLED_APPS += ['channels']
+
+ASGI_APPLICATION = 'your_project_name.asgi.application'
+
+# Redis backend for Channels (nếu dùng)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Dùng tạm, dev thôi
+    }
+}

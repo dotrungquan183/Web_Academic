@@ -35,7 +35,41 @@ function StudentForumQuestionDetail() {
   const [acceptedAnswerId, setAcceptedAnswerId] = useState(null);
   const [relatedQuestions, setRelatedQuestions] = useState([]);
   const [hotQuestions, setHotQuestions] = useState([]);
-  
+  useEffect(() => {
+  const socket = new WebSocket("ws://127.0.0.1:8000/ws/comments/");
+
+  socket.onopen = () => {
+    console.log("✅ WebSocket connected");
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("📨 WebSocket nhận:", data);
+
+    if (data.type_comment === "question") {
+      // 👇 Thêm comment mới vào danh sách question
+      setQuestionCommentText((prev) => [...prev, data]);
+    } else {
+      // 👇 Thêm comment mới vào danh sách answer theo content_id
+      setAnswerComments((prev) => ({
+        ...prev,
+        [data.content_id]: [...(prev[data.content_id] || []), data],
+      }));
+    }
+  };
+
+  socket.onclose = () => {
+    console.warn("⚠️ WebSocket disconnected");
+  };
+
+  socket.onerror = (error) => {
+    console.error("❌ WebSocket error:", error);
+  };
+
+  return () => {
+    socket.close();
+  };
+}, []);
   
   useEffect(() => {
       fetch("http://localhost:8000/api/student/student_forum/student_question/student_hotquestion/")
@@ -278,61 +312,75 @@ const handleDeleteQuestion = (questionId) => {
   // Sử dụng useEffect để gọi handleOpenComment khi vào trang
 
   const handleSubmitComment = async (contentId, type) => {
-    try {
-      const isQuestion = type === "question";
-  
-      const comment = isQuestion
-        ? questionCommentText.trim()
-        : answerCommentText[contentId]?.trim();
-  
-      if (!comment) {
-        alert("❗ Vui lòng nhập nội dung bình luận");
-        return;
-      }
-  
-      const token = getToken();
-  
-      const response = await fetch("http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/", {
+  try {
+    const isQuestion = type === "question";
+
+    const comment = isQuestion
+      ? questionCommentText.trim()
+      : answerCommentText[contentId]?.trim();
+
+    if (!comment) {
+      alert("❗ Vui lòng nhập nội dung bình luận");
+      return;
+    }
+
+    const token = getToken();
+
+    // ✅ Tạo FormData để hỗ trợ cả file & text
+    const formData = new FormData();
+    formData.append("content_id", contentId);
+    formData.append("type_comment", type);
+    formData.append("content", comment);
+
+    // 👉 Nếu có file thì thêm vào
+    const fileInput = isQuestion
+      ? document.getElementById("question-file-input")
+      : document.getElementById(`answer-file-input-${contentId}`);
+
+    if (fileInput && fileInput.files.length > 0) {
+      formData.append("comments", fileInput.files[0]);
+    }
+
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/",
+      {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          // ❌ KHÔNG dùng "Content-Type" với FormData
         },
-        body: JSON.stringify({
-          content_id: contentId,
-          type_comment: type,
-          content: comment,
-        }),
-      });
-  
-      if (!response.ok) {
-        const errText = await response.json();
-        console.error("❌ Server error:", errText);
-        throw new Error("Không gửi được bình luận");
+        body: formData,
       }
-  
-      // 👇 Reset input nhưng KHÔNG đóng lại comment box
-      if (isQuestion) {
-        setQuestionCommentText("");
-  
-        // ✅ Fetch lại danh sách comment mới nhất
-        fetchComments(contentId);
-      } else {
-        setAnswerCommentText((prev) => ({
-          ...prev,
-          [contentId]: "",
-        }));
-  
-        // ✅ Fetch lại comment câu trả lời nếu bạn có hàm fetch riêng
-        fetchAnswerComments(contentId);
-      }
-  
-      alert("✅ Bình luận đã được gửi thành công!");
-    } catch (err) {
-      console.error("Lỗi gửi bình luận:", err);
-      alert("⚠️ Có lỗi xảy ra khi gửi bình luận.");
+    );
+
+    if (!response.ok) {
+      const errText = await response.json();
+      console.error("❌ Server error:", errText);
+      throw new Error("Không gửi được bình luận");
     }
-  };
+
+    // ✅ Reset input
+    if (isQuestion) {
+      setQuestionCommentText("");
+
+      // ✅ Nếu vẫn muốn giữ fallback fetch
+      fetchComments(contentId);
+    } else {
+      setAnswerCommentText((prev) => ({
+        ...prev,
+        [contentId]: "",
+      }));
+
+      fetchAnswerComments(contentId);
+    }
+
+    alert("✅ Bình luận đã được gửi thành công!");
+  } catch (err) {
+    console.error("Lỗi gửi bình luận:", err);
+    alert("⚠️ Có lỗi xảy ra khi gửi bình luận.");
+  }
+};
+
   
   
   const handleEditCommentAnswer = (answerId, commentId) => {

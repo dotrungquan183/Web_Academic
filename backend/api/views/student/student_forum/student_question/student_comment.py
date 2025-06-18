@@ -7,7 +7,9 @@ from api.models import Comment
 from django.contrib.auth.models import User
 from django.utils import timezone
 import json
-
+from django.utils.timezone import now
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 @method_decorator(csrf_exempt, name="dispatch")
 class StudentCommentView(View):
     def post(self, request, *args, **kwargs):
@@ -16,21 +18,40 @@ class StudentCommentView(View):
             if error_response:
                 return error_response
 
-            # Lấy dữ liệu từ request.POST (dữ liệu text) và request.FILES (file upload)
             type_comment = request.POST.get("type_comment")
             content_id = request.POST.get("content_id")
             content = request.POST.get("content")
-            uploaded_file = request.FILES.get("comments")  # Tên 'comments' trùng với formData.append("comments", file)
+            uploaded_file = request.FILES.get("comments")  # file đính kèm
 
             if not all([type_comment, content_id, content]):
                 return JsonResponse({"error": "Missing fields"}, status=400)
 
             comment = Comment.objects.create(
                 type_comment=type_comment,
-                content_id=int(content_id),  # Chuyển về int nếu cần
+                content_id=int(content_id),
                 content=content,
                 user=user,
                 file=uploaded_file if uploaded_file else None,
+                created_at=now(),
+            )
+
+            # ✅ Gửi comment mới qua WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "comments",
+                {
+                    "type": "send.comment",
+                    "data": {
+                        "id": comment.id,
+                        "type_comment": type_comment,
+                        "content_id": int(content_id),
+                        "content": content,
+                        "author": user.username,
+                        "created_at": comment.created_at.isoformat(),
+                        "has_file": True if uploaded_file else False,
+                        "file_url": comment.file.url if uploaded_file else None,
+                    }
+                }
             )
 
             return JsonResponse({
