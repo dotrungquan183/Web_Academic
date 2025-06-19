@@ -2,7 +2,7 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-import backend.api.views.student.student_forum.student_question.routing  # 👈 sửa thành tên app thật của bạn
+import api.views.student.student_forum.student_question.routing 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
@@ -13,7 +13,7 @@ application = ProtocolTypeRouter({
     # 👇 Xử lý WebSocket bằng Auth + URLRouter
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            backend.api.views.student.student_forum.student_question.routing.websocket_urlpatterns  # 👈 Tên app thật
+            api.views.student.student_forum.student_question.routing.websocket_urlpatterns
         )
     ),
 })

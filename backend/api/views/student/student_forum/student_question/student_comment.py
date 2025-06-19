@@ -46,9 +46,9 @@ class StudentCommentView(View):
                         "type_comment": type_comment,
                         "content_id": int(content_id),
                         "content": content,
-                        "author": user.username,
-                        "created_at": comment.created_at.isoformat(),
-                        "has_file": True if uploaded_file else False,
+                        "username": user.username,  # ✅ dùng đúng key "username"
+                        "created_at": comment.created_at.strftime("%d/%m/%Y %H:%M"),  # ✅ format đẹp
+                        "has_file": bool(uploaded_file),
                         "file_url": comment.file.url if uploaded_file else None,
                     }
                 }

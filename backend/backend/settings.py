@@ -226,8 +226,7 @@ except Exception as e:
 
 INSTALLED_APPS += ['channels']
 
-ASGI_APPLICATION = 'your_project_name.asgi.application'
-
+ASGI_APPLICATION = 'backend.asgi.application'
 # Redis backend for Channels (nếu dùng)
 CHANNEL_LAYERS = {
     "default": {
