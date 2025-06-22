@@ -10,30 +10,29 @@ import logging
 from datetime import timedelta
 from django.db.models import Count, Sum, F, Q, Prefetch
 from django.db.models import OuterRef, Exists
-
-
-
 logger = logging.getLogger(__name__)
-
-
 class StudentShowUnanswersQuestionView(APIView):
     def get(self, request):
-
         # ✅ Đọc tham số unanswered
         unanswered = True
-        
-        # ✅ Lấy tất cả câu hỏi
-        questions = Question.objects.all()
 
-        # ✅ Lọc những câu hỏi chưa có câu trả lời (nếu được yêu cầu)
+        # ✅ Lấy tất cả câu hỏi được duyệt (is_approve = 1)
+        questions = Question.objects.filter(is_approve=1)
+
+        # ✅ Lọc những câu hỏi chưa có câu trả lời
         if unanswered:
             questions = questions.annotate(
-                has_answer=Exists(Answer.objects.filter(question=OuterRef('pk')))
+                has_answer=Exists(
+                    Answer.objects.filter(
+                        question=OuterRef('pk'),
+                        is_approve=1  # chỉ lấy những answer được duyệt
+                    )
+                )
             ).filter(has_answer=False)
 
         print("✅ Đang lọc unanswered, số lượng:", questions.count())
 
-        
+        # ✅ Lọc tham số
         time_filter = request.GET.get("time")
         bounty_filter = request.GET.get("bounty")
         interest_filter = request.GET.get("interest")
@@ -42,13 +41,10 @@ class StudentShowUnanswersQuestionView(APIView):
         now = timezone.now()
 
         questions = questions.select_related("user").prefetch_related(
-            Prefetch(
-                'questiontagmap_set',
-                queryset=QuestionTagMap.objects.select_related('tag')
-            )
+            'questiontagmap_set__tag'
         )
 
-        # TIME FILTER
+        # ✅ TIME FILTER
         if time_filter == "Newest":
             questions = questions.filter(created_at__gte=now - timedelta(hours=24))
         elif time_filter == "Week":
@@ -56,11 +52,11 @@ class StudentShowUnanswersQuestionView(APIView):
         elif time_filter == "Month":
             questions = questions.filter(created_at__gte=now - timedelta(days=30))
 
-        # BOUNTY FILTER
+        # ✅ BOUNTY FILTER
         if bounty_filter == "Bountied":
             questions = questions.filter(bounty_amount__gt=0)
 
-        # INTEREST FILTER
+        # ✅ INTEREST FILTER
         recent_period = now - timedelta(days=3)
         if interest_filter == "Trending":
             questions = questions.annotate(
@@ -76,7 +72,7 @@ class StudentShowUnanswersQuestionView(APIView):
         elif interest_filter == "Active":
             questions = questions.order_by('-updated_at')
 
-        # QUALITY FILTER
+        # ✅ QUALITY FILTER
         if quality_filter == "Interesting":
             questions = questions.annotate(
                 quality_score=F('view__view_count') + F('vote__score')
@@ -84,13 +80,13 @@ class StudentShowUnanswersQuestionView(APIView):
         elif quality_filter == "Score":
             questions = questions.annotate(score=Sum('vote__score')).order_by('-score')
 
-        # Convert thành list
+        # ✅ Xây dựng danh sách trả về
         question_list = []
         for question in questions:
             tags = [qt.tag.tag_name for qt in question.questiontagmap_set.all()]
-            total_views = View.objects.filter(question_id=question.id).aggregate(
-                total_views=Sum('view_count')
-            )["total_views"] or 0
+            total_views = View.objects.filter(
+                question_id=question.id
+            ).aggregate(total_views=Sum('view_count'))['total_views'] or 0
 
             try:
                 user_info = UserInformation.objects.get(user=question.user)
@@ -108,10 +104,11 @@ class StudentShowUnanswersQuestionView(APIView):
                 "views": total_views,
                 "username": question.user.username,
                 "avatar": avatar,
-                "user_id": question.user.id
+                "user_id": question.user.id,
             })
 
         return Response(question_list)
+
    
     def post(self, request):
         question_id = request.data.get("question_id")

@@ -6,6 +6,7 @@ from api.serializers import CourseListSerializer
 
 class TeacherBestCoursesView(APIView):
     def get(self, request):
-        courses = Course.objects.all().order_by('-fee')[:10]
+        # ✅ Chỉ lấy các khóa học đã được duyệt
+        courses = Course.objects.filter(is_approve=1).order_by('-fee')[:10]
         serializer = CourseListSerializer(courses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

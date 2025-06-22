@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from api.models import Vote, Question, Answer, UserInformation
+from api.models import Vote, Question, Answer, UserInformation, VoteForQuestion, VoteForAnswer
 from rest_framework.permissions import AllowAny
 from api.views.auth.authHelper import get_authenticated_user
 import logging
@@ -55,43 +55,52 @@ class StudentDetailQuestionView(APIView):
         vote_for = request.data.get('vote_for')
         content_id = request.data.get('content_id')
 
+        # Validate
         if vote_type not in ['like', 'dislike'] or vote_for not in ['question', 'answer'] or not content_id:
             logger.warning("Dữ liệu không hợp lệ.")
             return Response({"error": "Dữ liệu không hợp lệ"}, status=status.HTTP_400_BAD_REQUEST)
 
-        model = Question if vote_for == 'question' else Answer
+        # Get model & vote model
+        content_model = Question if vote_for == 'question' else Answer
+        vote_model = VoteForQuestion if vote_for == 'question' else VoteForAnswer
 
+        # Get content
         try:
-            content = model.objects.get(id=content_id)
-        except model.DoesNotExist:
+            content = content_model.objects.get(id=content_id)
+        except content_model.DoesNotExist:
             logger.error(f"Nội dung không tồn tại: {content_id}")
             return Response({"error": "Nội dung không tồn tại"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Reputation info
         content_owner = content.user
         content_owner_info = get_object_or_404(UserInformation, user=content_owner)
-        user_info = get_object_or_404(UserInformation, user=user)
         voted_by_owner = user == content_owner
 
         try:
             with transaction.atomic():
-                vote, created = Vote.objects.get_or_create(user=user, vote_for=vote_for, content_id=content_id)
+                # Tìm hoặc tạo vote
+                vote, created = vote_model.objects.get_or_create(
+                    user=user,
+                    **{f"{vote_for}": content}  # ví dụ: question=content hoặc answer=content
+                )
 
                 if created:
                     vote.vote_type = vote_type
                     vote.save()
-                    update_reputation(content_owner_info, vote_for, vote_type, 'add', voted_by_owner)
+                    update_reputation(content_owner_info, vote_for, vote_type, action='add', voted_by_owner=voted_by_owner)
                     return Response({"success": True, "action": "created"}, status=status.HTTP_201_CREATED)
 
+                # Nếu đã tồn tại và loại giống nhau => xóa
                 if vote.vote_type == vote_type:
                     vote.delete()
-                    update_reputation(content_owner_info, vote_for, vote_type, 'remove', voted_by_owner)
+                    update_reputation(content_owner_info, vote_for, vote_type, action='remove', voted_by_owner=voted_by_owner)
                     return Response({"success": True, "action": "removed"}, status=status.HTTP_200_OK)
 
                 # Nếu đổi loại vote
-                update_reputation(content_owner_info, vote_for, vote.vote_type, 'remove', voted_by_owner)
+                update_reputation(content_owner_info, vote_for, vote.vote_type, action='remove', voted_by_owner=voted_by_owner)
                 vote.vote_type = vote_type
                 vote.save()
-                update_reputation(content_owner_info, vote_for, vote_type, 'add', voted_by_owner)
+                update_reputation(content_owner_info, vote_for, vote_type, action='add', voted_by_owner=voted_by_owner)
                 return Response({"success": True, "action": "updated"}, status=status.HTTP_200_OK)
 
         except IntegrityError as e:
@@ -107,31 +116,39 @@ class StudentDetailQuestionView(APIView):
         logger.info(f"Request to get total vote score for question {question_id}")
 
         try:
-            question = Question.objects.get(id=question_id)
+            # Chỉ lấy câu hỏi đã được duyệt
+            question = Question.objects.get(id=question_id, is_approve=1)
         except Question.DoesNotExist:
-            logger.error(f"Question not found: {question_id}")
-            return Response({"error": "Câu hỏi không tồn tại"}, status=status.HTTP_404_NOT_FOUND)
+            logger.error(f"Question not found or not approved: {question_id}")
+            return Response({"error": "Câu hỏi không tồn tại hoặc chưa được duyệt"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Lấy tổng điểm bỏ phiếu cho câu hỏi
-        total_vote_score = Vote.objects.filter(
-            vote_for='question', content_id=str(question_id)
+        # Tổng điểm vote dựa trên VoteForQuestion
+        total_vote_score = VoteForQuestion.objects.filter(
+            question=question
         ).aggregate(
-            total_score=Sum(Case(
-                When(vote_type='like', then=1),
-                When(vote_type='dislike', then=-1),
-                default=0,
-                output_field=IntegerField()
-            ))
+            total_score=Sum(
+                Case(
+                    When(vote_type='like', then=1),
+                    When(vote_type='dislike', then=-1),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            )
         )['total_score']
 
-        # Lấy tổng số câu trả lời cho câu hỏi
-        total_answers = Answer.objects.filter(question=question_id).count()
+        # Tổng số câu trả lời (chỉ tính câu trả lời đã được duyệt nếu cần)
+        total_answers = Answer.objects.filter(question=question, is_approve=1).count()
 
-        logger.info(f"Total vote score for question {question_id}: {total_vote_score if total_vote_score is not None else 0}")
-        logger.info(f"Total answers for question {question_id}: {total_answers}")
+        logger.info(
+            f"Total vote score for question {question_id}: {total_vote_score if total_vote_score is not None else 0}"
+        )
+        logger.info(f"Total approved answers for question {question_id}: {total_answers}")
 
-        return Response({
-            "question_id": question_id,
-            "total_vote_score": total_vote_score if total_vote_score is not None else 0,
-            "total_answers": total_answers
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "question_id": question_id,
+                "total_vote_score": total_vote_score if total_vote_score is not None else 0,
+                "total_answers": total_answers,
+            },
+            status=status.HTTP_200_OK,
+        )

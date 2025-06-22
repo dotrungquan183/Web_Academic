@@ -1,32 +1,32 @@
-from django.db.models import Count, Q
+from django.db.models import Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from api.models import Question, Vote
+from api.models import Question, VoteForQuestion
 
 
 class StudentHotQuestionView(APIView):
     def get(self, request):
-        # Lọc các vote cho question và là like
-        vote_counts = (
-            Vote.objects
-            .filter(vote_for='question', vote_type='like')
-            .values('content_id')  # content_id chính là question_id
+        # 1. Lọc danh sách câu hỏi like nhiều nhất (chỉ những câu hỏi is_approve=1)
+        like_counts = (
+            VoteForQuestion.objects
+            .filter(vote_type='like', question__is_approve=1)  # Lọc câu hỏi đã được duyệt
+            .values('question_id')
             .annotate(like_count=Count('id'))
             .order_by('-like_count')[:10]
         )
 
-        # Lấy danh sách question_id từ vote_counts
-        hot_question_ids = [item['content_id'] for item in vote_counts]
+        # 2. Danh sách question_id đã sort theo like_count
+        hot_question_ids = [item['question_id'] for item in like_counts]
 
-        # Đảm bảo giữ thứ tự theo số lượt like
+        # 3. Lấy danh sách câu hỏi
         hot_questions = list(
             Question.objects
-            .filter(id__in=hot_question_ids)
+            .filter(id__in=hot_question_ids, is_approve=1)
             .values('id', 'title')
         )
 
-        # Đảm bảo thứ tự hot_questions theo vote_counts
+        # 4. Sắp xếp câu hỏi đúng thứ tự like_count
         hot_questions_sorted = sorted(
             hot_questions,
             key=lambda x: hot_question_ids.index(x['id'])

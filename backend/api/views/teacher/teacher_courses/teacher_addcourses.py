@@ -221,18 +221,18 @@ class TeacherAddCoursesView(APIView):
         if error_response:
             return error_response
 
-        # Lấy filter từ query param và giải mã
+        # ✅ Lấy filter từ query param và giải mã
         filter_param = unquote(request.GET.get('filter', 'all'))
         print(f"Filter param after decoding: {filter_param}")
 
-        # Lọc khóa học theo người dùng hoặc lấy tất cả
+        # ✅ Lọc khóa học đã được duyệt
         if filter_param == 'Khóa học của tôi':
-            print(f"Filter is 'mine', filtering courses for user: {user}")
-            courses = Course.objects.filter(user=user)
+            print(f"Filter is 'mine', filtering approved courses for user: {user}")
+            courses = Course.objects.filter(user=user, is_approve=1)
         else:
-            print(f"Filter is 'all', fetching all courses.")
-            courses = Course.objects.all()
+            print(f"Filter is 'all', fetching all approved courses")
+            courses = Course.objects.filter(is_approve=1)
 
-        # Serialize và trả dữ liệu, bao gồm cả link video
+        # ✅ Serialize và trả dữ liệu
         serializer = CourseListSerializer(courses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

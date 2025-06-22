@@ -18,9 +18,8 @@ logger = logging.getLogger(__name__)
 
 class StudentShowQuestionView(APIView):
     def get(self, request):
-        
-        # ✅ Lấy tất cả câu hỏi
-        questions = Question.objects.all()  
+        # ✅ Lấy tất cả câu hỏi đã được duyệt
+        questions = Question.objects.filter(is_approve=1)
         time_filter = request.GET.get("time")
         bounty_filter = request.GET.get("bounty")
         interest_filter = request.GET.get("interest")
@@ -35,7 +34,7 @@ class StudentShowQuestionView(APIView):
             )
         )
 
-        # TIME FILTER
+        # ✅ TIME FILTER
         if time_filter == "Newest":
             questions = questions.filter(created_at__gte=now - timedelta(hours=24))
         elif time_filter == "Week":
@@ -43,11 +42,11 @@ class StudentShowQuestionView(APIView):
         elif time_filter == "Month":
             questions = questions.filter(created_at__gte=now - timedelta(days=30))
 
-        # BOUNTY FILTER
+        # ✅ BOUNTY FILTER
         if bounty_filter == "Bountied":
             questions = questions.filter(bounty_amount__gt=0)
 
-        # INTEREST FILTER
+        # ✅ INTEREST FILTER
         recent_period = now - timedelta(days=3)
         if interest_filter == "Trending":
             questions = questions.annotate(
@@ -55,7 +54,7 @@ class StudentShowQuestionView(APIView):
             ).order_by('-recent_views')
         elif interest_filter == "Hot":
             questions = questions.annotate(
-                hotness=Count('answer', filter=Q(answer__created_at__gte=recent_period)) +
+                hotness=Count('answer', filter=Q(answer__created_at__gte=recent_period, answer__is_approve=1)) +
                         Sum('vote__score', filter=Q(vote__created_at__gte=recent_period))
             ).order_by('-hotness')
         elif interest_filter == "Frequent":
@@ -63,7 +62,7 @@ class StudentShowQuestionView(APIView):
         elif interest_filter == "Active":
             questions = questions.order_by('-updated_at')
 
-        # QUALITY FILTER
+        # ✅ QUALITY FILTER
         if quality_filter == "Interesting":
             questions = questions.annotate(
                 quality_score=F('view__view_count') + F('vote__score')
@@ -71,13 +70,13 @@ class StudentShowQuestionView(APIView):
         elif quality_filter == "Score":
             questions = questions.annotate(score=Sum('vote__score')).order_by('-score')
 
-        # Convert thành list
+        # ✅ Convert thành list
         question_list = []
         for question in questions:
             tags = [qt.tag.tag_name for qt in question.questiontagmap_set.all()]
-            total_views = View.objects.filter(question_id=question.id).aggregate(
-                total_views=Sum('view_count')
-            )["total_views"] or 0
+            total_views = View.objects.filter(
+                question_id=question.id
+            ).aggregate(total_views=Sum('view_count'))["total_views"] or 0
 
             try:
                 user_info = UserInformation.objects.get(user=question.user)
@@ -100,41 +99,6 @@ class StudentShowQuestionView(APIView):
             })
 
         return Response(question_list)
-   
-    def post(self, request):
-        question_id = request.data.get("question_id")
-        user_id = request.data.get("user_id")
-
-        if not question_id:
-            return Response({"error": "Thiếu question_id"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            question = Question.objects.get(pk=question_id)
-        except Question.DoesNotExist:
-            return Response({"error": "Không tìm thấy câu hỏi"}, status=status.HTTP_404_NOT_FOUND)
-
-        user = None
-        if user_id is not None:
-            try:
-                user = User.objects.get(pk=user_id)
-            except User.DoesNotExist:
-                return Response({"error": "Không tìm thấy người dùng"}, status=status.HTTP_404_NOT_FOUND)
-
-        today = timezone.now().date()
-
-        # Ghi nhận lượt xem
-        view, created = View.objects.get_or_create(
-            user=user,
-            question=question,
-            view_date=today,
-            defaults={'view_count': 1}
-        )
-
-        if not created:
-            view.view_count += 1
-            view.save()
-
-        return Response({"message": "Đã ghi nhận lượt xem"}, status=status.HTTP_200_OK)
 
     def delete(self, request, question_id, *args, **kwargs):
         # Lấy thông tin người dùng đã xác thực

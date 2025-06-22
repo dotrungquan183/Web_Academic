@@ -30,7 +30,9 @@ class Course(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Người dùng")
     intro = models.TextField(blank=True, verbose_name="Giới thiệu khóa học")
     created_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian tạo")  # Thêm default=timezone.now
-
+    is_approve = models.SmallIntegerField(
+        default=0, verbose_name="Duyệt khóa học"
+    )
     class Meta:
         db_table = 'course'
 
@@ -128,7 +130,9 @@ class Question(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_answer_id = models.IntegerField(null=True, blank=True)
     bounty_amount = models.IntegerField(null=True, blank=True, default=0)
-
+    is_approve = models.SmallIntegerField(
+        default=0, verbose_name="Duyệt câu hỏi"
+    )
     def __str__(self):
         return self.title
 
@@ -140,7 +144,9 @@ class Answer(models.Model):
     user = models.ForeignKey(UserInformation, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
+    is_approve = models.SmallIntegerField(
+        default=0, verbose_name="Duyệt câu trả lời"
+    )
     def __str__(self):
         return f"Answer {self.id} for Question {self.question_id}"
 
@@ -231,6 +237,56 @@ class Vote(models.Model):
         # Hoặc bạn có thể trả về số lượng để hiển thị trực tiếp trên frontend
         return likes, dislikes
 
+class VoteForQuestion(models.Model):
+    VOTE_TYPE_CHOICES = [
+        ('like', 'Like'),
+        ('dislike', 'Dislike'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    vote_type = models.CharField(max_length=10, choices=VOTE_TYPE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        unique_together = ('user', 'question')
+        db_table = 'votes_for_questions'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.question.title} ({self.vote_type})"
+
+    @classmethod
+    def update_vote_count(cls, question_id):
+        likes = cls.objects.filter(question_id=question_id, vote_type='like').count()
+        dislikes = cls.objects.filter(question_id=question_id, vote_type='dislike').count()
+        Question.objects.filter(id=question_id).update(like_count=likes, dislike_count=dislikes)
+        return likes, dislikes
+
+class VoteForAnswer(models.Model):
+    VOTE_TYPE_CHOICES = [
+        ('like', 'Like'),
+        ('dislike', 'Dislike'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE)
+    vote_type = models.CharField(max_length=10, choices=VOTE_TYPE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        unique_together = ('user', 'answer')
+        db_table = 'votes_for_answers'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.answer.id} ({self.vote_type})"
+
+    @classmethod
+    def update_vote_count(cls, answer_id):
+        likes = cls.objects.filter(answer_id=answer_id, vote_type='like').count()
+        dislikes = cls.objects.filter(answer_id=answer_id, vote_type='dislike').count()
+        Answer.objects.filter(id=answer_id).update(like_count=likes, dislike_count=dislikes)
+        return likes, dislikes
+
 class View(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
@@ -259,13 +315,59 @@ class Comment(models.Model):
     )  # 🔥 Chỉ cần thêm dòng này
 
     created_at = models.DateTimeField(auto_now_add=True)
-
+    is_approve = models.SmallIntegerField(
+        default=0, verbose_name="Duyệt bình luận"
+    )
     def __str__(self):
         return f"{self.type_comment} - {self.content[:30]}"
 
     class Meta:
+
         db_table = 'comments'
 
+class CommentForQuestion(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    content = models.TextField()
+    file = models.FileField(
+        upload_to='comments/',
+        null=True,
+        blank=True,
+        verbose_name="Tệp đính kèm"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approve = models.SmallIntegerField(
+        default=0, verbose_name="Duyệt bình luận câu hỏi"
+    )
+    class Meta:
+        db_table = 'comments_for_questions'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment on Q#{self.question.id}: {self.content[:30]}"
+
+
+class CommentForAnswer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE)
+    content = models.TextField()
+    file = models.FileField(
+        upload_to='comments/',
+        null=True,
+        blank=True,
+        verbose_name="Tệp đính kèm"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approve = models.SmallIntegerField(
+        default=0, verbose_name="Duyệt bình luận câu trả lời"
+    )
+    class Meta:
+        db_table = 'comments_for_answers'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment on A#{self.answer.id}: {self.content[:30]}"
+    
 class LessonVideoView(models.Model):
     lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)

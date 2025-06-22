@@ -138,28 +138,33 @@ class StudentAskQuestionView(View):
             return error_response
 
         try:
-            question = Question.objects.get(id=question_id)
+            # Lấy câu hỏi với is_approve = 1
+            question = Question.objects.get(id=question_id, is_approve=1)
 
-            # Kiểm tra quyền người dùng nếu cần:
+            # Nếu bạn vẫn cần check quyền sở hữu:
             if question.user != user:
                 return JsonResponse({"error": "Bạn không có quyền xem câu hỏi này!"}, status=403)
 
-            # Lấy tags của câu hỏi
+            # Lấy danh sách tags của câu hỏi
             tags = list(
                 QuestionTagMap.objects.filter(question=question)
                 .values_list('tag__tag_name', flat=True)
             )
 
-            return JsonResponse({
-                "id": question.id,
-                "title": question.title,
-                "content": question.content,
-                "bounty_amount": float(question.bounty_amount or 0),
-                "accepted_answer_id": question.accepted_answer_id,
-                "created_at": question.created_at.isoformat(),
-                "tags": tags,
-                "user_id": question.user.id,  # 👈 Thêm dòng này
-            }, status=200)
+            return JsonResponse(
+                {
+                    "id": question.id,
+                    "title": question.title,
+                    "content": question.content,
+                    "bounty_amount": float(question.bounty_amount or 0),
+                    "accepted_answer_id": question.accepted_answer_id,
+                    "created_at": question.created_at.isoformat(),
+                    "tags": tags,
+                    "user_id": question.user.id,
+                },
+                status=200,
+            )
 
         except Question.DoesNotExist:
-            return JsonResponse({"error": "Câu hỏi không tồn tại!"}, status=404)
+            return JsonResponse({"error": "Câu hỏi không tồn tại hoặc chưa được duyệt!"}, status=404)
+
