@@ -10,7 +10,21 @@ logger = logging.getLogger(__name__)
 
 class AdminAutoApproveSettingView(APIView):
     permission_classes = [AllowAny]  # Nếu không cần xác thực
+    def get(self, request):
+        # Lấy tất cả AutoApproveSetting
+        settings = AutoApproveSetting.objects.all()
 
+        # Tạo dictionary kết quả
+        data = {}
+        for setting in settings:
+            data[setting.type] = {
+                "enabled": setting.enabled,
+                "from": setting.from_date.isoformat() if setting.from_date else None,
+                "to": setting.to_date.isoformat() if setting.to_date else None,
+            }
+
+        return Response(data, status=status.HTTP_200_OK)
+    
     def post(self, request):
         logger.info(f"Request data: {request.data}")
 

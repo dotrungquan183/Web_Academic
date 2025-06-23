@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect  } from "react";
 
 const styles = {
   pageWrapper: {
@@ -138,12 +138,36 @@ const AdminManageDetailAccount = () => {
     logo: "", // This will store the actual File object
   });
   const [autoApprove, setAutoApprove] = useState({
-    question: true,
-    answer: false,
-    comment: false,
-    courses: false, // ✅ Bổ sung courses vào đây
+  question: { enabled: false, from: "", to: "" },
+  answer: { enabled: false, from: "", to: "" },
+  comment: { enabled: false, from: "", to: "" },
+  courses: { enabled: false, from: "", to: "" }
+});
 
-  });
+useEffect(() => {
+  const fetchAutoApprove = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/admin/auto_approve/", {
+        method: "GET",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log("✅ Data fetch auto-approve:", data); // <- log ra xem
+        setAutoApprove(data);  // Cập nhật state
+      } else {
+        console.error("❌ Không fetch được auto-approve. Status:", res.status);
+      }
+    } catch (err) {
+      console.error("❌ Lỗi mạng khi gọi auto-approve:", err);
+    }
+  };
+
+  fetchAutoApprove();
+}, []);
+
+
+
   const handleSaveAutoApproveConfig = async () => {
     console.log('Lưu cấu hình:', { autoApprove });
 

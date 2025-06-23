@@ -1,44 +1,174 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from api.models import Vote, Question, Answer, UserInformation, VoteForQuestion, VoteForAnswer
+from api.models import  Question, Answer, UserInformation, VoteForQuestion, VoteForAnswer, Reputation
 from rest_framework.permissions import AllowAny
 from api.views.auth.authHelper import get_authenticated_user
 import logging
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.db.models import Sum, Case, When, IntegerField
 from django.shortcuts import get_object_or_404
+from django.db import models
+
 # Thiết lập logger
 
 logger = logging.getLogger(__name__)
 
-def update_reputation(user_info, vote_for, vote_type, action, voted_by_owner=False):
+def reward_new_user(user_info: UserInformation):
     """
-    Cập nhật reputation dựa trên vote_type, vote_for, hành động và người thực hiện.
-    Nếu là dislike answer từ người khác, trừ 1 điểm của người vote.
+    Cộng điểm reputation cho người dùng mới tham gia.
+    Rule: new_user
     """
-    points = 0
-    if vote_type == 'like':
-        if vote_for == 'question':
-            points = 5
-        elif vote_for == 'answer':
-            points = 10
-    elif vote_type == 'dislike':
-        points = -2
-
-    if action == 'remove':
-        points = -points
-
-    user_info.reputation += points
-    user_info.save()
-    logger.info(f"Updated reputation for user {user_info.user.username}: {user_info.reputation} ({'+' if points >= 0 else ''}{points})")
-
-    # Nếu là downvote answer và người vote không phải tác giả answer
-    if vote_type == 'dislike' and vote_for == 'answer' and not voted_by_owner:
-        # Trừ 1 điểm của người vote
-        user_info.reputation -= 1 if action == 'add' else -1
+    try:
+        rep_record = Reputation.objects.get(rule_key='new_user')
+        points = rep_record.point_change
+        user_info.reputation += points
         user_info.save()
-        logger.info(f"Downvote penalty: -1 reputation for voter {user_info.user.username} (after vote action: {action})")
+
+        logger.info(
+            f"Rewarded new user {user_info.user.username}: +{points} points"
+        )
+    except Reputation.DoesNotExist:
+        logger.error("No Reputation record found for 'new_user'")
+        
+def update_downvote_penalty(user_info, action):
+    """
+    Cộng hoặc trừ điểm penalty cho người downvote.
+    action: add | remove
+    """
+    try:
+        penalty_rule = Reputation.objects.get(rule_key='downvote_penalty')
+        points = penalty_rule.point_change
+        if action == 'remove':
+            points = -points
+        user_info.reputation += points
+        user_info.save()
+        logger.info(
+            f"Updated downvote penalty for {user_info.user.username}: {points:+}"
+        )
+    except Reputation.DoesNotExist:
+        logger.error("No Reputation record found for downvote_penalty")
+
+
+def update_reputation(user_info, action_type, target_type, action):
+    """
+    Cập nhật điểm reputation của CHỦ SỞ HỮU nội dung.
+    action_type: upvote | downvote | accepted
+    target_type: question | answer
+    action: add | remove
+    """
+    try:
+        if action_type == 'upvote':
+            rule_key = 'upvote_question' if target_type == 'question' else 'upvote_answer'
+        elif action_type == 'downvote':
+            rule_key = 'downvote_question' if target_type == 'question' else 'downvote_answer'
+        elif action_type == 'accepted':
+            rule_key = 'answer_accepted'
+        else:
+            logger.warning(f"Unknown action_type: {action_type}")
+            return
+
+        rep_record = Reputation.objects.get(rule_key=rule_key)
+        points = rep_record.point_change
+        if action == 'remove':
+            points = -points
+
+        user_info.reputation += points
+        user_info.save()
+        logger.info(
+            f"Updated reputation for {user_info.user.username}: {points:+}"
+        )
+    except Reputation.DoesNotExist:
+        logger.error(f"No Reputation record found for {rule_key}")
+
+
+class StudentDetailQuestionView(APIView):
+    permission_classes = [AllowAny]
+
+def post(self, request):
+    logger.info(f"Request data: {request.data}")
+    user, error_response = get_authenticated_user(request)
+    if error_response:
+        return error_response
+
+    vote_type = request.data.get('vote_type')  # like | dislike
+    vote_for = request.data.get('vote_for')    # question | answer
+    content_id = request.data.get('content_id')
+
+    # Validate
+    if vote_type not in ['like', 'dislike'] or vote_for not in ['question', 'answer'] or not content_id:
+        return Response({"error": "Dữ liệu không hợp lệ"}, status=400)
+
+    action_type = 'upvote' if vote_type == 'like' else 'downvote'
+    content_model = Question if vote_for == 'question' else Answer
+    vote_model = VoteForQuestion if vote_for == 'question' else VoteForAnswer
+
+    try:
+        content = content_model.objects.get(id=content_id)
+    except content_model.DoesNotExist:
+        return Response({"error": "Nội dung không tồn tại"}, status=404)
+
+    content_owner_info = get_object_or_404(UserInformation, user=content.user)
+    voted_by_owner = (user == content.user)
+
+    try:
+        with transaction.atomic():
+            vote, created = vote_model.objects.get_or_create(
+                user=user,
+                **{vote_for: content}
+            )
+
+            if created:
+                # Tạo mới vote
+                vote.vote_type = vote_type
+                vote.save()
+
+                # Nếu upvote → cộng điểm chủ sở hữu
+                if action_type == 'upvote':
+                    update_reputation(content_owner_info, action_type, vote_for, action='add')
+                # Nếu downvote → trừ điểm chủ sở hữu + trừ penalty người downvote
+                else:
+                    update_reputation(content_owner_info, action_type, vote_for, action='add')
+                    if not voted_by_owner:
+                        downvoter_info = UserInformation.objects.get(user=user)
+                        update_downvote_penalty(downvoter_info, action='add')
+                return Response({"success": True, "action": "created"}, status=201)
+
+            if vote.vote_type == vote_type:
+                # Bỏ vote
+                vote.delete()
+
+                # Gỡ điểm cũ của chủ sở hữu
+                update_reputation(content_owner_info, action_type, vote_for, action='remove')
+                if action_type == 'downvote' and not voted_by_owner:
+                    downvoter_info = UserInformation.objects.get(user=user)
+                    update_downvote_penalty(downvoter_info, action='remove')
+                return Response({"success": True, "action": "removed"}, status=200)
+
+            # Đổi loại vote
+            old_action_type = 'upvote' if vote.vote_type == 'like' else 'downvote'
+            vote.vote_type = vote_type
+            vote.save()
+
+            # Gỡ điểm cũ
+            update_reputation(content_owner_info, old_action_type, vote_for, action='remove')
+            if old_action_type == 'downvote' and not voted_by_owner:
+                downvoter_info = UserInformation.objects.get(user=user)
+                update_downvote_penalty(downvoter_info, action='remove')
+
+            # Thêm điểm mới
+            update_reputation(content_owner_info, action_type, vote_for, action='add')
+            if action_type == 'downvote' and not voted_by_owner:
+                downvoter_info = UserInformation.objects.get(user=user)
+                update_downvote_penalty(downvoter_info, action='add')
+
+            return Response({"success": True, "action": "updated"}, status=200)
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return Response({"error": "Lỗi máy chủ"}, status=500)
+
+
 
 class StudentDetailQuestionView(APIView):
     permission_classes = [AllowAny]
@@ -46,70 +176,99 @@ class StudentDetailQuestionView(APIView):
     def post(self, request):
         logger.info(f"Request data: {request.data}")
 
+        # Xác thực user
         user, error_response = get_authenticated_user(request)
         if error_response:
-            logger.error(f"Error in getting authenticated user: {error_response}")
             return error_response
 
-        vote_type = request.data.get('vote_type')
-        vote_for = request.data.get('vote_for')
+        vote_type = request.data.get('vote_type')  # like | dislike
+        vote_for = request.data.get('vote_for')    # question | answer
         content_id = request.data.get('content_id')
 
         # Validate
         if vote_type not in ['like', 'dislike'] or vote_for not in ['question', 'answer'] or not content_id:
-            logger.warning("Dữ liệu không hợp lệ.")
-            return Response({"error": "Dữ liệu không hợp lệ"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Dữ liệu không hợp lệ"}, status=400)
 
-        # Get model & vote model
+        action_type = 'upvote' if vote_type == 'like' else 'downvote'
         content_model = Question if vote_for == 'question' else Answer
         vote_model = VoteForQuestion if vote_for == 'question' else VoteForAnswer
 
-        # Get content
+        # Lấy content
         try:
             content = content_model.objects.get(id=content_id)
         except content_model.DoesNotExist:
-            logger.error(f"Nội dung không tồn tại: {content_id}")
-            return Response({"error": "Nội dung không tồn tại"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Nội dung không tồn tại"}, status=404)
 
-        # Reputation info
-        content_owner = content.user
-        content_owner_info = get_object_or_404(UserInformation, user=content_owner)
-        voted_by_owner = user == content_owner
+        content_owner_info = get_object_or_404(UserInformation, user=content.user)
+        is_owner = (user == content.user)
 
         try:
             with transaction.atomic():
-                # Tìm hoặc tạo vote
                 vote, created = vote_model.objects.get_or_create(
                     user=user,
-                    **{f"{vote_for}": content}  # ví dụ: question=content hoặc answer=content
+                    **{vote_for: content}
                 )
 
+                # 1) Nếu vote mới
                 if created:
                     vote.vote_type = vote_type
                     vote.save()
-                    update_reputation(content_owner_info, vote_for, vote_type, action='add', voted_by_owner=voted_by_owner)
-                    return Response({"success": True, "action": "created"}, status=status.HTTP_201_CREATED)
 
-                # Nếu đã tồn tại và loại giống nhau => xóa
+                    if action_type == 'upvote':
+                        update_reputation(content_owner_info, action_type, vote_for, action='add')
+                    else:
+                        update_reputation(content_owner_info, action_type, vote_for, action='add')
+                        if not is_owner:
+                            # Người downvote -1
+                            UserInformation.objects.filter(user=user).update(
+                                reputation=models.F('reputation') - 1
+                            )
+                    return Response({"success": True, "action": "created"}, status=201)
+
+                # 2) Nếu đã vote cùng loại → gỡ
                 if vote.vote_type == vote_type:
                     vote.delete()
-                    update_reputation(content_owner_info, vote_for, vote_type, action='remove', voted_by_owner=voted_by_owner)
-                    return Response({"success": True, "action": "removed"}, status=status.HTTP_200_OK)
 
-                # Nếu đổi loại vote
-                update_reputation(content_owner_info, vote_for, vote.vote_type, action='remove', voted_by_owner=voted_by_owner)
+                    if action_type == 'upvote':
+                        update_reputation(content_owner_info, action_type, vote_for, action='remove')
+                    else:
+                        update_reputation(content_owner_info, action_type, vote_for, action='remove')
+                        if not is_owner:
+                            UserInformation.objects.filter(user=user).update(
+                                reputation=models.F('reputation') + 1
+                            )
+                    return Response({"success": True, "action": "removed"}, status=200)
+
+                # 3) Nếu đổi loại vote
+                old_action_type = 'upvote' if vote.vote_type == 'like' else 'downvote'
                 vote.vote_type = vote_type
                 vote.save()
-                update_reputation(content_owner_info, vote_for, vote_type, action='add', voted_by_owner=voted_by_owner)
-                return Response({"success": True, "action": "updated"}, status=status.HTTP_200_OK)
 
-        except IntegrityError as e:
-            logger.error(f"IntegrityError: {e}")
-            return Response({"error": "Lỗi cơ sở dữ liệu."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                # Bỏ điểm cũ
+                if old_action_type == 'upvote':
+                    update_reputation(content_owner_info, old_action_type, vote_for, action='remove')
+                else:
+                    update_reputation(content_owner_info, old_action_type, vote_for, action='remove')
+                    if not is_owner:
+                        UserInformation.objects.filter(user=user).update(
+                            reputation=models.F('reputation') + 1
+                        )
+
+                # Thêm điểm mới
+                if action_type == 'upvote':
+                    update_reputation(content_owner_info, action_type, vote_for, action='add')
+                else:
+                    update_reputation(content_owner_info, action_type, vote_for, action='add')
+                    if not is_owner:
+                        UserInformation.objects.filter(user=user).update(
+                            reputation=models.F('reputation') - 1
+                        )
+
+                return Response({"success": True, "action": "updated"}, status=200)
 
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return Response({"error": "Đã xảy ra lỗi khi xử lý yêu cầu"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error processing vote: {e}")
+            return Response({"error": "Lỗi máy chủ"}, status=500)
 
 
     def get(self, request, question_id):

@@ -6,6 +6,11 @@ from django.views.decorators.csrf import csrf_exempt
 from api.views.auth.authHelper import get_authenticated_user
 from api.models import Question, QuestionTag, QuestionTagMap, Answer, UserInformation
 from django.utils.timezone import now
+from django.shortcuts import get_object_or_404
+from api.views.student.student_forum.student_question.student_detailquestion import update_reputation
+import logging
+
+logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name="dispatch")
 class StudentAskQuestionView(View):
@@ -66,6 +71,7 @@ class StudentAskQuestionView(View):
             return JsonResponse({"error": str(e)}, status=500)
 
     def put(self, request, question_id, *args, **kwargs):
+        # Xác thực người dùng
         user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
@@ -75,12 +81,14 @@ class StudentAskQuestionView(View):
             title = data.get("title")
             content = data.get("content") or data.get("description")
             tags = data.get("tags")
-            bounty_amount = data.get("bounty_amount", 0)
+            bounty_amount = int(data.get("bounty_amount", 0))
             accepted_answer_id = data.get("accepted_answer_id")
 
+            # Validate
             if not title or not content or not tags:
                 return JsonResponse({"error": "Vui lòng điền đầy đủ thông tin!"}, status=400)
 
+            # Lấy câu hỏi
             try:
                 question = Question.objects.get(id=question_id)
             except Question.DoesNotExist:
@@ -89,26 +97,44 @@ class StudentAskQuestionView(View):
             if question.user != user:
                 return JsonResponse({"error": "Bạn không có quyền chỉnh sửa câu hỏi của người khác!"}, status=403)
 
-            # Nếu có accepted_answer_id thì kiểm tra
-            if accepted_answer_id:
-                try:
-                    answer = Answer.objects.get(id=accepted_answer_id, question=question)
-                    
-                    # Nếu trước đó chưa có hoặc accepted answer thay đổi
-                    if question.accepted_answer_id != accepted_answer_id:
-                        question.accepted_answer_id = accepted_answer_id
-                        
-                        # ✅ Tăng reputation cho người trả lời
-                        answer_author_info = answer.user
-                        answer_author_info.reputation += 15
-                        answer_author_info.save()
-                except Answer.DoesNotExist:
-                    return JsonResponse(
-                        {"error": "Câu trả lời không hợp lệ hoặc không thuộc câu hỏi này!"},
-                        status=400
-                    )
+            # Xử lý accepted_answer_id
+            old_accepted_id = question.accepted_answer_id
+            new_accepted_id = accepted_answer_id if accepted_answer_id else None
 
-            # Cập nhật các trường còn lại
+            # Nếu id cũ khác id mới → xử lý cộng/trừ điểm
+            if old_accepted_id and old_accepted_id != new_accepted_id:
+                try:
+                    old_answer = Answer.objects.get(id=old_accepted_id, question=question)
+                    old_author_info = get_object_or_404(UserInformation, user=old_answer.user)
+                    # Trừ điểm cũ
+                    update_reputation(
+                        user_info=old_author_info,
+                        action_type='accepted',
+                        target_type='answer',
+                        action='remove'
+                    )
+                except Answer.DoesNotExist:
+                    logger.warning("Câu trả lời cũ không tồn tại!")
+
+            if new_accepted_id and old_accepted_id != new_accepted_id:
+                try:
+                    new_answer = Answer.objects.get(id=new_accepted_id, question=question)
+                    new_author_info = get_object_or_404(UserInformation, user=new_answer.user)
+                    # Cộng điểm mới
+                    update_reputation(
+                        user_info=new_author_info,
+                        action_type='accepted',
+                        target_type='answer',
+                        action='add'
+                    )
+                    question.accepted_answer_id = new_accepted_id
+                except Answer.DoesNotExist:
+                    return JsonResponse({"error": "Câu trả lời không hợp lệ!"}, status=400)
+            elif not new_accepted_id:
+                # Hủy accepted
+                question.accepted_answer_id = None
+
+            # Cập nhật các trường
             question.title = title
             question.content = content
             question.bounty_amount = bounty_amount
@@ -117,7 +143,6 @@ class StudentAskQuestionView(View):
 
             # Cập nhật tags
             QuestionTagMap.objects.filter(question=question).delete()
-
             tag_names = set(tag.strip() for tag in tags) if isinstance(tags, list) else set(
                 tag.strip() for tag in tags.split(",") if tag.strip()
             )
@@ -130,6 +155,7 @@ class StudentAskQuestionView(View):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Dữ liệu không hợp lệ!"}, status=400)
         except Exception as e:
+            logger.error(f"Lỗi khi cập nhật câu hỏi: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     def get(self, request, question_id, *args, **kwargs):

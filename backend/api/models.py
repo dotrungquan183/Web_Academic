@@ -26,6 +26,21 @@ class AutoApproveSetting(models.Model):
     def is_auto_approve_active(self):
         today = timezone.now().date()
         return self.enabled and self.from_date <= today <= self.to_date
+
+class Reputation(models.Model):
+    rule_key = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=255)
+    point_change = models.IntegerField()
+    user_id_last_update = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reputation_updates'
+    )
+
+    def __str__(self):
+        return f"{self.rule_key} ({self.point_change:+} điểm)"
 class Course(models.Model):
     LEVEL_CHOICES = [
         ('basic', 'Dễ'),
@@ -55,7 +70,7 @@ class Course(models.Model):
         if setting and setting.is_auto_approve_active():
             self.is_approve = 1
         super().save(*args, **kwargs)
-        
+
     class Meta:
         db_table = 'course'
 
