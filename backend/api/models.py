@@ -10,6 +10,22 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import timedelta
 from django.utils import timezone
+
+class AutoApproveSetting(models.Model):
+    TYPE_CHOICES = [
+        ('question', 'Câu hỏi'),
+        ('answer', 'Câu trả lời'),
+        ('comment', 'Bình luận'),
+        ('courses', 'Khóa học'),
+    ]
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, unique=True)
+    enabled = models.BooleanField(default=False)
+    from_date = models.DateField(null=True, blank=True)
+    to_date = models.DateField(null=True, blank=True)
+
+    def is_auto_approve_active(self):
+        today = timezone.now().date()
+        return self.enabled and self.from_date <= today <= self.to_date
 class Course(models.Model):
     LEVEL_CHOICES = [
         ('basic', 'Dễ'),
@@ -33,6 +49,13 @@ class Course(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt khóa học"
     )
+
+    def save(self, *args, **kwargs):
+        setting = AutoApproveSetting.objects.filter(type='courses').first()
+        if setting and setting.is_auto_approve_active():
+            self.is_approve = 1
+        super().save(*args, **kwargs)
+        
     class Meta:
         db_table = 'course'
 
@@ -133,6 +156,13 @@ class Question(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt câu hỏi"
     )
+    def save(self, *args, **kwargs):
+        # Check auto approve setting
+        setting = AutoApproveSetting.objects.filter(type='question').first()
+        if setting and setting.is_auto_approve_active():
+            self.is_approve = 1
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
 
@@ -147,6 +177,13 @@ class Answer(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt câu trả lời"
     )
+
+    def save(self, *args, **kwargs):
+        setting = AutoApproveSetting.objects.filter(type='answer').first()
+        if setting and setting.is_auto_approve_active():
+            self.is_approve = 1
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Answer {self.id} for Question {self.question_id}"
 
@@ -318,6 +355,13 @@ class Comment(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt bình luận"
     )
+
+    def save(self, *args, **kwargs):
+        setting = AutoApproveSetting.objects.filter(type='comment').first()
+        if setting and setting.is_auto_approve_active():
+            self.is_approve = 1
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.type_comment} - {self.content[:30]}"
 
@@ -339,6 +383,13 @@ class CommentForQuestion(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt bình luận câu hỏi"
     )
+
+    def save(self, *args, **kwargs):
+        setting = AutoApproveSetting.objects.filter(type='comment').first()
+        if setting and setting.is_auto_approve_active():
+            self.is_approve = 1
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = 'comments_for_questions'
         ordering = ['-created_at']
@@ -361,6 +412,12 @@ class CommentForAnswer(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt bình luận câu trả lời"
     )
+
+    def save(self, *args, **kwargs):
+        setting = AutoApproveSetting.objects.filter(type='comment').first()
+        if setting and setting.is_auto_approve_active():
+            self.is_approve = 1
+        super().save(*args, **kwargs)
     class Meta:
         db_table = 'comments_for_answers'
         ordering = ['-created_at']
@@ -387,3 +444,4 @@ class LessonDocumentView(models.Model):
             return f"{self.user.username} viewed {self.lesson.title} at {self.view_at}"
     class Meta:
         db_table = 'lesson_document_view'
+

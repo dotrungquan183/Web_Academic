@@ -144,18 +144,33 @@ const AdminManageDetailAccount = () => {
     courses: false, // ✅ Bổ sung courses vào đây
 
   });
-  const handleSaveAutoApproveConfig = () => {
-    console.log("Lưu cấu hình:", {
-      autoApprove,
-      applyFrom,
-      applyTo
-    });
+  const handleSaveAutoApproveConfig = async () => {
+    console.log('Lưu cấu hình:', { autoApprove });
 
-    alert("Đã lưu cấu hình duyệt tự động.");
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/auto_approve/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Nếu bạn cần token auth:
+          // 'Authorization': `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({ autoApprove })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert('✅ Đã lưu cấu hình duyệt tự động.');
+        console.log('Server response:', data);
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Lỗi: ${errorData.error || 'Không xác định'}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('❌ Có lỗi mạng.');
+    }
   };
-
-  const [applyFrom, setApplyFrom] = useState("2025-06-13");
-  const [applyTo, setApplyTo] = useState("2025-12-31");
 
   const [permissions, setPermissions] = useState([
     { action_key: 'ask_question', description: 'Đặt câu hỏi', min_reputation: 1 },
@@ -241,30 +256,10 @@ const AdminManageDetailAccount = () => {
   };
 
   const [logoPreview, setLogoPreview] = useState(null); // For preview
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
-  const [maintenance, setMaintenance] = useState({ from: "", to: "", note: "" });
-
-  const stats = [
-    { title: "Tổng số người dùng", value: 1240 },
-    { title: "Tổng request trong ngày", value: 30892 },
-    { title: "Sử dụng CPU", value: "35%" },
-    { title: "Sử dụng RAM", value: "62%" },
-    { title: "Tổng số bài đăng", value: 894 },
-    { title: "Báo cáo gần đây", value: 12 },
-  ];
 
   const handleInputChange = (field, value) => {
     setSystemInfo((prev) => ({ ...prev, [field]: value }));
   };
-
-  const handleDateChange = (field, value) => {
-    setDateRange((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleMaintenanceChange = (field, value) => {
-    setMaintenance((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -273,93 +268,8 @@ const AdminManageDetailAccount = () => {
     }
   };
 
-  const handleBackup = () => {
-    alert("Đã tiến hành backup dữ liệu hệ thống.");
-  };
-
-  const handleSaveMaintenance = () => {
-    alert(`Đã lưu lịch bảo trì từ ${maintenance.from} đến ${maintenance.to}`);
-  };
-
   return (
     <div style={styles.pageWrapper}>
-      {/* Bộ lọc thống kê */}
-      <div style={styles.section}>
-        <div style={styles.dateFilter}>
-          <div>
-            <label style={styles.label}>Từ ngày:</label>
-            <input
-              type="date"
-              value={dateRange.from}
-              onChange={(e) => handleDateChange("from", e.target.value)}
-              style={styles.input}
-            />
-          </div>
-          <div>
-            <label style={styles.label}>Đến ngày:</label>
-            <input
-              type="date"
-              value={dateRange.to}
-              onChange={(e) => handleDateChange("to", e.target.value)}
-              style={styles.input}
-            />
-          </div>
-        </div>
-        <div style={styles.sectionTitle}>Cấu hình máy chủ</div>
-        <div style={styles.statsGrid}>
-          {stats.map((stat, idx) => {
-            const cardColors = [
-              "#d1ecf1", "#d4edda", "#fff3cd", "#f8d7da", "#e2e3e5", "#fefefe",
-            ];
-            const bgColor = cardColors[idx % cardColors.length];
-            return (
-              <div
-                key={idx}
-                style={{
-                  ...styles.statCard,
-                  backgroundColor: bgColor,
-                  border: "1px solid #ccc",
-                }}
-              >
-                <div style={styles.statTitle}>{stat.title}</div>
-                <div style={styles.statValue}>{stat.value}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      {/* Thống kê dữ liệu */}
-      <div style={styles.section}>
-        <div style={styles.sectionTitle}>Dữ liệu</div>
-        <div style={styles.statsGrid}>
-          {[
-            { title: "Dung lượng cơ sở dữ liệu", value: "524 MB" },
-            { title: "Tổng số bảng", value: 37 },
-            { title: "Tổng số bản ghi", value: "2,481,943" },
-            { title: "Bảng lớn nhất", value: "orders (1.2M bản ghi)" },
-            { title: "Tốc độ tăng trưởng dữ liệu", value: "12% / tháng" },
-          ].map((stat, idx) => {
-            const cardColors = [
-              "#f0f9ff", "#fef3c7", "#ecfccb", "#fde2e4", "#e0f2fe", "#ede9fe", "#fff7ed",
-            ];
-            const bgColor = cardColors[idx % cardColors.length];
-            return (
-              <div
-                key={idx}
-                style={{
-                  ...styles.statCard,
-                  backgroundColor: bgColor,
-                  border: "1px solid #ccc",
-                }}
-              >
-                <div style={styles.statTitle}>{stat.title}</div>
-                <div style={styles.statValue}>{stat.value}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       <div style={styles.section}>
         <div style={styles.sectionTitle}>Thông tin hệ thống</div>
         <div style={styles.formRow}>
@@ -558,8 +468,8 @@ const AdminManageDetailAccount = () => {
                   : type === "answer"
                     ? "Câu trả lời"
                     : type === "courses"
-                      ? "Khóa học"                    
-                    : "Bình luận"}
+                      ? "Khóa học"
+                      : "Bình luận"}
               </label>
 
               {/* Switch ON/OFF */}
@@ -630,48 +540,6 @@ const AdminManageDetailAccount = () => {
             </button>
           </div>
         </div>
-      </div>
-
-
-
-      {/* Bảo trì hệ thống */}
-      <div style={styles.section}>
-        <div style={styles.sectionTitle}>Bảo trì hệ thống</div>
-        <div style={styles.dateFilter}>
-          <div>
-            <label style={styles.label}>Từ ngày:</label>
-            <input
-              type="date"
-              value={maintenance.from}
-              onChange={(e) => handleMaintenanceChange("from", e.target.value)}
-              style={styles.input}
-            />
-          </div>
-          <div>
-            <label style={styles.label}>Đến ngày:</label>
-            <input
-              type="date"
-              value={maintenance.to}
-              onChange={(e) => handleMaintenanceChange("to", e.target.value)}
-              style={styles.input}
-            />
-          </div>
-        </div>
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Lý do bảo trì:</label>
-          <textarea
-            value={maintenance.note}
-            onChange={(e) => handleMaintenanceChange("note", e.target.value)}
-            style={{ ...styles.input, height: "80px", resize: "vertical" }}
-          />
-        </div>
-        <button style={styles.button} onClick={handleBackup}>Backup dữ liệu</button>
-        <button
-          style={{ ...styles.button, backgroundColor: "#28a745" }}
-          onClick={handleSaveMaintenance}
-        >
-          Lưu lịch bảo trì
-        </button>
       </div>
     </div>
   );
