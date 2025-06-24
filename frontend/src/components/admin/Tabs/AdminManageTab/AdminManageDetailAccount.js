@@ -128,15 +128,6 @@ const styles = {
 
 
 const AdminManageDetailAccount = () => {
-
-  const [systemInfo, setSystemInfo] = useState({
-    name: "EduConnect Portal",
-    description: "Trang quản trị hệ thống giáo dục nội bộ",
-    email: "support@educonnect.vn",
-    hotline: "1800 6868",
-    address: "12 Nguyễn Văn Bảo, Q. Gò Vấp, TP. Hồ Chí Minh",
-    logo: "", // This will store the actual File object
-  });
   const [autoApprove, setAutoApprove] = useState({
   question: { enabled: false, from: "", to: "" },
   answer: { enabled: false, from: "", to: "" },
@@ -250,14 +241,17 @@ useEffect(() => {
     setSelectedPermissionKey(null);
   };
 
-  const [reputationRules, setReputationRules] = useState([
-    { rule_key: 'new_user', description: 'Người dùng mới', point_change: 5 },
-    { rule_key: 'upvote_answer', description: 'Câu trả lời được upvote', point_change: 10 },
-    { rule_key: 'upvote_question', description: 'Câu hỏi được upvote', point_change: 5 },
-    { rule_key: 'answer_accepted', description: 'Câu trả lời được chọn đúng', point_change: 15 },
-    { rule_key: 'downvote_received', description: 'Câu hỏi/câu trả lời bị downvote', point_change: -2 },
-    { rule_key: 'downvote_given', description: 'Downvote người khác', point_change: -1 },
-  ]);
+ const [reputationRules, setReputationRules] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/admin/admin_reputationlist/") // Đường dẫn API, chỉnh đúng theo setup của bạn
+      .then((res) => {
+        if (!res.ok) throw new Error("Error fetching reputations");
+        return res.json();
+      })
+      .then((data) => setReputationRules(data))
+      .catch((err) => console.error(err));
+  }, []);
   const [reputationRule, setReputationRule] = useState({ rule_key: '', description: '', point_change: 0 });
 
   const handleReputationChange = (field, value) => {
@@ -279,74 +273,9 @@ useEffect(() => {
     setReputationRule({ rule_key: '', description: '', point_change: 0 });
   };
 
-  const [logoPreview, setLogoPreview] = useState(null); // For preview
-
-  const handleInputChange = (field, value) => {
-    setSystemInfo((prev) => ({ ...prev, [field]: value }));
-  };
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSystemInfo((prev) => ({ ...prev, logo: file }));
-      setLogoPreview(URL.createObjectURL(file)); // Create URL for preview
-    }
-  };
-
   return (
     <div style={styles.pageWrapper}>
       <div style={styles.section}>
-        <div style={styles.sectionTitle}>Thông tin hệ thống</div>
-        <div style={styles.formRow}>
-          {/* Cột trái - Thông tin hệ thống */}
-          <div style={styles.column}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Tên hệ thống:</label>
-              <input
-                type="text"
-                value={systemInfo.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Giới thiệu:</label>
-              <textarea
-                value={systemInfo.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                style={{ ...styles.input, height: "80px", resize: "vertical" }}
-              />
-            </div>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email liên hệ:</label>
-              <input
-                type="email"
-                value={systemInfo.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Hotline:</label>
-              <input
-                type="text"
-                value={systemInfo.hotline}
-                onChange={(e) => handleInputChange("hotline", e.target.value)}
-                style={styles.input}
-              />
-            </div>
-          </div>
-
-          {/* Cột phải - Upload logo */}
-          <div style={styles.column}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Tải lên Logo:</label>
-              <input type="file" accept="image/*" onChange={handleLogoChange} style={styles.input} />
-              {logoPreview && (
-                <img src={logoPreview} alt="Logo Preview" style={styles.logoPreview} />
-              )}
-            </div>
-          </div>
-        </div>
         <div style={styles.formRow}>
           <div style={{ ...styles.column, width: "100%" }}>
             <h3 style={{ fontWeight: "bold", marginTop: "20px" }}>Phân quyền theo điểm uy tín</h3>

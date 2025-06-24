@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Question,  Chapter, Lesson, LessonVideoView
+from .models import Course, Question,  Chapter, Lesson, LessonVideoView, Reputation
 import datetime
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -63,3 +63,8 @@ class LessonVideoViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonVideoView
         fields = ['lesson', 'user']
+
+class ReputationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reputation
+        fields = ['rule_key', 'description', 'point_change']
