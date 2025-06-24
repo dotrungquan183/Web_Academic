@@ -25,32 +25,7 @@ const pStyle = (color) => ({
   fontWeight: "bold",
   color,
 });
-const fakeLoginData = [
-  { hour: '00h', logins: 2 },
-  { hour: '01h', logins: 1 },
-  { hour: '02h', logins: 0 },
-  { hour: '03h', logins: 0 },
-  { hour: '04h', logins: 1 },
-  { hour: '05h', logins: 3 },
-  { hour: '06h', logins: 7 },
-  { hour: '07h', logins: 14 },
-  { hour: '08h', logins: 18 },
-  { hour: '09h', logins: 21 },
-  { hour: '10h', logins: 15 },
-  { hour: '11h', logins: 10 },
-  { hour: '12h', logins: 6 },
-  { hour: '13h', logins: 9 },
-  { hour: '14h', logins: 11 },
-  { hour: '15h', logins: 12 },
-  { hour: '16h', logins: 8 },
-  { hour: '17h', logins: 5 },
-  { hour: '18h', logins: 3 },
-  { hour: '19h', logins: 2 },
-  { hour: '20h', logins: 1 },
-  { hour: '21h', logins: 0 },
-  { hour: '22h', logins: 0 },
-  { hour: '23h', logins: 1 },
-];
+
 const UserLoginChart = () => {
   const [showChart, setShowChart] = useState(false);
 
@@ -91,66 +66,77 @@ const UserLoginChart = () => {
   );
 };
 const AdminManageAccount = () => {
+  const [hourlyLoginData, setHourlyLoginData] = useState([]); // lưu mảng {hour, logins}
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/admin/admin_user/')
+      .then(res => res.json())
+      .then(data => {
+        console.log('=== Raw user data:', data);
+        setUsers(data);
+
+        // Lấy ngày hôm nay (local)
+        const now = new Date();
+        const todayYear = now.getFullYear();
+        const todayMonth = now.getMonth(); // 0-11
+        const todayDate = now.getDate();
+
+        const countsByHour = Array(24).fill(0);
+
+        data.forEach((user) => {
+          user.login_histories?.forEach((ts) => {
+            const dateObj = new Date(ts.replace(' ', 'T'));
+            console.log(
+              'checking login:',
+              ts,
+              '| local:',
+              dateObj.getFullYear(),
+              dateObj.getMonth() + 1,
+              dateObj.getDate(),
+              '| today:',
+              todayYear,
+              todayMonth + 1,
+              todayDate
+            );
+
+            if (
+              dateObj.getFullYear() === todayYear &&
+              dateObj.getMonth() === todayMonth &&
+              dateObj.getDate() === todayDate
+            ) {
+              countsByHour[dateObj.getHours()] += 1;
+            }
+          });
+        });
+
+        const hourlyData = countsByHour.map((count, i) => ({
+          hour: `${i.toString().padStart(2, '0')}h`,
+          logins: count,
+        }));
+        setHourlyLoginData(hourlyData);
+        console.log('=== hourlyLoginData:', hourlyData); // log check
+      })
+      .catch(err => console.error('Error fetching users:', err));
+  }, []);
+
+
   // Sample data combining User_info and auth_user tables
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      user_id: 1,
-      username: 'nguyenvana',
-      email: 'nguyenvana@email.com',
-      full_name: 'Nguyễn Văn A',
-      phone: '0123456789',
-      birth_date: '1990-05-15',
-      gender: 'Nam',
-      user_type: 'giáo viên',
-      address: '123 Đường ABC, Quận 1, TP.HCM',
-      avatar: 'http://localhost:8000/image/1.png',
-      reputation: 85,
-      is_active: true,
-      is_staff: true,
-      is_superuser: false,
-      last_login: '2024-06-10 14:30:00',
-      date_joined: '2023-01-15 09:00:00'
-    },
-    {
-      id: 2,
-      user_id: 2,
-      username: 'tranthib',
-      email: 'tranthib@email.com',
-      full_name: 'Trần Thị B',
-      phone: '0987654321',
-      birth_date: '2005-08-20',
-      gender: 'Nữ',
-      user_type: 'học sinh',
-      address: '456 Đường XYZ, Quận 2, TP.HCM',
-      avatar: 'http://localhost:8000/image/6.png',
-      reputation: 72,
-      is_active: true,
-      is_staff: false,
-      is_superuser: false,
-      last_login: '2024-06-10 10:15:00',
-      date_joined: '2023-03-20 11:30:00'
-    },
-    {
-      id: 3,
-      user_id: 3,
-      username: 'admin',
-      email: 'admin@system.com',
-      full_name: 'Quản trị viên',
-      phone: '0111222333',
-      birth_date: '1985-12-01',
-      gender: 'Nam',
-      user_type: 'admin',
-      address: 'Trụ sở chính',
-      avatar: 'http://localhost:8000/image/3.png',
-      reputation: 100,
-      is_active: true,
-      is_staff: true,
-      is_superuser: true,
-      last_login: '2024-06-10 16:45:00',
-      date_joined: '2022-01-01 00:00:00'
-    }
-  ]);
+  const [users, setUsers] = useState([]); // Khởi tạo rỗng
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/admin/admin_user/')
+      .then((res) => res.json())
+      .then((data) => setUsers(data))  // Gán data trả về
+      .catch((error) => console.error('Error fetching users:', error));
+  }, []);
+
+  const today = new Date().toISOString().slice(0, 10); // Lấy yyyy-mm-dd hôm nay
+  const totalUsers = users.length;
+  const totalTeachers = users.filter((u) => u.user_type === 'Giảng viên').length;
+  const totalStudents = users.filter((u) => u.user_type === 'Sinh viên').length;
+  const loggedInToday = users.filter(
+    (u) => u.last_login && u.last_login.startsWith(today)
+  ).length;
 
   const [filteredUsers, setFilteredUsers] = useState(users);
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,13 +154,15 @@ const AdminManageAccount = () => {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone.includes(searchTerm)
-      );
-    }
+  const q = searchTerm.toLowerCase();
+  filtered = filtered.filter((user) =>
+    (user.full_name ?? '').toLowerCase().includes(q) ||
+    (user.username ?? '').toLowerCase().includes(q) ||
+    (user.email ?? '').toLowerCase().includes(q) ||
+    (user.phone ?? '').toLowerCase().includes(q)
+  );
+}
+
 
     // Type filter
     if (filterType !== 'all') {
@@ -275,21 +263,21 @@ const AdminManageAccount = () => {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "1.5rem" }}>
             <div style={{ ...cardStyle, background: "#dbeafe" }}>
               <h4 style={h4Style("#1e3a8a")}>Tổng người dùng</h4>
-              <p style={pStyle("#2563eb")}>1,235</p>
+              <p style={pStyle("#2563eb")}>{totalUsers}</p>
             </div>
             <div style={{ ...cardStyle, background: "#d1fae5" }}>
               <h4 style={h4Style("#065f46")}>Số giáo viên</h4>
-              <p style={pStyle("#059669")}>85</p>
+              <p style={pStyle("#059669")}>{totalTeachers}</p>
             </div>
             <div style={{ ...cardStyle, background: "#ede9fe" }}>
               <h4 style={h4Style("#6b21a8")}>Số học sinh</h4>
-              <p style={pStyle("#9333ea")}>1,050</p>
+              <p style={pStyle("#9333ea")}>{totalStudents}</p>
             </div>
             <div style={{ ...cardStyle, background: "#ffedd5" }}>
               <h4 style={{ ...h4Style("#c2410c"), display: "flex", alignItems: "center", gap: "0.25rem" }}>
                 <Clock size={16} /> Đăng nhập hôm nay
               </h4>
-              <p style={pStyle("#ea580c")}>176</p>
+              <p style={pStyle("#ea580c")}>{loggedInToday}</p>
             </div>
           </div>
 
@@ -298,7 +286,7 @@ const AdminManageAccount = () => {
           <div className="chart-container bg-white shadow rounded-xl p-4">
             <h3 className="text-lg font-semibold mb-4">Lượt đăng nhập hôm nay theo giờ</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={fakeLoginData}>
+              <BarChart data={hourlyLoginData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" />
                 <YAxis />
@@ -378,7 +366,11 @@ const AdminManageAccount = () => {
                   <tr key={user.id} class="aduserman-row-hover">
                     <td>
                       <div class="aduserman-user-info">
-                        <img class="aduserman-avatar" src={user.avatar} alt="" />
+                        <img
+                          className="aduserman-avatar"
+                          src={`http://localhost:8000${user.avatar}`}
+                          alt={user.full_name}
+                        />
                         <div class="aduserman-user-text">
                           <div class="aduserman-user-name">{user.full_name}</div>
                           <div class="aduserman-username">@{user.username}</div>

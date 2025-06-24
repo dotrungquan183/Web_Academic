@@ -1,11 +1,11 @@
+from api.models import LoginHistory  # ✅ import model LoginHistory
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
-from django.contrib.auth.models import update_last_login  # ✅ import hàm này
+from django.contrib.auth.models import User, update_last_login
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from api.models import UserInformation
+from api.models import UserInformation, LoginHistory  # thêm LoginHistory
 from django.conf import settings
 
 @api_view(['POST'])
@@ -25,27 +25,35 @@ def login_view(request):
     except UserInformation.DoesNotExist:
         return Response({"error": "Không tìm thấy thông tin user!"}, status=status.HTTP_404_NOT_FOUND)
 
-    # ✅ Cập nhật last_login ngay tại đây
+    # ✅ Cập nhật last_login
     update_last_login(None, user)
 
+    # ✅ Ghi vào bảng LoginHistory
+    LoginHistory.objects.create(user=user)
+
+    # Map role
     user_type = user_info.user_type.lower()
     role_map = {"sinh viên": "student", "giảng viên": "teacher", "admin": "admin"}
     role = role_map.get(user_type, "user")
 
+    # Xử lý avatar
     avatar_path = user_info.avatar.lstrip("/") if user_info.avatar else "default-avatar.png"
     if avatar_path and settings.MEDIA_URL.lstrip("/") in avatar_path:
         avatar_path = avatar_path[len(settings.MEDIA_URL.lstrip("/")):]
     avatar_url = request.build_absolute_uri(f"{settings.MEDIA_URL.rstrip('/')}/{avatar_path}")
 
-    # Tạo token JWT
+    # Tạo JWT
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
 
-    return Response({
-        "message": "Đăng nhập thành công!",
-        "role": role,
-        "username": user.username,
-        "avatar": avatar_url,
-        "token": access_token,
-        "refresh_token": str(refresh)
-    }, status=status.HTTP_200_OK)
+    return Response(
+        {
+            "message": "Đăng nhập thành công!",
+            "role": role,
+            "username": user.username,
+            "avatar": avatar_url,
+            "token": access_token,
+            "refresh_token": str(refresh),
+        },
+        status=status.HTTP_200_OK,
+    )

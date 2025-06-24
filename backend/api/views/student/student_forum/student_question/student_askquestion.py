@@ -8,6 +8,8 @@ from api.models import Question, QuestionTag, QuestionTagMap, Answer, UserInform
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
 from api.views.student.student_forum.student_question.student_detailquestion import update_reputation
+from django.core.exceptions import PermissionDenied
+from api.views.student.student_forum.student_question.student_detailquestion import check_permission_and_update_reputation
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,38 +17,45 @@ logger = logging.getLogger(__name__)
 @method_decorator(csrf_exempt, name="dispatch")
 class StudentAskQuestionView(View):
     def post(self, request, *args, **kwargs):
-        # Lấy thông tin người dùng từ request
+        # Lấy thông tin người dùng
         user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
 
         try:
-            # Lấy dữ liệu từ body request
+            # ✅ Check quyền đặt câu hỏi
+            check_permission_and_update_reputation(user, "ask_question")
+
+            # Parse body
             data = json.loads(request.body)
             title = data.get("title")
-            description = data.get("content")  # frontend dùng "content" thay vì "description"
+            description = data.get("content")  # frontend gửi "content"
             tags = data.get("tags")
-            bounty_amount = data.get("bounty_amount", 0)
+            bounty_amount = int(data.get("bounty_amount", 0))
 
-            # Kiểm tra các trường dữ liệu bắt buộc
-            if not title or not description or not tags or not isinstance(tags, list) or len([t for t in tags if isinstance(t, str) and t.strip()]) == 0:
+            # Validate đầu vào
+            if (
+                not title
+                or not description
+                or not tags
+                or not isinstance(tags, list)
+                or len([t for t in tags if isinstance(t, str) and t.strip()]) == 0
+            ):
                 return JsonResponse({"error": "Không đủ thông tin!"}, status=400)
 
-            # Lấy user_info để trừ điểm nếu có bounty
+            # Check thông tin user để trừ bounty nếu cần
             try:
                 user_info = UserInformation.objects.get(user=user)
             except UserInformation.DoesNotExist:
                 return JsonResponse({"error": "Không tìm thấy thông tin người dùng!"}, status=404)
 
-            # Nếu bounty_amount > 0, kiểm tra reputation đủ không
-            bounty_amount = int(bounty_amount)
             if bounty_amount > 0:
                 if user_info.reputation < bounty_amount:
                     return JsonResponse({"error": "Không đủ điểm để đặt bounty!"}, status=400)
                 user_info.reputation -= bounty_amount
                 user_info.save()
 
-            # Tạo câu hỏi mới trong cơ sở dữ liệu
+            # Tạo câu hỏi
             question = Question.objects.create(
                 user=user,
                 title=title,
@@ -54,20 +63,22 @@ class StudentAskQuestionView(View):
                 bounty_amount=bounty_amount,
             )
 
-            # Xử lý tags (nếu có)
-            tag_names = set(tag.strip() for tag in tags if tag.strip())  # Loại bỏ tag trống
+            # Xử lý tags
+            tag_names = set(tag.strip() for tag in tags if tag.strip())
             for tag_name in tag_names:
                 tag, _ = QuestionTag.objects.get_or_create(tag_name=tag_name)
                 QuestionTagMap.objects.create(question=question, tag=tag)
 
-            # Trả về thông báo thành công
             return JsonResponse({"message": "Câu hỏi đã được đăng!"}, status=201)
 
+        except PermissionDenied as pd:
+            # Người không đủ quyền thực hiện
+            return JsonResponse({"error": str(pd)}, status=403)
+
         except json.JSONDecodeError:
-            # Xử lý lỗi khi dữ liệu JSON không hợp lệ
             return JsonResponse({"error": "Dữ liệu không hợp lệ!"}, status=400)
+
         except Exception as e:
-            # Xử lý lỗi chung
             return JsonResponse({"error": str(e)}, status=500)
 
     def put(self, request, question_id, *args, **kwargs):

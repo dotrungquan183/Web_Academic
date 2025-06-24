@@ -166,6 +166,8 @@
  
 .aduserman-table-scroll {
   overflow-x: auto;
+  overflow-y: auto;
+
 }
  
 .aduserman-table {

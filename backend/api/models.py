@@ -41,6 +41,22 @@ class Reputation(models.Model):
 
     def __str__(self):
         return f"{self.rule_key} ({self.point_change:+} điểm)"
+    
+class ReputationPermission(models.Model):
+    action_key = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=255)
+    min_reputation = models.IntegerField()
+    user_id_last_update = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reputation_permission_updates'
+    )
+
+    def __str__(self):
+        return f"{self.action_key} (min rep: {self.min_reputation})"
+    
 class Course(models.Model):
     LEVEL_CHOICES = [
         ('basic', 'Dễ'),
@@ -460,3 +476,12 @@ class LessonDocumentView(models.Model):
     class Meta:
         db_table = 'lesson_document_view'
 
+class LoginHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_histories')
+    login_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-login_time']
+
+    def __str__(self):
+        return f"{self.user.username} logged at {self.login_time}"

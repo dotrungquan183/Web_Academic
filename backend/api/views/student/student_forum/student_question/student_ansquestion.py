@@ -4,16 +4,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
 import json
-from api.models import Answer, Question, UserInformation, VoteForAnswer
+from api.models import Answer, Question, UserInformation, VoteForAnswer, ReputationPermission
 from django.contrib.auth.models import User  # Import User model từ auth để lấy username
 from api.views.auth.authHelper import get_authenticated_user
 from django.utils.timezone import now
 import logging
 import traceback
-from django.db import transaction, IntegrityError
-from rest_framework.response import Response
-from rest_framework import status
-
+from django.core.exceptions import PermissionDenied
+from api.views.student.student_forum.student_question.student_detailquestion import check_permission_and_update_reputation
 logger = logging.getLogger(__name__)
 @method_decorator(csrf_exempt, name='dispatch')
 class StudentAnsQuestionView(View):
@@ -22,35 +20,60 @@ class StudentAnsQuestionView(View):
     
     def post(self, request, *args, **kwargs):
         try:
+            # 📥 Parse dữ liệu JSON
             data = json.loads(request.body.decode('utf-8'))
             print("📥 DỮ LIỆU NHẬN VỀ:", data)
-        except Exception as e:
+        except json.JSONDecodeError as e:
             print("❌ JSON lỗi:", str(e))
             return JsonResponse({'error': 'Dữ liệu không hợp lệ'}, status=400)
 
+        # 🎯 Lấy thông tin đầu vào
         question_id = data.get('question_id')
         user_id = data.get('user_id')
         content = data.get('content')
-
         if not all([question_id, user_id, content]):
             return JsonResponse({'error': 'Thiếu dữ liệu đầu vào'}, status=400)
 
+        # 🔍 Lấy Question và UserInformation
         try:
             question = get_object_or_404(Question, id=question_id)
-            user = get_object_or_404(UserInformation, user_id=user_id)
+            user_info = get_object_or_404(UserInformation, user_id=user_id)
         except Exception as e:
             print("❌ Không tìm thấy Question hoặc User:", str(e))
-            return JsonResponse({'error': 'Không tìm thấy Question hoặc User'}, status=400)
+            return JsonResponse(
+                {'error': 'Không tìm thấy Question hoặc User'},
+                status=400
+            )
 
-        # Tạo câu trả lời
-        answer = Answer.objects.create(
-            question=question,
-            user=user,
-            content=content
+        # ✅ Kiểm tra quyền và điểm uy tín
+        try:
+            check_permission_and_update_reputation(user_info, "post_answer")
+        except PermissionDenied as pd:
+            # Nếu không đủ quyền => trả lỗi rõ ràng
+            return JsonResponse(
+                {'error': str(pd)},
+                status=403
+            )
+
+        # 💬 Tạo câu trả lời
+        try:
+            answer = Answer.objects.create(
+                question=question,
+                user=user_info,
+                content=content
+            )
+        except Exception as e:
+            print("❌ Lỗi tạo Answer:", str(e))
+            return JsonResponse(
+                {'error': 'Lỗi khi lưu câu trả lời!'},
+                status=500
+            )
+
+        # 🎉 Thành công
+        return JsonResponse(
+            {'message': '✅ Trả lời thành công!', 'id': answer.id},
+            status=201
         )
-
-        return JsonResponse({'message': 'Success', 'id': answer.id}, status=201)
-
 
     def delete(self, request, answer_id=None, *args, **kwargs):
         # 1. Lấy user từ JWT

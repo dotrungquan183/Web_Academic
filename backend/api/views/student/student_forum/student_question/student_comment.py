@@ -3,13 +3,15 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from api.views.auth.authHelper import get_authenticated_user
-from api.models import CommentForQuestion, CommentForAnswer
+from api.models import CommentForQuestion, CommentForAnswer, UserInformation, ReputationPermission
 import json
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.core.exceptions import PermissionDenied
+from api.views.student.student_forum.student_question.student_detailquestion import check_permission_and_update_reputation
 @method_decorator(csrf_exempt, name="dispatch")
 class StudentCommentView(View):
     def _get_model_and_fk(self, type_comment):
@@ -23,59 +25,93 @@ class StudentCommentView(View):
         return None, None
 
     def post(self, request, *args, **kwargs):
-        try:
-            user, error_response = get_authenticated_user(request)
-            if error_response:
-                return error_response
+            try:
+                # 🔐 Xác thực người dùng
+                user, error_response = get_authenticated_user(request)
+                if error_response:
+                    return error_response
 
-            type_comment = request.POST.get("type_comment")
-            content_id = request.POST.get("content_id")
-            content = request.POST.get("content")
-            uploaded_file = request.FILES.get("comments")
+                # ✅ Fetch UserInformation để lấy điểm uy tín
+                try:
+                    user_info = UserInformation.objects.get(user=user)
+                except UserInformation.DoesNotExist:
+                    return JsonResponse(
+                        {"error": "❌ Không tìm thấy thông tin người dùng!"},
+                        status=404
+                    )
 
-            if not all([type_comment, content_id, content]):
-                return JsonResponse({"error": "Missing fields"}, status=400)
+                # 🎯 Check quyền bình luận
+                try:
+                    check_permission_and_update_reputation(user_info, "comment")
+                except PermissionDenied:
+                    # Lấy min_reputation
+                    try:
+                        perm = ReputationPermission.objects.get(action_key="comment")
+                        return JsonResponse(
+                            {"error": f"❌ Bạn cần ít nhất {perm.min_reputation} điểm uy tín để bình luận!"},
+                            status=403
+                        )
+                    except ReputationPermission.DoesNotExist:
+                        return JsonResponse(
+                            {"error": "❌ Quy tắc bình luận không tồn tại!"},
+                            status=403
+                        )
 
-            CommentModel, fk_name = self._get_model_and_fk(type_comment)
-            if not CommentModel:
-                return JsonResponse({"error": "Invalid type_comment"}, status=400)
+                # 📥 Parse request
+                type_comment = request.POST.get("type_comment")
+                content_id = request.POST.get("content_id")
+                content = request.POST.get("content")
+                uploaded_file = request.FILES.get("comments")
 
-            with transaction.atomic():
-                comment = CommentModel.objects.create(
-                    **{fk_name: int(content_id)},  # gán content_id vào question_id hoặc answer_id
-                    content=content,
-                    user=user,
-                    file=uploaded_file if uploaded_file else None,
-                    created_at=now(),
+                if not all([type_comment, content_id, content]):
+                    return JsonResponse(
+                        {"error": "❌ Vui lòng điền đầy đủ các trường!"},
+                        status=400
+                    )
+
+                # 🧮 Lấy model và tên ForeignKey
+                CommentModel, fk_name = self._get_model_and_fk(type_comment)
+                if not CommentModel:
+                    return JsonResponse({"error": "❌ Loại comment không hợp lệ!"}, status=400)
+
+                # 🧮 Tạo comment
+                with transaction.atomic():
+                    comment = CommentModel.objects.create(
+                        **{fk_name: int(content_id)},
+                        content=content,
+                        user=user,  # ✅ Dùng user (ForeignKey(User))
+                        file=uploaded_file if uploaded_file else None,
+                        created_at=now(),
+                    )
+
+                    # 📡 Gửi comment qua WebSocket
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "comments",
+                        {
+                            "type": "send.comment",
+                            "data": {
+                                "id": comment.id,
+                                "type_comment": type_comment,
+                                "content_id": int(content_id),
+                                "content": content,
+                                "username": user.username,
+                                "created_at": comment.created_at.strftime("%d/%m/%Y %H:%M"),
+                                "has_file": bool(uploaded_file),
+                                "file_url": comment.file.url if uploaded_file else None,
+                            },
+                        }
+                    )
+
+                return JsonResponse(
+                    {"message": "✅ Bình luận đã được gửi thành công!", "comment_id": comment.id},
+                    status=201
                 )
 
-                # Gửi qua WebSocket
-                channel_layer = get_channel_layer()
-                async_to_sync(channel_layer.group_send)(
-                    "comments",
-                    {
-                        "type": "send.comment",
-                        "data": {
-                            "id": comment.id,
-                            "type_comment": type_comment,
-                            "content_id": int(content_id),
-                            "content": content,
-                            "username": user.username,
-                            "created_at": comment.created_at.strftime("%d/%m/%Y %H:%M"),
-                            "has_file": bool(uploaded_file),
-                            "file_url": comment.file.url if uploaded_file else None,
-                        },
-                    },
-                )
+            except Exception as e:
+                print("Error occurred:", str(e))
+                return JsonResponse({"error": "❌ Lỗi máy chủ!"}, status=500)
 
-            return JsonResponse(
-                {"message": "Comment created successfully", "comment_id": comment.id},
-                status=201,
-            )
-
-        except Exception as e:
-            print("Error occurred:", str(e))
-            return JsonResponse({"error": str(e)}, status=500)
 
     def get(self, request, *args, **kwargs):
         try:

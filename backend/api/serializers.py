@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Question,  Chapter, Lesson, LessonVideoView, Reputation
+from .models import Course, Question,  Chapter, Lesson, LessonVideoView, Reputation,ReputationPermission
 import datetime
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,3 +68,14 @@ class ReputationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reputation
         fields = ['rule_key', 'description', 'point_change']
+
+class ReputationPermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReputationPermission
+        fields = [
+            "id",
+            "action_key",
+            "description",
+            "min_reputation",
+        ]
+        read_only_fields = ["user_id_last_update"]
