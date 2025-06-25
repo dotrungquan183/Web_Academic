@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import TeacherForumLayout from "../../TeacherLayout";
+import StudentForumLayout from "../../StudentLayout";
 import { getToken } from "../../../../../auth/authHelper";
-import LatexInputKaTeX from "../../TeacherLatexInputKaTeX";
-function TeacherUnanswersAskQuestion() {
+import LatexInputKaTeX from "../../StudentLatexInputKaTeX";
+function StudentUnanswersAskQuestion() {
   const navigate = useNavigate();
   const location = useLocation();
   const hasCheckedPermissionRef = useRef(false); // ✅ chặn lặp kiểm tra quyền
@@ -43,7 +43,7 @@ function TeacherUnanswersAskQuestion() {
       const q = location.state.question;
       if (q.user_id && q.user_id !== currentUserId) {
         alert("Bạn không có quyền chỉnh sửa câu hỏi này!");
-        navigate("/teacherforum/question");
+        navigate("/studentforum/question");
         return;
       }
 
@@ -111,7 +111,7 @@ function TeacherUnanswersAskQuestion() {
       const result = await response.json();
       if (response.ok) {
         alert(isEditing ? "Cập nhật câu hỏi thành công!" : "Câu hỏi đã được đăng!");
-        navigate("/teacherforum/question");
+        navigate("/studentforum/question");
       } else {
         alert(`Lỗi: ${result.error || JSON.stringify(result)}`);
       }
@@ -122,7 +122,7 @@ function TeacherUnanswersAskQuestion() {
   };
 
   return (
-    <TeacherForumLayout>
+    <StudentForumLayout>
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
@@ -192,7 +192,7 @@ function TeacherUnanswersAskQuestion() {
           </form>
         </div>
       </div>
-    </TeacherForumLayout>
+    </StudentForumLayout>
   );
 }
 
@@ -284,4 +284,4 @@ const styles = {
   },
 };
 
-export default TeacherUnanswersAskQuestion;
+export default StudentUnanswersAskQuestion;

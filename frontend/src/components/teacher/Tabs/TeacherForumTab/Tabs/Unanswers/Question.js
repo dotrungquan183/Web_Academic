@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import TeacherForumLayout from "../../Layout";
+import TeacherForumLayout from "../../TeacherLayout";
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../../auth/authHelper';
 

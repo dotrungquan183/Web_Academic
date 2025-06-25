@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback} from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentForumLayout from "../../Layout";
+import StudentForumLayout from "../../StudentLayout";
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../../auth/authHelper';
 
@@ -13,6 +13,15 @@ function StudentForumQuestion() {
   const [interestFilter, setInterestFilter] = useState("");
   const [qualityFilter, setQualityFilter] = useState("");
   const navigate = useNavigate();
+  const [searchKeyword, setSearchKeyword] = useState("");
+
+  // Lọc dữ liệu theo từ khóa
+  const filteredData = data
+    ? data.filter((q) =>
+      q.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      q.content?.toLowerCase().includes(searchKeyword.toLowerCase())
+    )
+    : [];
 
   const fetchQuestions = useCallback(async () => {
     try {
@@ -56,18 +65,18 @@ function StudentForumQuestion() {
     }
   }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
 
-  // ✅ useEffect không còn warning nữa
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
+
 
   return (
     <StudentForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
-          <button 
-            style={askButtonStyle} 
+          <button
+            style={askButtonStyle}
             onClick={() => navigate("/studentforum/question/askquestion")}
           >
             Đặt câu hỏi
@@ -107,14 +116,37 @@ function StudentForumQuestion() {
       </div>
 
       <div style={questionListStyle}>
+        <div style={{ position: "relative", display: "inline-block", width: "300px" }}>
+          <input
+            type="text"
+            placeholder="Tìm kiếm câu hỏi..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            style={{
+              ...searchInputStyle,
+              width: "85%",
+              paddingRight: "30px", // chừa chỗ cho icon bên phải
+            }}
+          />
+          <span style={{
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+            color: "#888"
+          }}>
+            🔍
+          </span>
+        </div>
         {data === null ? (
           <p>Đang tải dữ liệu...</p>
-        ) : data.length > 0 ? (
+        ) : filteredData.length > 0 ? (
           <ul style={{ listStyleType: "none", padding: 0 }}>
-            {data.map((question) => (
-              <li 
-                key={question.id} 
-                style={questionContainerStyle} 
+            {filteredData.map((question) => (
+              <li
+                key={question.id}
+                style={questionContainerStyle}
                 onClick={async () => {
                   const token = getToken();
                   let userId = null;
@@ -176,6 +208,7 @@ function StudentForumQuestion() {
         ) : (
           <p>Không có câu hỏi nào.</p>
         )}
+
       </div>
     </StudentForumLayout>
   );
@@ -275,6 +308,10 @@ const questionContentStyle = {
   fontWeight: "bold",
   color: "#003366",
   marginBottom: "10px",
+
+  wordBreak: "break-word",    // Cho phép ngắt từ giữa nếu từ quá dài
+  overflowWrap: "break-word", // Tương tự, đảm bảo không tràn
+  whiteSpace: "normal",       // Cho phép xuống dòng bình thường
 };
 
 const questionMetaStyle = {
@@ -285,6 +322,13 @@ const questionMetaStyle = {
   color: "#666",
   alignItems: "center",  // thêm dòng này
   lineHeight: "1.4",
+};
+const searchInputStyle = {
+  padding: "8px",
+  marginRight: "10px",
+  borderRadius: "5px",
+  border: "1px solid #ccc",
+  width: "250px"
 };
 
 export default StudentForumQuestion;

@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import TeacherForumLayout from "../../TeacherLayout";
+import StudentForumLayout from "../../StudentLayout";
 import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { renderWithLatex } from "../../TeacherLatexInputKaTeX";
+import { renderWithLatex } from "../../StudentLatexInputKaTeX";
 import EmojiPicker from 'emoji-picker-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShare, faEdit, faEye } from '@fortawesome/free-solid-svg-icons';
 
-function TeacherForumQuestionDetail() {
+function StudentUnanswersForumQuestionDetail() {
   const { id } = useParams();
   const [question, setQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
@@ -30,7 +30,7 @@ function TeacherForumQuestionDetail() {
   const [answerCommentText, setAnswerCommentText] = useState({});
   const [activeAnswerId, setActiveAnswerId] = useState(null);
   // Comment của câu hỏi
-  const [comments, setComments] = useState({});
+  const [comments, setComments] = useState([]);
   const [visibleCommentCount, setVisibleCommentCount] = useState(5);
   // Comment của câu trả lời
   const [answerComments, setAnswerComments] = useState({});
@@ -51,56 +51,6 @@ function TeacherForumQuestionDetail() {
   const [selectedFileNameForAnswer, setSelectedFileNameForAnswer] = useState(null);
   const emojiPickerQuestionRef = useRef(null);
   const emojiPickerAnswerRef = useRef(null);
-
-  useEffect(() => {
-    console.log("📡 Khởi động kết nối WebSocket...");
-
-    const socket = new WebSocket("ws://127.0.0.1:8000/ws/comments/");
-
-    socket.onopen = () => {
-      console.log("✅ WebSocket đã kết nối thành công với server");
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        console.log("📨 Nhận dữ liệu WebSocket RAW:", event.data);
-
-        const data = JSON.parse(event.data);
-        console.log("✅ Dữ liệu JSON đã parse:", data);
-
-        if (data.type_comment === "question") {
-          console.log("📝 Là comment của câu hỏi → cập nhật setComments");
-
-          setComments((prev) => ({
-            ...prev,
-            [data.content_id]: [data, ...(prev[data.content_id] || [])], // hiển thị comment mới lên đầu
-          }));
-        }
-        else {
-          console.log(`📝 Là comment của câu trả lời content_id=${data.content_id} → cập nhật setAnswerComments`);
-          setAnswerComments((prev) => ({
-            ...prev,
-            [data.content_id]: [...(prev[data.content_id] || []), data],
-          }));
-        }
-      } catch (error) {
-        console.error("❌ Lỗi khi xử lý message từ WebSocket:", error);
-      }
-    };
-
-    socket.onclose = (event) => {
-      console.warn("⚠️ WebSocket đã bị đóng:", event.code, event.reason);
-    };
-
-    socket.onerror = (error) => {
-      console.error("❌ Lỗi WebSocket:", error);
-    };
-
-    return () => {
-      console.log("🔌 Đóng kết nối WebSocket");
-      socket.close();
-    };
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -200,7 +150,7 @@ function TeacherForumQuestionDetail() {
   // Lấy dữ liệu câu hỏi và danh sách câu trả lời
   useEffect(() => {
     // Lấy câu hỏi
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
+    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion_unanswers/")
       .then((res) => res.json())
       .then((data) => {
         const selectedQuestion = data.find((q) => q.id.toString() === id);
@@ -402,66 +352,67 @@ function TeacherForumQuestionDetail() {
       }
 
       const token = getToken();
-      if (!token) {
-        alert("❗ Vui lòng đăng nhập để bình luận.");
-        return;
-      }
 
-      // ✅ FormData
+      // Tạo FormData
       const formData = new FormData();
       formData.append("content_id", contentId);
       formData.append("type_comment", type);
       formData.append("content", comment);
 
+      // ✅ Gắn file nếu có
       const file = isQuestion
         ? selectedFilesForQuestion[contentId]
         : selectedFilesForAnswer[contentId];
 
       if (file) {
-        formData.append("comments", file);
+        formData.append("comments", file); // khớp với field trong Django model
       }
 
-      // 📡 Gửi request
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // KHÔNG set Content-Type khi dùng FormData
+        },
+        body: formData,
+      });
 
-      // ⚠️ Nếu không OK → lấy message lỗi
       if (!response.ok) {
-        let errorData = {};
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { error: "❌ Server không trả JSON hợp lệ!" };
-        }
-
-        const errorMsg = errorData?.error || "❌ Gửi bình luận thất bại.";
-        alert(errorMsg); // Báo lỗi trả về từ backend
-        return;
+        const errText = await response.json();
+        console.error("❌ Server error:", errText);
+        throw new Error("Không gửi được bình luận");
       }
 
-      // ✅ Thành công → reset form
+      // ✅ Reset nội dung và fetch lại comment
       if (isQuestion) {
-        setQuestionCommentText((prev) => ({ ...prev, [contentId]: "" }));
-        setSelectedFilesForQuestion((prev) => ({ ...prev, [contentId]: null }));
+        setQuestionCommentText((prev) => ({
+          ...prev,
+          [contentId]: ""
+        }));
+        fetchComments(contentId);
+
+        setSelectedFilesForQuestion(null);
       } else {
-        setAnswerCommentText((prev) => ({ ...prev, [contentId]: "" }));
-        setSelectedFilesForAnswer((prev) => ({ ...prev, [contentId]: null }));
+        setAnswerCommentText((prev) => ({
+          ...prev,
+          [contentId]: "",
+        }));
+        fetchAnswerComments(contentId);
+
+        setSelectedFilesForAnswer((prev) => ({
+          ...prev,
+          [contentId]: null,
+        }));
       }
 
-      // ✅ Không cần fetch lại vì đã có WebSocket
+      alert("✅ Bình luận đã được gửi thành công!");
     } catch (err) {
-      console.error("⚠️ Lỗi gửi bình luận:", err);
-      alert("⚠️ Có lỗi xảy ra khi gửi bình luận. Vui lòng thử lại sau.");
+      console.error("Lỗi gửi bình luận:", err);
+      alert("⚠️ Có lỗi xảy ra khi gửi bình luận.");
     }
   };
+
+
+
 
   const handleEditCommentAnswer = (answerId, commentId) => {
     const token = getToken();
@@ -879,7 +830,7 @@ function TeacherForumQuestionDetail() {
         .then((res) => res.json())
         .then((data) => {
           console.log("📥 Raw API data:", data); // 🧪 Log tại đây
-          const formattedAnswers = data.answers.map((ans) => {
+          const formattedAnswers = data.map((ans) => {
             const voteKey = `answer_vote_${ans.id}-${userId}`;
             const storedVote = localStorage.getItem(voteKey);
             const userVote = storedVote ? parseInt(storedVote, 10) : 0;
@@ -918,56 +869,69 @@ function TeacherForumQuestionDetail() {
 
       const answerData = {
         question_id: parseInt(id),
-        user_id,
+        user_id: user_id,
         content: newAnswer.trim(),
       };
 
-      const response = await fetch(
-        "http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(answerData),
-        }
-      );
+      const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(answerData),
+      });
 
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { error: await response.text() };
-        }
-        alert(errorData.error || "❌ Có lỗi xảy ra!");
-        return; // dừng, không throw Error
+        const errText = await response.text();
+        console.error("❌ Response không ok:", errText);
+        throw new Error("Gửi câu trả lời thất bại.");
       }
 
-      // Nếu OK
       const result = await response.json();
-      setAnswers((prev) => [
-        {
-          id: result.id,
-          username: userName,
-          content: newAnswer,
-          created_at: new Date().toISOString(),
-          userVote: 0,
-        },
-        ...prev,
-      ]);
 
+      const newAns = {
+        id: result.id,
+        username: userName,
+        content: newAnswer,
+        created_at: new Date().toISOString(),
+        userVote: 0,
+      };
+
+      const voteKey = `answer_vote_${newAns.id}-${user_id}`;
+      localStorage.setItem(voteKey, "0");
+
+      setAnswers((prev) => [newAns, ...prev]);
       setNewAnswer("");
-      alert("✅ Đăng câu trả lời thành công!");
+      alert("Đăng câu trả lời thành công!");
       window.location.reload();
+
+      // Sau khi đăng câu trả lời mới, tải lại danh sách câu trả lời
+      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const formattedAnswers = data.map((ans) => {
+            const voteKey = `answer_vote_${ans.id}-${userId}`;
+            const storedVote = localStorage.getItem(voteKey);
+            const userVote = storedVote ? parseInt(storedVote, 10) : 0;
+            return {
+              id: ans.id,
+              username: ans.username,
+              content: ans.content,
+              created_at: ans.created_at,
+              userVote,
+              like: ans.like,
+              dislike: ans.dislike,
+              totalVote: ans.totalVote,
+            };
+          });
+          setAnswers(formattedAnswers);
+        });
     } catch (error) {
-      // Lỗi mạng hoặc lỗi ngoài dự đoán
-      console.error("❌ Lỗi mạng:", error);
-      alert("❌ Lỗi mạng. Vui lòng thử lại sau.");
+      console.error("❌ Lỗi khi gửi câu trả lời:", error);
+      alert("Đăng câu trả lời thất bại. Vui lòng thử lại sau.");
     }
   };
-
 
   const handleEditAnswer = (ans) => {
     setIsEditing(ans.id); // Đánh dấu câu trả lời đang chỉnh sửa
@@ -1154,7 +1118,7 @@ function TeacherForumQuestionDetail() {
   console.log(relatedQuestions);
 
   return (
-    <TeacherForumLayout>
+    <StudentForumLayout>
       <div style={layoutStyle}>
         <div style={containerStyle}>
           <div style={questionContainerStyle}>
@@ -1266,7 +1230,7 @@ function TeacherForumQuestionDetail() {
                     <button
                       style={actionButtonStyle}
                       onClick={() =>
-                        navigate("/teacherforum/question/askquestion", {
+                        navigate("/studentforum/question/askquestion", {
                           state: { question: question },
                         })
                       }
@@ -2113,7 +2077,7 @@ function TeacherForumQuestionDetail() {
           </div>
         </div>
       </div>
-    </TeacherForumLayout>
+    </StudentForumLayout>
   );
 }
 
@@ -2358,4 +2322,4 @@ const layoutStyle = {
   marginLeft: "160px",
 };
 
-export default TeacherForumQuestionDetail;
+export default StudentUnanswersForumQuestionDetail;

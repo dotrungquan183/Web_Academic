@@ -1,12 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import StudentForumLayout from "../../Layout";
+import StudentForumLayout from "../../StudentLayout";
 import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { renderWithLatex } from "../../StudentLatexInputKaTeX";
+import EmojiPicker from 'emoji-picker-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShare, faEdit, faEye } from '@fortawesome/free-solid-svg-icons';
 
 function StudentForumQuestionDetail() {
   const { id } = useParams();
@@ -22,7 +26,7 @@ function StudentForumQuestionDetail() {
   const token = localStorage.getItem("token");
   const answerInputRef = useRef(null);
   const [showCommentInputId, setShowCommentInputId] = useState(null);
-  const [questionCommentText, setQuestionCommentText] = useState("");
+  const [questionCommentText, setQuestionCommentText] = useState({});
   const [answerCommentText, setAnswerCommentText] = useState({});
   const [activeAnswerId, setActiveAnswerId] = useState(null);
   // Comment của câu hỏi
@@ -35,6 +39,19 @@ function StudentForumQuestionDetail() {
   const [acceptedAnswerId, setAcceptedAnswerId] = useState(null);
   const [relatedQuestions, setRelatedQuestions] = useState([]);
   const [hotQuestions, setHotQuestions] = useState([]);
+
+  const [showEmojiPickerForAnswer, setShowEmojiPickerForAnswer] = useState(false);
+  const [showEmojiPickerForQuestion, setShowEmojiPickerForQuestion] = useState(false);
+  const fileInputForQuestionRef = useRef(null);
+  const [selectedFilesForQuestion, setSelectedFilesForQuestion] = useState({});
+  const [selectedFileNameForQuestion, setSelectedFileNameForQuestion] = useState(null);
+
+  const fileInputForAnswerRef = useRef(null);
+  const [selectedFilesForAnswer, setSelectedFilesForAnswer] = useState({});
+  const [selectedFileNameForAnswer, setSelectedFileNameForAnswer] = useState(null);
+  const emojiPickerQuestionRef = useRef(null);
+  const emojiPickerAnswerRef = useRef(null);
+
   useEffect(() => {
     console.log("📡 Khởi động kết nối WebSocket...");
 
@@ -85,8 +102,47 @@ function StudentForumQuestionDetail() {
     };
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        emojiPickerAnswerRef.current &&
+        !emojiPickerAnswerRef.current.contains(event.target)
+      ) {
+        setShowEmojiPickerForAnswer(false);
+      }
+    }
 
+    if (showEmojiPickerForAnswer) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
 
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showEmojiPickerForAnswer]);
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        emojiPickerQuestionRef.current &&
+        !emojiPickerQuestionRef.current.contains(event.target)
+      ) {
+        setShowEmojiPickerForQuestion(false);
+      }
+    }
+
+    if (showEmojiPickerForQuestion) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    // Cleanup khi component unmount hoặc showEmojiPickerForQuestion thay đổi
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showEmojiPickerForQuestion]);
   useEffect(() => {
     fetch("http://localhost:8000/api/student/student_forum/student_question/student_hotquestion/")
       .then((res) => {
@@ -150,7 +206,7 @@ function StudentForumQuestionDetail() {
         const selectedQuestion = data.find((q) => q.id.toString() === id);
         if (selectedQuestion) {
           setQuestion(selectedQuestion);
-          setAcceptedAnswerId(selectedQuestion.accepted_answer_id); // 👈 Thêm dòng này
+          setAcceptedAnswerId(selectedQuestion.accepted_answer_id);
         }
       });
 
@@ -169,7 +225,7 @@ function StudentForumQuestionDetail() {
           }
         }
 
-        const formattedAnswers = data.map((ans) => {
+        const formattedAnswers = data.answers.map((ans) => {
           const voteKey = `answer_vote_${ans.id}-${localUserId}`;
           const storedVote = localStorage.getItem(voteKey);
           const userVote = storedVote ? parseInt(storedVote, 10) : 0;
@@ -183,6 +239,7 @@ function StudentForumQuestionDetail() {
             dislike: ans.dislike, // ✅ thêm
             totalVote: ans.totalVote, // ✅ thêm
             user_id: ans.user_id, // ✅ thêm
+            question_id: ans.question_id, // ✅ thêm
           };
         });
 
@@ -229,6 +286,9 @@ function StudentForumQuestionDetail() {
       const res = await axios.get(
         `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=answer&content_id=${answerId}`
       );
+
+      //console.log("Dữ liệu comment trả về:", res.data); // 👉 LOG ở đây
+
       setAnswerComments((prev) => ({
         ...prev,
         [answerId]: res.data.comments,
@@ -327,83 +387,81 @@ function StudentForumQuestionDetail() {
   };
   // Sử dụng useEffect để gọi handleOpenComment khi vào trang
 
-const handleSubmitComment = async (contentId, type) => {
-  try {
-    const isQuestion = type === "question";
-    const comment = isQuestion
-      ? questionCommentText.trim()
-      : answerCommentText[contentId]?.trim();
 
-    if (!comment) {
-      alert("❗ Vui lòng nhập nội dung bình luận");
-      return;
-    }
+  const handleSubmitComment = async (contentId, type) => {
+    try {
+      const isQuestion = type === "question";
 
-    const token = getToken();
-    if (!token) {
-      alert("❗ Vui lòng đăng nhập để bình luận.");
-      return;
-    }
+      const comment = isQuestion
+        ? questionCommentText[contentId]?.trim()
+        : answerCommentText[contentId]?.trim();
 
-    // ✅ Tạo FormData
-    const formData = new FormData();
-    formData.append("content_id", contentId);
-    formData.append("type_comment", type);
-    formData.append("content", comment);
-
-    // 👉 Nếu có file thì thêm vào
-    const fileInput = isQuestion
-      ? document.getElementById("question-file-input")
-      : document.getElementById(`answer-file-input-${contentId}`);
-
-    if (fileInput && fileInput.files.length > 0) {
-      formData.append("comments", fileInput.files[0]);
-    }
-
-    // 📡 Gửi request
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // Không set Content-Type thủ công khi dùng FormData
-        },
-        body: formData,
+      if (!comment) {
+        alert("❗ Vui lòng nhập nội dung bình luận");
+        return;
       }
-    );
 
-    // ⚠️ Xử lý lỗi HTTP
-    if (!response.ok) {
-      let errText;
-      try {
-        errText = await response.json();
-      } catch {
-        errText = { error: "❌ Không thể phân tích lỗi từ server" };
+      const token = getToken();
+      if (!token) {
+        alert("❗ Vui lòng đăng nhập để bình luận.");
+        return;
       }
-      const errorMessage = errText?.error || "❌ Không gửi được bình luận.";
-      alert(errorMessage); // báo lỗi backend
-      return;
+
+      // ✅ FormData
+      const formData = new FormData();
+      formData.append("content_id", contentId);
+      formData.append("type_comment", type);
+      formData.append("content", comment);
+
+      const file = isQuestion
+        ? selectedFilesForQuestion[contentId]
+        : selectedFilesForAnswer[contentId];
+
+      if (file) {
+        formData.append("comments", file);
+      }
+
+      // 📡 Gửi request
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      // ⚠️ Nếu không OK → lấy message lỗi
+      if (!response.ok) {
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: "❌ Server không trả JSON hợp lệ!" };
+        }
+
+        const errorMsg = errorData?.error || "❌ Gửi bình luận thất bại.";
+        alert(errorMsg); // Báo lỗi trả về từ backend
+        return;
+      }
+
+      // ✅ Thành công → reset form
+      if (isQuestion) {
+        setQuestionCommentText((prev) => ({ ...prev, [contentId]: "" }));
+        setSelectedFilesForQuestion((prev) => ({ ...prev, [contentId]: null }));
+      } else {
+        setAnswerCommentText((prev) => ({ ...prev, [contentId]: "" }));
+        setSelectedFilesForAnswer((prev) => ({ ...prev, [contentId]: null }));
+      }
+
+      // ✅ Không cần fetch lại vì đã có WebSocket
+    } catch (err) {
+      console.error("⚠️ Lỗi gửi bình luận:", err);
+      alert("⚠️ Có lỗi xảy ra khi gửi bình luận. Vui lòng thử lại sau.");
     }
-
-    // 🎯 Thành công
-    if (isQuestion) {
-      setQuestionCommentText("");
-      fetchComments(contentId); // tải lại danh sách comment của question
-    } else {
-      setAnswerCommentText((prev) => ({ ...prev, [contentId]: "" }));
-      fetchAnswerComments(contentId); // tải lại danh sách comment của answer
-    }
-
-    alert("✅ Bình luận đã được gửi thành công!");
-  } catch (err) {
-    console.error("Lỗi gửi bình luận:", err);
-    alert("⚠️ Có lỗi xảy ra khi gửi bình luận. Vui lòng thử lại sau.");
-  }
-};
-
-
-
+  };
 
   const handleEditCommentAnswer = (answerId, commentId) => {
     const token = getToken();
@@ -825,7 +883,6 @@ const handleSubmitComment = async (contentId, type) => {
             const voteKey = `answer_vote_${ans.id}-${userId}`;
             const storedVote = localStorage.getItem(voteKey);
             const userVote = storedVote ? parseInt(storedVote, 10) : 0;
-
             return {
               id: ans.id,
               username: ans.username,
@@ -838,7 +895,6 @@ const handleSubmitComment = async (contentId, type) => {
               totalVote: ans.totalVote,
             };
           });
-
           setAnswers(formattedAnswers);
         });
     }).catch((error) => console.error("❌ Error during vote:", error));
@@ -862,70 +918,56 @@ const handleSubmitComment = async (contentId, type) => {
 
       const answerData = {
         question_id: parseInt(id),
-        user_id: user_id,
+        user_id,
         content: newAnswer.trim(),
       };
 
-      const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(answerData),
-      });
+      const response = await fetch(
+        "http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(answerData),
+        }
+      );
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("❌ Response không ok:", errText);
-        throw new Error("Gửi câu trả lời thất bại.");
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: await response.text() };
+        }
+        alert(errorData.error || "❌ Có lỗi xảy ra!");
+        return; // dừng, không throw Error
       }
 
+      // Nếu OK
       const result = await response.json();
+      setAnswers((prev) => [
+        {
+          id: result.id,
+          username: userName,
+          content: newAnswer,
+          created_at: new Date().toISOString(),
+          userVote: 0,
+        },
+        ...prev,
+      ]);
 
-      const newAns = {
-        id: result.id,
-        username: userName,
-        content: newAnswer,
-        created_at: new Date().toISOString(),
-        userVote: 0,
-      };
-
-      const voteKey = `answer_vote_${newAns.id}-${user_id}`;
-      localStorage.setItem(voteKey, "0");
-
-      setAnswers((prev) => [newAns, ...prev]);
       setNewAnswer("");
-      alert("Đăng câu trả lời thành công!");
+      alert("✅ Đăng câu trả lời thành công!");
       window.location.reload();
-
-      // Sau khi đăng câu trả lời mới, tải lại danh sách câu trả lời
-      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          const formattedAnswers = data.map((ans) => {
-            const voteKey = `answer_vote_${ans.id}-${userId}`;
-            const storedVote = localStorage.getItem(voteKey);
-            const userVote = storedVote ? parseInt(storedVote, 10) : 0;
-            return {
-              id: ans.id,
-              username: ans.username,
-              content: ans.content,
-              created_at: ans.created_at,
-              user_id: ans.user_id,
-              userVote,
-              like: ans.like,
-              dislike: ans.dislike,
-              totalVote: ans.totalVote,
-            };
-          });
-          setAnswers(formattedAnswers);
-        });
     } catch (error) {
+      // Lỗi mạng hoặc lỗi ngoài dự đoán
       console.error("❌ Lỗi mạng:", error);
       alert("❌ Lỗi mạng. Vui lòng thử lại sau.");
     }
   };
+
 
   const handleEditAnswer = (ans) => {
     setIsEditing(ans.id); // Đánh dấu câu trả lời đang chỉnh sửa
@@ -942,8 +984,27 @@ const handleSubmitComment = async (contentId, type) => {
       return "vừa xong";
     }
 
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes} phút trước`;
+    const units = [
+      { label: "năm", seconds: 31536000 },
+      { label: "tháng", seconds: 2592000 },
+      { label: "ngày", seconds: 86400 },
+      { label: "giờ", seconds: 3600 },
+      { label: "phút", seconds: 60 },
+    ];
+
+    let remainingSeconds = diffInSeconds;
+    const parts = [];
+
+    for (const unit of units) {
+      const value = Math.floor(remainingSeconds / unit.seconds);
+      if (value > 0) {
+        parts.push(`${value} ${unit.label}`);
+        remainingSeconds -= value * unit.seconds;
+      }
+      if (parts.length === 2) break; // chỉ lấy tối đa 2 đơn vị
+    }
+
+    return parts.join(" ") + " trước";
   };
 
 
@@ -1022,16 +1083,16 @@ const handleSubmitComment = async (contentId, type) => {
     const decoded = jwtDecode(token);
     const currentUserId = decoded.user_id;
 
-    if (currentUserId !== questionOwnerId) {
+    if (parseInt(currentUserId) !== parseInt(questionOwnerId)) {
       alert("❌ Bạn không có quyền đánh dấu câu trả lời đúng!");
       return;
     }
 
-    // ✅ Cập nhật trước để checkbox phản hồi ngay
     const previousAcceptedId = acceptedAnswerId;
-    setAcceptedAnswerId(answerId);
+    setAcceptedAnswerId(answerId); // ✅ Hiển thị tức thì
 
     try {
+      // ✅ Nếu bạn đã có dữ liệu câu hỏi rồi, bỏ đoạn GET này đi!
       const getQuestionRes = await fetch(
         `http://localhost:8000/api/student/student_forum/student_question/student_askquestion/${questionId}/`,
         {
@@ -1061,7 +1122,7 @@ const handleSubmitComment = async (contentId, type) => {
             content: questionData.content,
             tags: questionData.tags,
             bounty_amount: questionData.bounty_amount,
-            accepted_answer_id: answerId,
+            accepted_answer_id: answerId, // 👈 Thay đổi quan trọng
           }),
         }
       );
@@ -1071,19 +1132,16 @@ const handleSubmitComment = async (contentId, type) => {
       if (putRes.ok) {
         alert("✅ Đã đánh dấu câu trả lời là đúng!");
       } else {
-        // ❌ Rollback lại nếu lỗi
         setAcceptedAnswerId(previousAcceptedId);
-        alert(
-          `❌ Lỗi: ${putResult.error || "Không thể đánh dấu câu trả lời này."}`
-        );
+        alert(`❌ Lỗi: ${putResult.error || "Không thể đánh dấu câu trả lời này."}`);
       }
     } catch (error) {
       console.error("❌ Lỗi khi đánh dấu câu trả lời đúng:", error);
-      // ❌ Rollback lại nếu lỗi
       setAcceptedAnswerId(previousAcceptedId);
       alert("❌ Đã xảy ra lỗi.");
     }
   };
+
 
 
   const scrollToAnswerInput = () => {
@@ -1122,8 +1180,46 @@ const handleSubmitComment = async (contentId, type) => {
               <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} />
             </button>
             <div style={questionContentStyle}>
-              <h2>{question.title}</h2>
-              <div style={metaContainerStyle}>
+              <div
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "200px",
+                  overflow: "auto",
+                  margin: "8px 0",
+                  padding: "8px",
+                  paddingRight: "40px",  // Thêm padding bên phải để chừa chỗ icon
+                  background: "transparent",
+                  border: "none",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div
+                  style={{
+                    display: "block",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    whiteSpace: "normal",
+                    lineBreak: "anywhere",
+                  }}
+                >
+                  <h2
+                    style={{
+                      margin: 0,
+                      display: "block",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      wordBreak: "break-word",
+                      whiteSpace: "normal",
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    {renderWithLatex(question.title)}
+                  </h2>
+                </div>
+              </div>
+
+
+              <div style={{ ...metaContainerStyle, paddingLeft: "8px" }}>
                 <div style={{ display: "flex", gap: "4px" }}>
                   <button
                     disabled={parseInt(question?.user_id) === parseInt(userId)}
@@ -1152,29 +1248,36 @@ const handleSubmitComment = async (contentId, type) => {
                 </div>
                 <span>🕒 {new Date(question.created_at).toLocaleString()}</span>
                 <span>
-                  🔖 {question.tags?.length ? question.tags.join(", ") : "No tags"}
+                  🔖 {question.tags?.length ? question.tags.join(", ") : "Không có thẻ"}
                 </span>
               </div>
 
-              <p>{question.content}</p>
+              <p style={{ paddingLeft: "8px" }}>
+                {renderWithLatex(question.content)}
+              </p>
 
               {/* Thông tin thêm về câu hỏi */}
               <div style={containerQuestionSelectStyle}>
                 <div style={topRowStyle}>
                   <div style={buttonGroupStyle}>
-                    <button style={actionButtonStyle}>↗️ Chia sẻ</button>
+                    <button style={actionButtonStyle}>
+                      <FontAwesomeIcon icon={faShare} style={{ fontSize: "1.1em" }} />
+                    </button>
                     <button
                       style={actionButtonStyle}
                       onClick={() =>
                         navigate("/studentforum/question/askquestion", {
-                          state: { question: question }, // 👈 truyền object câu hỏi
+                          state: { question: question },
                         })
                       }
                     >
-                      ✏️ Chỉnh sửa
+                      <FontAwesomeIcon icon={faEdit} style={{ fontSize: "1.1em" }} />
                     </button>
-                    <button style={actionButtonStyle}>👁️ Theo dõi</button>
+                    <button style={actionButtonStyle}>
+                      <FontAwesomeIcon icon={faEye} style={{ fontSize: "1.1em" }} />
+                    </button>
                   </div>
+
 
                   {/* 👇 Chỗ hiển thị thời gian chỉnh sửa */}
                   <span>
@@ -1185,14 +1288,35 @@ const handleSubmitComment = async (contentId, type) => {
 
                         const now = new Date();
                         const diffInSeconds = Math.floor((now - updatedAt) / 1000);
+
                         if (diffInSeconds < 60) return "Vừa xong";
 
-                        const diffInMinutes = Math.floor(diffInSeconds / 60);
-                        return `Đã chỉnh sửa ${diffInMinutes} phút trước`;
+                        const units = [
+                          { label: "năm", seconds: 31536000 },
+                          { label: "tháng", seconds: 2592000 },
+                          { label: "ngày", seconds: 86400 },
+                          { label: "giờ", seconds: 3600 },
+                          { label: "phút", seconds: 60 },
+                        ];
+
+                        let remaining = diffInSeconds;
+                        const parts = [];
+
+                        for (const unit of units) {
+                          const value = Math.floor(remaining / unit.seconds);
+                          if (value > 0) {
+                            parts.push(`${value} ${unit.label}`);
+                            remaining -= value * unit.seconds;
+                          }
+                          if (parts.length === 2) break;
+                        }
+
+                        return `Đã chỉnh sửa ${parts.join(" ")} trước`;
                       })()
                     ) : (
                       "⛔ Không có updated_at"
                     )}
+
                   </span>
 
                 </div>
@@ -1226,9 +1350,35 @@ const handleSubmitComment = async (contentId, type) => {
                             onClick={() => handleDeleteCommentQuestion(question.id, c.id)}
                           />
                         </div>
-                        <div style={{ marginLeft: "10px" }}>{c.content}</div>
+
+                        {/* Sử dụng renderWithLatex để hiển thị nội dung comment có công thức */}
+                        <div style={{ marginLeft: "10px" }}>
+                          {renderWithLatex(c.content)}
+                          {c.file_url && (() => {
+                            const ext = c.file_name?.split('.').pop().toLowerCase();
+                            const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+
+                            if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                              return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
+                            }
+                            if (["mp4", "webm", "ogg"].includes(ext)) {
+                              return (
+                                <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                                  <source src={fullFileUrl} type={`video/${ext}`} />
+                                  Your browser does not support the video tag.
+                                </video>
+                              );
+                            }
+                            return (
+                              <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
+                                Xem trước
+                              </a>
+                            );
+                          })()}
+                        </div>
                       </div>
                     ))}
+
 
                     {/* Nút "Hiển thị thêm bình luận" nếu còn bình luận chưa hiển thị */}
                     {comments[question.id] &&
@@ -1255,12 +1405,148 @@ const handleSubmitComment = async (contentId, type) => {
 
 
                     {/* Khung nhập bình luận */}
-                    <textarea
-                      placeholder="Nhập bình luận của bạn..."
-                      value={questionCommentText}
-                      onChange={(e) => setQuestionCommentText(e.target.value)}
-                      style={commentTextareaStyle}
-                    />
+                    <div>
+                      {/* Khung nhập bình luận + tiện ích (90/10) */}
+                      <div
+                        style={{
+                          background: "#fff",
+                          border: "1px solid #000",
+                          borderRadius: "4px",
+                          height: "200px",
+                          display: "flex",
+                          flexDirection: "column",
+                          padding: "10px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        {/* Textarea chiếm 90% */}
+                        <textarea
+                          placeholder="Nhập bình luận của bạn..."
+                          value={questionCommentText[question.id] || ""}
+                          onChange={(e) =>
+                            setQuestionCommentText((prev) => ({
+                              ...prev,
+                              [question.id]: e.target.value,
+                            }))
+                          }
+                          style={{
+                            flex: 9,
+                            resize: "none",
+                            border: "none",
+                            outline: "none",
+                            background: "transparent",
+                            fontSize: "14px",
+                            fontFamily: "inherit",
+                          }}
+                        />
+
+
+                        {/* Tiện ích chiếm 10% */}
+                        <div
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            borderTop: "1px solid #ccc",
+                            paddingTop: "5px",
+                          }}
+                        >
+                          <input
+                            type="file"
+                            ref={fileInputForQuestionRef}
+                            style={{ display: "none" }}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                alert(`Đã chọn file: ${file.name}`);
+                              }
+                            }}
+                          />
+
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <input
+                              type="file"
+                              ref={fileInputForQuestionRef}
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  setSelectedFilesForQuestion((prev) => ({
+                                    ...prev,
+                                    [question.id]: file, // ⬅️ Lưu file theo contentId
+                                  }));
+                                  setSelectedFileNameForQuestion((prev) => ({
+                                    ...prev,
+                                    [question.id]: file.name, // ⬅️ Lưu tên hiển thị
+                                  }));
+                                }
+                              }}
+                            />
+
+                            <span
+                              title="Thêm file"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => fileInputForQuestionRef.current.click()}
+                            >
+                              📎
+                            </span>
+
+                            {/* 👉 Hiển thị tên file sau khi chọn */}
+                            {selectedFileNameForQuestion && selectedFileNameForQuestion[question.id] && (
+                              <span style={{ fontStyle: "italic", color: "gray" }}>
+                                {selectedFileNameForQuestion[question.id]}
+                              </span>
+                            )}
+
+                          </div>
+
+
+                          <span
+                            title="Thêm emoji"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => setShowEmojiPickerForQuestion(!showEmojiPickerForQuestion)}
+                          >
+                            😊
+                          </span>
+
+                          {showEmojiPickerForQuestion && (
+                            <div
+                              ref={emojiPickerQuestionRef}
+                              style={{ position: "absolute", zIndex: 1000 }}
+                            >
+                              <EmojiPicker
+                                onEmojiClick={(emojiData) => {
+                                  setQuestionCommentText((prev) => ({
+                                    ...prev,
+                                    [question.id]: (prev[question.id] || "") + emojiData.emoji,
+                                  }));
+                                  setShowEmojiPickerForQuestion(false);
+                                }}
+                              />
+                            </div>
+                          )}
+
+                        </div>
+                      </div>
+
+                      {/* Khung preview hiển thị nội dung bình luận */}
+                      <div
+                        style={{
+                          background: "#f8f8f8",
+                          padding: "10px",
+                          minHeight: "40px",
+                          border: "1px solid #000",
+                          borderRadius: "4px",
+                          wordBreak: "break-word",
+                          overflowWrap: "break-word",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {renderWithLatex(questionCommentText[question.id] || "")}
+                      </div>
+                    </div>
+
                     <button
                       style={commentButtonSendStyle}
                       onClick={() => handleSubmitComment(question.id, "question")}
@@ -1285,52 +1571,73 @@ const handleSubmitComment = async (contentId, type) => {
                   <li key={ans.id} style={answerItemStyle}>
                     <div style={{ ...singleAnswerBox, position: "relative" }}>
                       {/* Nút xoá ở góc phải trên */}
-                      <button
-                        onClick={() => handleDeleteAnswer(ans.id)}
-                        style={{
-                          position: "absolute",
-                          top: "10px",
-                          right: "10px",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: "4px",
-                          borderRadius: "4px",
-                          transition: "background-color 0.2s",
-                          fontSize: "1em",
-                        }}
-                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
-                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                        title="Xoá câu trả lời"
-                      >
-                        <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} /> {/* Thêm màu #003366 cho icon */}
-                      </button>
+                      {String(userId) === String(ans.user_id) && (
+                        <button
+                          onClick={() => handleDeleteAnswer(ans.id)}
+                          style={{
+                            position: "absolute",
+                            top: "10px",
+                            right: "10px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "4px",
+                            borderRadius: "4px",
+                            transition: "background-color 0.2s",
+                            fontSize: "1em",
+                          }}
+                          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
+                          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                          title="Xoá câu trả lời"
+                        >
+                          <FaTrash style={{ color: "#003366", fontSize: "1.5em" }} />
+                        </button>
+                      )}
+
                       {/* Checkbox đánh dấu là đúng */}
+                      {parseInt(userId) === parseInt(question.user_id) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "55px", // khoảng cách từ trên xuống dưới nút xoá
+                            right: "10px",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={parseInt(acceptedAnswerId) === parseInt(ans.id)}
+                            onChange={() =>
+                              handleMarkAsCorrect(question.id, ans.id, question.user_id)
+                            }
+                            style={{
+                              width: "25px",
+                              height: "25px",
+                              accentColor: "#003366",
+                              cursor: "pointer",
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      <p><strong>{ans.username}</strong></p>
                       <div
                         style={{
-                          position: "absolute",
-                          top: "55px", // khoảng cách từ trên xuống dưới nút xoá
-                          right: "10px",
+                          marginTop: "-5px",
+                          marginBottom: "8px",
+                          padding: "10px",
+                          backgroundColor: "#f9f9f9",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "4px",
+                          overflowX: "auto",          // Cuộn ngang nếu nội dung dài
+                          wordWrap: "break-word",
+                          whiteSpace: "normal",
+                          minWidth: "106%",
+                          maxWidth: "110%",
+                          boxSizing: "border-box",
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={acceptedAnswerId === ans.id}
-                          onChange={() =>
-                            handleMarkAsCorrect(question.id, ans.id, question.user_id)
-                          }
-                          style={{
-                            width: "25px",
-                            height: "25px",
-                            accentColor: "#003366",
-                            cursor: "pointer",
-                          }}
-                        />
-
+                        {renderWithLatex(ans.content)}
                       </div>
-                      <p><strong>{ans.username}</strong></p>
-                      <p>{ans.content}</p>
-
                       {/* Vote section */}
                       <div style={metaContainerStyle}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1384,7 +1691,10 @@ const handleSubmitComment = async (contentId, type) => {
                       <div style={{ ...containerAnswerSelectStyle, marginTop: '10px' }}>
                         <div style={topRowStyle}>
                           <div style={buttonGroupStyle}>
-                            <button style={actionButtonStyle}>↗️ Chia sẻ</button>
+                            <button style={actionButtonStyle}>
+                              <FontAwesomeIcon icon={faShare} style={{ fontSize: "1.1em" }} />
+                            </button>
+
                             <button
                               style={actionButtonStyle}
                               onClick={() => {
@@ -1405,18 +1715,19 @@ const handleSubmitComment = async (contentId, type) => {
 
                                   handleEditAnswer(ans);
                                   scrollToAnswerInput();
-
                                 } catch (error) {
                                   console.error("Lỗi khi kiểm tra quyền chỉnh sửa:", error);
                                   alert("⚠️ Có lỗi xảy ra khi kiểm tra quyền. Vui lòng thử lại.");
                                 }
                               }}
                             >
-                              ✏️ Chỉnh sửa
+                              <FontAwesomeIcon icon={faEdit} style={{ fontSize: "1.1em" }} />
                             </button>
-                            <button style={actionButtonStyle}>👁️ Theo dõi</button>
-                          </div>
 
+                            <button style={actionButtonStyle}>
+                              <FontAwesomeIcon icon={faEye} style={{ fontSize: "1.1em" }} />
+                            </button>
+                          </div>
                           <span>
                             {(() => {
                               const secondsAgo = Math.floor((new Date() - new Date(ans.created_at)) / 1000);
@@ -1466,12 +1777,48 @@ const handleSubmitComment = async (contentId, type) => {
                                     />
                                     <FaTrash
                                       style={{ cursor: "pointer", color: "#003366" }}
-                                      onClick={() => handleDeleteCommentAnswer(ans.id, c.id)} // Hàm xử lý xóa comment
+                                      onClick={() => handleDeleteCommentAnswer(ans.id, c.id)}
                                     />
                                   </div>
-                                  <div style={{ marginLeft: "10px" }}>{c.content}</div>
+                                  <div
+                                    style={{
+                                      marginLeft: "10px",
+                                      maxWidth: "100%",
+                                      overflowX: "auto",
+                                      overflowY: "auto",
+                                      maxHeight: "300px",
+                                      wordBreak: "break-word",
+                                      whiteSpace: "normal",
+                                      lineBreak: "anywhere",
+                                    }}
+                                  >
+                                    {renderWithLatex(c.content)}
+
+                                    {c.file_url && (() => {
+                                      const ext = c.file_name?.split('.').pop().toLowerCase();
+                                      const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+
+                                      if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                                        return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
+                                      }
+                                      if (["mp4", "webm", "ogg"].includes(ext)) {
+                                        return (
+                                          <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                                            <source src={fullFileUrl} type={`video/${ext}`} />
+                                            Your browser does not support the video tag.
+                                          </video>
+                                        );
+                                      }
+                                      return (
+                                        <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
+                                          Xem trước
+                                        </a>
+                                      );
+                                    })()}
+                                  </div>
                                 </div>
                               ))}
+
 
                               {/* Nút hiển thị thêm bình luận */}
                               {answerComments[ans.id] &&
@@ -1497,14 +1844,151 @@ const handleSubmitComment = async (contentId, type) => {
                                 )}
 
                               {/* Khung nhập bình luận */}
-                              <textarea
-                                placeholder="Nhập bình luận của bạn..."
-                                value={answerCommentText[ans.id] || ""}
-                                onChange={(e) =>
-                                  setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
-                                }
-                                style={commentTextareaStyle}
-                              />
+                              <div>
+                                {/* Khung preview chia 90% nội dung - 10% tiện ích */}
+                                <div>
+                                  {/* Khung nhập bình luận với tiện ích (90/10) */}
+                                  <div
+                                    style={{
+                                      marginTop: "10px",
+                                      background: "#fff",
+                                      border: "1px solid #000",
+                                      borderRadius: "4px",
+                                      height: "200px", // Tổng chiều cao khung nhập
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      padding: "10px",
+                                    }}
+                                  >
+                                    {/* Ô nhập bình luận (chiếm 90%) */}
+                                    <textarea
+                                      placeholder="Nhập bình luận của bạn..."
+                                      value={answerCommentText[ans.id] || ""}
+                                      onChange={(e) =>
+                                        setAnswerCommentText({ ...answerCommentText, [ans.id]: e.target.value })
+                                      }
+                                      style={{
+                                        flex: 9,
+                                        resize: "none",
+                                        border: "none",
+                                        outline: "none",
+                                        background: "transparent",
+                                        fontSize: "14px",
+                                        fontFamily: "inherit",
+                                      }}
+                                    />
+
+                                    {/* Tiện ích (chiếm 10%) */}
+                                    <div
+                                      style={{
+                                        flex: 1,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        borderTop: "1px solid #ccc",
+                                        paddingTop: "5px",
+                                      }}
+                                    >
+                                      <input
+                                        type="file"
+                                        ref={fileInputForAnswerRef}
+                                        style={{ display: "none" }}
+                                        onChange={(e) => {
+                                          const file = e.target.files[0];
+                                          if (file) {
+                                            alert(`Đã chọn file: ${file.name}`);
+                                          }
+                                        }}
+                                      />
+
+                                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <input
+                                          type="file"
+                                          ref={fileInputForAnswerRef}
+                                          style={{ display: "none" }}
+                                          onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                              setSelectedFilesForAnswer((prev) => ({
+                                                ...prev,
+                                                [ans.id]: file, // ⬅️ Lưu file theo contentId
+                                              }));
+                                              setSelectedFileNameForAnswer((prev) => ({
+                                                ...prev,
+                                                [ans.id]: file.name, // ⬅️ Lưu tên hiển thị
+                                              }));
+                                            }
+                                          }}
+                                        />
+
+                                        <span
+                                          title="Thêm file"
+                                          style={{ cursor: "pointer" }}
+                                          onClick={() => fileInputForAnswerRef.current.click()}
+                                        >
+                                          📎
+                                        </span>
+
+                                        {/* 👉 Hiển thị tên file sau khi chọn */}
+                                        {selectedFileNameForAnswer && selectedFileNameForAnswer[ans.id] && (
+                                          <span style={{ fontStyle: "italic", color: "gray" }}>
+                                            {selectedFileNameForAnswer[ans.id]}
+                                          </span>
+                                        )}
+
+                                      </div>
+
+
+                                      <span
+                                        title="Thêm emoji"
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => setShowEmojiPickerForAnswer(!showEmojiPickerForAnswer)}
+                                      >
+                                        😊
+                                      </span>
+
+                                      {showEmojiPickerForAnswer && (
+                                        <div
+                                          ref={emojiPickerAnswerRef}
+                                          style={{ position: "absolute", zIndex: 1000 }}
+                                        >
+                                          <EmojiPicker
+                                            onEmojiClick={(emojiData) => {
+                                              setAnswerCommentText((prev) => ({
+                                                ...prev,
+                                                [ans.id]: (prev[ans.id] || "") + emojiData.emoji,
+                                              }));
+                                              setShowEmojiPickerForAnswer(false);
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Khung render preview */}
+                                  <div
+                                    style={{
+                                      marginTop: "10px",
+                                      background: "#f8f8f8",
+                                      padding: "10px",
+                                      minHeight: "40px",
+                                      maxHeight: "200px",
+                                      border: "1px solid #000",
+                                      borderRadius: "4px",
+                                      overflowY: "auto",
+                                      wordBreak: "break-word",
+                                      overflowWrap: "break-word",
+                                      whiteSpace: "pre-wrap",
+                                    }}
+                                  >
+                                    {renderWithLatex(answerCommentText[ans.id] || "")}
+                                  </div>
+                                </div>
+
+                              </div>
+
+
                               <button
                                 style={commentButtonSendStyle}
                                 onClick={() => handleSubmitComment(ans.id, "answer")}
@@ -1529,15 +2013,36 @@ const handleSubmitComment = async (contentId, type) => {
                 {isEditing ? "✏️ Chỉnh sửa câu trả lời:" : "💬 Câu trả lời của bạn:"}
               </label>
 
-              <textarea
-                id="answer"
-                value={isEditing ? editContent : newAnswer}
-                onChange={(e) =>
-                  isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
-                }
-                style={textAreaStyle}
-                placeholder="Nhập câu trả lời tại đây..."
-              />
+              <div>
+                <textarea
+                  id="answer"
+                  value={isEditing ? editContent : newAnswer}
+                  onChange={(e) =>
+                    isEditing ? setEditContent(e.target.value) : setNewAnswer(e.target.value)
+                  }
+                  style={textAreaStyle}
+                  placeholder="Nhập câu trả lời tại đây..."
+                />
+
+                {/* Preview nội dung có công thức LaTeX */}
+                <div
+                  style={{
+                    marginTop: "10px",
+                    background: "#f8f8f8",
+                    padding: "10px",
+                    minHeight: "40px",
+                    border: "1px solid #eee",
+                    borderRadius: "4px",
+                    overflowX: "auto",              // Cho phép cuộn ngang nếu cần
+                    wordWrap: "break-word",         // Ngắt từ dài
+                    whiteSpace: "normal",           // Cho phép xuống dòng
+                    maxWidth: "100%",               // Không cho vượt chiều rộng
+                    boxSizing: "border-box"
+                  }}
+                >
+                  {renderWithLatex(isEditing ? editContent : newAnswer)}
+                </div>
+              </div>
 
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                 {isEditing ? (
@@ -1646,7 +2151,12 @@ const voteButton = {
 
 const questionContentStyle = {
   flex: 1,
+  minWidth: 0,               // 🔑 NGĂN FLEXBOX giãn tràn
+  maxWidth: "100%",          // Không vượt quá vùng cha
+  overflow: "auto",          // Cho phép cuộn nếu dài
+  wordBreak: "break-word",   // Ngắt từ nếu dài
 };
+
 
 const metaContainerStyle = {
   fontSize: "14px",
@@ -1750,13 +2260,18 @@ const topRowStyle = {
 
 const buttonGroupStyle = {
   display: "flex",
-  gap: "10px",
+  gap: "4px",            // Khoảng cách nhỏ giữa các nút
+  borderRadius: "8px",   // Bo góc tổng thể
+  background: "#f9f9f9", // Màu nền giống Facebook
+  padding: "4px",
+  alignItems: "center",
+  marginLeft: "-4px", // 👉 Dịch sang trái
 };
 
 const actionButtonStyle = {
-  backgroundColor: "#003366",
-  color: "#fff",
-  border: "none",
+  backgroundColor: "#f9f9f9",
+  color: "#003366",
+  border: "1px solid #003366",
   padding: "8px 20px",
   borderRadius: "4px",
   cursor: "pointer",
@@ -1777,19 +2292,28 @@ const commentButtonStyle = {
   borderRadius: "4px",
   fontWeight: "bold",
   cursor: "pointer",
-  width: "375px",
+  width: "100%",
 };
 
-const commentTextareaStyle = {
-  width: "98%",
-  padding: "8px",
-  borderRadius: "6px",
-  border: "1px solid #003366",
-  fontSize: "14px",
-  resize: "vertical",
-  height: "100px", // ✅ Chiều cao lớn hơn
-};
+// const commentTextareaStyleForAnswer = {
+//   width: "97%",
+//   padding: "8px",
+//   borderRadius: "6px",
+//   border: "1px solid #003366",
+//   fontSize: "14px",
+//   resize: "vertical",
+//   height: "100px",
+// };
 
+// const commentTextareaStyleForQuestion = {
+//   width: "97.5%",
+//   padding: "8px",
+//   borderRadius: "6px",
+//   border: "1px solid #003366",
+//   fontSize: "14px",
+//   resize: "vertical",
+//   height: "100px",
+// };
 
 const commentButtonSendStyle = {
   marginTop: "6px",

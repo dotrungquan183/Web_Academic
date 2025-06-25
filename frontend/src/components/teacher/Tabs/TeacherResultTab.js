@@ -8,12 +8,8 @@ import {
   ThumbsUp,
   Award,
   TrendingUp,
-  Eye,
   CheckCircle,
   XCircle,
-  BarChart3,
-  PieChart,
-  Calendar,
   Star
 } from 'lucide-react';
 import {

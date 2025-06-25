@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import TeacherForumLayout from "../../TeacherLayout";
+import StudentForumLayout from "../../StudentLayout";
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../../auth/authHelper';
 
-function TeacherForumQuestion() {
+function StudentUnanswersForumQuestion() {
   const [data, setData] = useState(null);
   const [votesMap, setVotesMap] = useState({});
   const [answersMap, setAnswersMap] = useState({});
@@ -32,7 +32,7 @@ function TeacherForumQuestion() {
       if (interestFilter) params.append("interest", interestFilter);
       if (qualityFilter) params.append("quality", qualityFilter);
 
-      const response = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/?${params.toString()}`);
+      const response = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion_unanswers/?${params.toString()}`);
       const result = await response.json();
       const formattedData = Array.isArray(result) ? result : result ? [result] : [];
       setData(formattedData);
@@ -71,13 +71,13 @@ function TeacherForumQuestion() {
 
 
   return (
-    <TeacherForumLayout>
+    <StudentForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
           <button
             style={askButtonStyle}
-            onClick={() => navigate("/teacherforum/question/askquestion")}
+            onClick={() => navigate("/studentforum/question/askquestion")}
           >
             Đặt câu hỏi
           </button>
@@ -180,7 +180,7 @@ function TeacherForumQuestion() {
                     console.error("Lỗi khi cập nhật view:", err);
                   }
 
-                  navigate(`/teacherforum/question/${question.id}`);
+                  navigate(`/studentforum/question/${question.id}`);
                 }}
               >
                 <div style={questionContentStyle}>
@@ -210,7 +210,7 @@ function TeacherForumQuestion() {
         )}
 
       </div>
-    </TeacherForumLayout>
+    </StudentForumLayout>
   );
 }
 
@@ -331,4 +331,4 @@ const searchInputStyle = {
   width: "250px"
 };
 
-export default TeacherForumQuestion;
+export default StudentUnanswersForumQuestion;

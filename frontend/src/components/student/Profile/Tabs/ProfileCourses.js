@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../../../auth/authHelper";
 import TeacherProfileLayout from "../Layout";
-import { renderWithLatex } from "../../../teacher/Tabs/TeacherForumTab/LatexInputKaTeX";
+import { renderWithLatex } from "../../../teacher/Tabs/TeacherForumTab/TeacherLatexInputKaTeX";
 
 const getAvatarUrl = (user) => {
   if (user?.avatar) {

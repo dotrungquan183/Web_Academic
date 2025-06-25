@@ -26,7 +26,7 @@ function StudentMenu() {
       if (event.persisted) window.location.reload();
     };
   }, []);
-
+  
   const getAvatarUrl = () => {
     if (user?.avatar) {
       return user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`;

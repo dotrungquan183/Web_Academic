@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import TeacherForumLayout from "../../Layout";
+import TeacherForumLayout from "../../TeacherLayout";
 import { getToken } from "../../../../../auth/authHelper";
-import LatexInputKaTeX from "../../LatexInputKaTeX";
+import LatexInputKaTeX from "../../TeacherLatexInputKaTeX";
 function TeacherAskQuestion() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -157,9 +157,6 @@ function TeacherAskQuestion() {
                     overflowWrap: "break-word",
                   }}
                 />
-
-
-
                 <input
                   type="text"
                   name="tags"

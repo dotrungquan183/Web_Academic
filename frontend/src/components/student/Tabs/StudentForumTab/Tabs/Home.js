@@ -1,87 +1,108 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import TeacherForumLayout from "../../TeacherLayout";
+import { useNavigate } from "react-router-dom";
+import StudentForumLayout from "../StudentLayout";
 import { jwtDecode } from 'jwt-decode';
-import { getToken } from '../../../../../auth/authHelper';
+import { getToken } from '../../../../auth/authHelper';
 
-function TeacherTagsForumQuestion() {
-    const [data, setData] = useState(null);
+function StudentForumHome() {
+    const [data, setData] = useState([]);
     const [votesMap, setVotesMap] = useState({});
     const [answersMap, setAnswersMap] = useState({});
     const [timeFilter, setTimeFilter] = useState("");
     const [bountyFilter, setBountyFilter] = useState("");
     const [interestFilter, setInterestFilter] = useState("");
     const [qualityFilter, setQualityFilter] = useState("");
-    const { tagId } = useParams();
-    const navigate = useNavigate();
     const [searchKeyword, setSearchKeyword] = useState("");
-
-    // Lọc dữ liệu theo từ khóa
-    const filteredData = data
-        ? data.filter((q) =>
-            q.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-            q.content?.toLowerCase().includes(searchKeyword.toLowerCase())
-        )
-        : [];
+    const [, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const fetchQuestions = useCallback(async () => {
+        const token = getToken();
+        let userId = null;
+
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                userId = decoded.user_id;
+            } catch (error) {
+                console.error("❌ Token không hợp lệ:", error);
+                return;
+            }
+        }
+
+        if (!userId) {
+            console.error("❌ User chưa đăng nhập hoặc token không hợp lệ.");
+            return;
+        }
+
+        setLoading(true);
         try {
             const params = new URLSearchParams();
-
             if (timeFilter) params.append("time", timeFilter);
             if (bountyFilter) params.append("bounty", bountyFilter);
             if (interestFilter) params.append("interest", interestFilter);
             if (qualityFilter) params.append("quality", qualityFilter);
 
-            // Gửi request với tagId trong path, các filter trong query string
             const response = await fetch(
-                `http://localhost:8000/api/student/student_forum/student_tag/student_showquestion_tags/${tagId}?${params.toString()}`
+                `http://localhost:8000/api/student/student_forum/student_home/${userId}?${params.toString()}`
             );
             const result = await response.json();
-            const formattedData = Array.isArray(result) ? result : result ? [result] : [];
-            setData(formattedData);
+            const questions = Array.isArray(result) ? result : result ? [result] : [];
+
+            setData(questions);
 
             const votesResults = {};
             const answersResults = {};
 
-            await Promise.all(formattedData.map(async (q) => {
-                try {
-                    const res = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`);
-                    const detail = await res.json();
+            await Promise.all(
+                questions.map(async (q) => {
+                    try {
+                        const res = await fetch(
+                            `http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`
+                        );
+                        const detail = await res.json();
 
-                    if (detail.total_vote_score !== undefined) {
-                        votesResults[q.id] = detail.total_vote_score;
-                    }
+                        if (detail.total_vote_score !== undefined) {
+                            votesResults[q.id] = detail.total_vote_score;
+                        }
 
-                    if (detail.total_answers !== undefined) {
-                        answersResults[q.id] = detail.total_answers;
+                        if (detail.total_answers !== undefined) {
+                            answersResults[q.id] = detail.total_answers;
+                        }
+                    } catch (err) {
+                        console.error(`❌ Lỗi khi fetch chi tiết câu hỏi ${q.id}:`, err);
                     }
-                } catch (err) {
-                    console.error(`Error fetching detail for question ${q.id}:`, err);
-                }
-            }));
+                })
+            );
 
             setVotesMap(votesResults);
             setAnswersMap(answersResults);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("❌ Lỗi khi fetch câu hỏi:", error);
             setData([]);
+        } finally {
+            setLoading(false);
         }
-    }, [timeFilter, bountyFilter, interestFilter, qualityFilter, tagId]);
+    }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
 
     useEffect(() => {
         fetchQuestions();
     }, [fetchQuestions]);
 
+    const filteredData = data.filter((q) =>
+        q.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        q.content?.toLowerCase().includes(searchKeyword.toLowerCase())
+    );
+
 
     return (
-        <TeacherForumLayout>
+        <StudentForumLayout>
             <div style={containerStyle}>
                 <div style={headerStyle}>
                     <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
                     <button
                         style={askButtonStyle}
-                        onClick={() => navigate("/teacherforum/question/askquestion")}
+                        onClick={() => navigate("/studentforum/question/askquestion")}
                     >
                         Đặt câu hỏi
                     </button>
@@ -184,7 +205,7 @@ function TeacherTagsForumQuestion() {
                                         console.error("Lỗi khi cập nhật view:", err);
                                     }
 
-                                    navigate(`/teacherforum/question/${question.id}`);
+                                    navigate(`/studentforum/question/${question.id}`);
                                 }}
                             >
                                 <div style={questionContentStyle}>
@@ -214,7 +235,7 @@ function TeacherTagsForumQuestion() {
                 )}
 
             </div>
-        </TeacherForumLayout>
+        </StudentForumLayout>
     );
 }
 
@@ -335,4 +356,4 @@ const searchInputStyle = {
     width: "250px"
 };
 
-export default TeacherTagsForumQuestion;
+export default StudentForumHome;

@@ -7,7 +7,7 @@ import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { FaFire, FaLink, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { renderWithLatex } from "../../../../../teacher/Tabs/TeacherForumTab/LatexInputKaTeX";
+import { renderWithLatex } from "../../../../../teacher/Tabs/TeacherForumTab/TeacherLatexInputKaTeX";
 import EmojiPicker from 'emoji-picker-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShare, faEdit, faEye } from '@fortawesome/free-solid-svg-icons';

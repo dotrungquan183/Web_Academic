@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import StudentForumLayout from "../../Layout";
+import StudentForumLayout from "../../StudentLayout";
 import { getToken } from "../../../../../auth/authHelper";
-
+import LatexInputKaTeX from "../../StudentLatexInputKaTeX";
 function StudentAskQuestion() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,6 +56,9 @@ function StudentAskQuestion() {
     }
   }, [location.state, navigate]);
 
+  const handleDescriptionChange = (value) => {
+    setFormData(prev => ({ ...prev, description: value }));
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "bounty_amount" && (isNaN(value) || Number(value) < 0)) {
@@ -138,13 +141,21 @@ function StudentAskQuestion() {
                   onChange={handleChange}
                   style={styles.input}
                 />
-                <textarea
-                  name="description"
-                  placeholder="Mô tả câu hỏi"
-                  required
+
+                {/* Thay textarea mô tả bằng LatexInputKaTeX */}
+                <LatexInputKaTeX
                   value={formData.description}
-                  onChange={handleChange}
-                  style={styles.textarea}
+                  onChange={handleDescriptionChange}
+                  placeholder="Mô tả câu hỏi (hỗ trợ LaTeX)"
+                  style={{
+                    width: "100%",
+                    minHeight: 120,
+                    maxHeight: 120,
+                    overflowY: "auto",
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
                 />
                 <input
                   type="text"
@@ -164,7 +175,7 @@ function StudentAskQuestion() {
                   style={styles.input}
                 />
                 <button type="submit" style={styles.button}>
-                  {location.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
+                  {location?.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
                 </button>
               </div>
               <div style={styles.rightSection}>
@@ -191,7 +202,7 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     padding: "15px 0", // Thay vì 85vh, dùng padding cho hiển thị tốt hơn với sidebar
-    marginLeft:"108px",
+    marginLeft: "108px",
   },
   formContainer: {
     width: "1000px",
@@ -220,10 +231,14 @@ const styles = {
   },
   leftSection: {
     flex: "1 1 48%",
+    maxWidth: "100%",         // đảm bảo max width
     backgroundColor: "rgba(200, 200, 200, 0.3)",
     padding: "20px",
     borderRadius: "8px",
+    boxSizing: "border-box", // phòng lỗi padding làm tràn
   },
+
+
   rightSection: {
     flex: "1 1 48%",
     backgroundColor: "rgba(200, 200, 200, 0.3)",

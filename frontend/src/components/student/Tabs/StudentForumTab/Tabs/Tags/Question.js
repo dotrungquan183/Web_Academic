@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import TeacherForumLayout from "../../TeacherLayout";
+import StudentForumLayout from "../../StudentLayout";
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../../auth/authHelper';
 
-function TeacherTagsForumQuestion() {
+function StudentTagsForumQuestion() {
     const [data, setData] = useState(null);
     const [votesMap, setVotesMap] = useState({});
     const [answersMap, setAnswersMap] = useState({});
@@ -75,13 +75,13 @@ function TeacherTagsForumQuestion() {
 
 
     return (
-        <TeacherForumLayout>
+        <StudentForumLayout>
             <div style={containerStyle}>
                 <div style={headerStyle}>
                     <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
                     <button
                         style={askButtonStyle}
-                        onClick={() => navigate("/teacherforum/question/askquestion")}
+                        onClick={() => navigate("/studentforum/question/askquestion")}
                     >
                         Đặt câu hỏi
                     </button>
@@ -184,7 +184,7 @@ function TeacherTagsForumQuestion() {
                                         console.error("Lỗi khi cập nhật view:", err);
                                     }
 
-                                    navigate(`/teacherforum/question/${question.id}`);
+                                    navigate(`/studentforum/question/${question.id}`);
                                 }}
                             >
                                 <div style={questionContentStyle}>
@@ -214,7 +214,7 @@ function TeacherTagsForumQuestion() {
                 )}
 
             </div>
-        </TeacherForumLayout>
+        </StudentForumLayout>
     );
 }
 
@@ -335,4 +335,4 @@ const searchInputStyle = {
     width: "250px"
 };
 
-export default TeacherTagsForumQuestion;
+export default StudentTagsForumQuestion;

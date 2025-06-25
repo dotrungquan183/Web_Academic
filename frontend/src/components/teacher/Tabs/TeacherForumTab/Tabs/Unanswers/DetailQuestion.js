@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import TeacherForumLayout from "../../Layout";
+import TeacherForumLayout from "../../TeacherLayout";
 import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { FaFire, FaLink, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { renderWithLatex } from "../../LatexInputKaTeX";
+import { renderWithLatex } from "../../TeacherLatexInputKaTeX";
 import EmojiPicker from 'emoji-picker-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShare, faEdit, faEye } from '@fortawesome/free-solid-svg-icons';

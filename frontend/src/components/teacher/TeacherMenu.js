@@ -212,9 +212,6 @@ function TeacherMenu() {
                 )}
               </div>
             )}
-
-
-
           </div>
 
           <FaQuestionCircle className="header-icon" />

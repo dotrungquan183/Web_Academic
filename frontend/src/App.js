@@ -26,10 +26,15 @@ import StudentDocsTab from "./components/student/Tabs/StudentDocsTab"
 import StudentForumTab from "./components/student/Tabs/StudentForumTab/Menu"
 import StudentForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Questions/Question"
 import StudentAskQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Questions/AskQuestion"
+import StudentForumHome from "./components/student/Tabs/StudentForumTab/Tabs/Home"
 import StudentForumQuestionDetail from "./components/student/Tabs/StudentForumTab/Tabs/Questions/DetailQuestion"
-import StudentForumUnanswer from "./components/student/Tabs/StudentForumTab/Tabs/Unanswer"
-import StudentForumTag from "./components/student/Tabs/StudentForumTab/Tabs/Tag"
-import StudentForumSave from "./components/student/Tabs/StudentForumTab/Tabs/Save"
+
+import StudentUnanswersAskQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Unanswers/AskQuestion"
+import StudentUnanswersForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Unanswers/Question"
+import StudentUnanswersForumQuestionDetail from "./components/student/Tabs/StudentForumTab/Tabs/Unanswers/DetailQuestion"
+
+import StudentForumTag from "./components/student/Tabs/StudentForumTab/Tabs/Tags/Tag"
+import StudentTagsForumQuestion from "./components/student/Tabs/StudentForumTab/Tabs/Tags/Question"
 import StudentSupportTab from "./components/student/Tabs/StudentSupportTab"
 import StudentHomeworkTab from "./components/student/Tabs/StudentHomeworkTab"
 import StudentContactTab from "./components/student/Tabs/StudentContactTab";
@@ -211,9 +216,12 @@ function App() {
         <Route path="/studentforum/question" element={<StudentLayout><StudentForumQuestion /></StudentLayout>} />
         <Route path="/studentforum/question/askquestion" element={<StudentLayout><StudentAskQuestion /></StudentLayout>} />
         <Route path="/studentforum/question/:id" element={<StudentLayout><StudentForumQuestionDetail /></StudentLayout>} />
-        <Route path="/studentforum/unanswer" element={<StudentLayout><StudentForumUnanswer /></StudentLayout>} />
+        <Route path="/studentforum/unanswers" element={<StudentLayout><StudentUnanswersForumQuestion /></StudentLayout>} />
+        <Route path="/studentforum/unanswers/askquestion" element={<StudentLayout><StudentUnanswersAskQuestion /></StudentLayout>} />
+        <Route path="/studentforum/unanswers/:id" element={<StudentLayout><StudentUnanswersForumQuestionDetail /></StudentLayout>} />
         <Route path="/studentforum/tag" element={<StudentLayout><StudentForumTag /></StudentLayout>} />
-        <Route path="/studentforum/save" element={<StudentLayout><StudentForumSave /></StudentLayout>} />       
+        <Route path="/studentforum/tag/:tagId" element={<StudentLayout><StudentTagsForumQuestion /></StudentLayout>} />
+        <Route path="/studentforum/home" element={<StudentLayout><StudentForumHome /></StudentLayout>} />
         <Route path="/studentprofile/courses" element={<StudentLayout><StudentProfileCourses /></StudentLayout>} />
         <Route path="/studentprofile/forum" element={<StudentLayout><StudentProfileForum /></StudentLayout>} />
 
@@ -244,7 +252,7 @@ function App() {
         <Route path="/teacherprofile/courses" element={<TeacherLayout><TeacherProfileCourses /></TeacherLayout>} />
         <Route path="/teacherprofile/forum" element={<TeacherLayout><TeacherProfileForum /></TeacherLayout>} />
 
-        <Route path="/admin" element={<AdminLayout><AdminResultTab /></AdminLayout>} />
+        <Route path="/admin" element={<AdminLayout><AdminManageDetailAccount /></AdminLayout>} />
         <Route path="/admincourses/listcourses" element={<AdminLayout><AdminListCourses /></AdminLayout>} />
         <Route path="/admincourses/listcourses/:courseId" element={<AdminLayout><AdminDetailCourses /></AdminLayout>} />
         <Route path="/admincourses/post" element={<AdminLayout><AdminPost /></AdminLayout>} />

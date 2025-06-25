@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import TeacherForumLayout from "../../TeacherLayout";
+import StudentForumLayout from "../../StudentLayout";
 
-function TeacherForumTag() {
+function StudentForumTag() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [activeFilter, setActiveFilter] = useState("All");
@@ -41,7 +41,7 @@ function TeacherForumTag() {
   }, [searchQuery, data]);
 
   return (
-    <TeacherForumLayout>
+    <StudentForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Chủ đề</h2>
@@ -103,7 +103,7 @@ function TeacherForumTag() {
               <div
                 key={tag.id}
                 style={alternatingStyle}
-                onClick={() => navigate(`/teacherforum/tag/${tag.id}`)}
+                onClick={() => navigate(`/studentforum/tag/${tag.id}`)}
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               >
@@ -118,11 +118,11 @@ function TeacherForumTag() {
           <p style={{ marginLeft: "160px" }}>Không có dữ liệu.</p>
         )}
       </div>
-    </TeacherForumLayout>
+    </StudentForumLayout>
   );
 }
 
-export default TeacherForumTag;
+export default StudentForumTag;
 
 // === Style ===
 const containerStyle = {
