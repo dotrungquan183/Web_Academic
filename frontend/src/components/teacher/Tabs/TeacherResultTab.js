@@ -1,311 +1,873 @@
-import React, { useState, useEffect } from 'react';
-import { getToken } from "../../auth/authHelper";
+import React, { useState } from 'react';
 import {
-  Chart as ChartJS,
-  ArcElement,
+  BookOpen,
+  MessageSquare,
+  Users,
+  Video,
+  Clock,
+  ThumbsUp,
+  Award,
+  TrendingUp,
+  Eye,
+  CheckCircle,
+  XCircle,
+  BarChart3,
+  PieChart,
+  Calendar,
+  Star
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  LineChart,
+  AreaChart,  // Thêm AreaChart
+  BarChart,
+  Line,
+  Area,       // Thêm Area
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  PointElement,
-  LineElement,
-  RadialLinearScale,
-} from 'chart.js';
-import { Pie, Doughnut, Bar, Line, PolarArea } from 'react-chartjs-2';
-
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  PointElement,
-  LineElement,
-  RadialLinearScale
-);
-
-const chartTitles = {
-  user_activity: "Hoạt động người dùng",
-  daily_views: "Lượt xem hàng ngày",
-  daily_votes: "Lượt vote hàng ngày",
-  vote_ratio: "Tỉ lệ vote",
-  top_questions_by_views: "Top câu hỏi theo lượt xem",
-  accepted_answers: "Câu trả lời được chấp nhận",
-  avg_votes_per_question: "Trung bình vote mỗi câu hỏi",
-  daily_questions: "Câu hỏi hàng ngày",
-  tag_question_count: "Câu hỏi theo thẻ",
-  bounty_distribution: "Phân bố treo giải",
-  comment_type_distribution: "Phân bố loại bình luận",
-  daily_answers: "Câu trả lời hàng ngày"
-};
-
-const chartTypes = {
-  user_activity: 'bar',
-  daily_views: 'line',
-  daily_votes: 'line',
-  vote_ratio: 'doughnut',
-  top_questions_by_views: 'bar',
-  accepted_answers: 'bar',
- avg_votes_per_question: 'bar',
-  daily_questions: 'line',
-  tag_question_count: 'bar',
-  bounty_distribution: 'polarArea',
-  comment_type_distribution: 'pie',
-  daily_answers: 'line'
-};
-
-const sidebarItems = [
-  { key: 'tab1', icon: '📊', label: 'Hoạt động' },
-  { key: 'tab2', icon: '📈', label: 'Tương tác' },
-];
-
-const ChartCard = ({ title, chart }) => (
-  <div
-    style={{
-      width: '350px',
-      margin: 16,
-      padding: 16,
-      backgroundColor: 'white',
-      borderRadius: 12,
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-      height: 300,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      transition: 'all 0.3s ease',
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
-      e.currentTarget.style.backgroundColor = '#f0f4ff';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-      e.currentTarget.style.backgroundColor = 'white';
-    }}
-  >
-    <h3 style={{ fontSize: 16, textAlign: 'center', marginBottom: 12 }}>{title}</h3>
-    <div style={{ flex: 1, minHeight: 250 }}>{chart}</div>
-  </div>
-);
-
-const renderChart = (type, data) => {
-  const chartMap = {
-    bar: <Bar data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
-    line: <Line data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
-    doughnut: <Doughnut data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
-    pie: <Pie data={data} options={{ responsive: true, maintainAspectRatio: false }} />,
-    polarArea: <PolarArea data={data} options={{ responsive: true, maintainAspectRatio: false }} />
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell
+} from 'recharts';
+import './TeacherDashboard.css';
+ 
+const TeacherDashboard = () => {
+  const [activeTab, setActiveTab] = useState('courses');
+ 
+  // Mock data - trong thực tế sẽ fetch từ API
+  const courseData = {
+    totalCourses: 12,
+    totalStudents: 248,
+    totalVideos: 86,
+    totalDuration: 2340, // minutes
+    approvedCourses: 10,
+    pendingCourses: 2,
+    rejectedCourses: 0
   };
-  return chartMap[type] || null;
-};
-
-export default function TeacherDashboard() {
-  const [chartDataMap, setChartDataMap] = useState({});
-  const [activeTab, setActiveTab] = useState('tab1');
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const token = getToken();
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const charts = Object.keys(chartTitles);
-
-    Promise.all(
-      charts.map(chart =>
-        fetch(`http://localhost:8000/api/teacher/teacher_insight/teacher_insight_forum/?chart=${chart}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          }
-        })
-          .then(res => {
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-          })
-          .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-              const labelKey = Object.keys(data[0]).find(k =>
-                typeof data[0][k] === 'string' &&
-                !['value', 'count', 'total'].includes(k)
-              ) || Object.keys(data[0])[0];
-
-              const valueKey = ['value', 'count', 'total'].find(k => k in data[0]) ||
-                Object.keys(data[0]).find(k => typeof data[0][k] === 'number' && k !== labelKey) ||
-                'value';
-
-              return {
-                chart,
-                data: {
-                  labels: data.map(d => d[labelKey]),
-                  datasets: [{
-                    label: chartTitles[chart],
-                    data: data.map(d => Number(d[valueKey]) || 0),
-                    backgroundColor: [
-                      '#60a5fa', '#facc15', '#34d399', '#f87171', '#a78bfa',
-                      '#fb923c', '#2dd4bf', '#818cf8', '#f472b6', '#22d3ee'
-                    ],
-                    borderWidth: 1,
-                    fill: false,
-                    borderColor: '#2563eb',
-                    tension: 0.4,
-                  }]
-                }
-              };
-            } else {
-              return null;
-            }
-          })
-          .catch(() => null)
-      )
-    ).then(results => {
-      const newChartDataMap = {};
-      results.forEach(r => {
-        if (r) newChartDataMap[r.chart] = r.data;
-      });
-      setChartDataMap(newChartDataMap);
-    });
-  }, [token]);
-
-  const chartsTab1 = [
-    'user_activity',
-    'daily_views',
-    'daily_votes',
-    'vote_ratio',
-    'top_questions_by_views',
-    'accepted_answers'
+ 
+  const forumData = {
+    totalAnswers: 34,
+    acceptedAnswers: 28,
+    totalVotes: 156,
+    reputation: 1240,
+    totalComments: 67,
+    helpfulComments: 52,
+    // Thêm data cho biểu đồ câu hỏi được duyệt
+    totalQuestions: 42,
+    approvedQuestions: 38
+  };
+ 
+  const monthlyStudentData = [
+    { month: 'T1', students: 45 },
+    { month: 'T2', students: 52 },
+    { month: 'T3', students: 48 },
+    { month: 'T4', students: 61 },
+    { month: 'T5', students: 58 },
+    { month: 'T6', students: 67 }
   ];
-
-  const chartsTab2 = [
-    'avg_votes_per_question',
-    'daily_questions',
-    'tag_question_count',
-    'bounty_distribution',
-    'comment_type_distribution',
-    'daily_answers'
+ 
+  const coursePopularityData = [
+    { name: 'Đại số cơ bản', students: 78, videos: 12, duration: 480 },
+    { name: 'Hình học không gian', students: 56, videos: 8, duration: 320 },
+    { name: 'Lượng giác', students: 42, videos: 10, duration: 380 },
+    { name: 'Giải tích', students: 38, videos: 15, duration: 580 },
+    { name: 'Xác suất thống kê', students: 34, videos: 9, duration: 280 }
   ];
-
-  const formatTime = (date) =>
-  date.toLocaleString('vi-VN', {
-    hour12: false,
-    weekday: 'long',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-
-
-  return (
-    <div style={{ display: 'flex', height: '100vh', marginTop: '-15px' }}>
-      {/* Sidebar */}
-      <div style={{
-        width: 425,
-        backgroundColor: 'rgba(0, 51, 102, 0.95)',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: 20,
-        paddingBottom: 20,
-      }}>
-        <h2 style={{ marginBottom: 20, fontWeight: 'bold' }}>Dashboard</h2>
-        {sidebarItems.map(({ key, icon, label }) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            onMouseEnter={(e) => {
-              if (activeTab !== key) e.currentTarget.style.backgroundColor = '#1e3a8a';
-            }}
-            onMouseLeave={(e) => {
-              if (activeTab !== key) e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-            style={{
-              width: 210,
-              backgroundColor: activeTab === key ? '#256ee3' : 'transparent',
-              color: 'white',
-              border: 'none',
-              padding: '12px 0',
-              marginBottom: 12,
-              cursor: 'pointer',
-              fontSize: 18,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              borderRadius: 8,
-              fontWeight: activeTab === key ? 'bold' : 'normal',
-              userSelect: 'none',
-              transition: 'background-color 0.3s ease',
-            }}
-            title={label}
-          >
-            <span>{icon}</span> <span>{label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Content area */}
-      <div style={{
-        flexGrow: 1,
-        padding: 20,
-        overflowY: 'auto',
-        backgroundColor: 'rgba(243, 244, 246, 0.85)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-start',
-      }}>
-        {/* ⏰ Clock Header */}
-        <div style={{
-          width: '100%',
-          fontSize: 20,
-          fontWeight: 'bold',
-          textAlign: 'left',
-          marginBottom: 12,
-          color: '003366'
-        }}>
-          🕒 {formatTime(currentTime)}
+ 
+  const lessonViewData = [
+    { lesson: 'Bài 1', views: 78, total: 78 },
+    { lesson: 'Bài 2', views: 72, total: 78 },
+    { lesson: 'Bài 3', views: 65, total: 78 },
+    { lesson: 'Bài 4', views: 58, total: 78 },
+    { lesson: 'Bài 5', views: 45, total: 78 }
+  ];
+ 
+ 
+// Mock data mới cho các biểu đồ bổ sung
+ 
+// Data cho lượt xem video theo tuần
+const videoViewsData = [
+  { week: 'T1', views: 245 },
+  { week: 'T2', views: 312 },
+  { week: 'T3', views: 289 },
+  { week: 'T4', views: 356 },
+  { week: 'T5', views: 423 },
+  { week: 'T6', views: 398 }
+];
+ 
+// Data cho lượt xem tài liệu theo tuần
+const documentViewsData = [
+  { week: 'T1', views: 156 },
+  { week: 'T2', views: 189 },
+  { week: 'T3', views: 203 },
+  { week: 'T4', views: 234 },
+  { week: 'T5', views: 267 },
+  { week: 'T6', views: 298 }
+];
+ 
+// Data cho bài học được xem nhiều nhất
+const topLessonsData = [
+  {
+    title: 'Giải phương trình bậc hai',
+    course: 'Đại số cơ bản',
+    views: 456
+  },
+  {
+    title: 'Định lý Pythagoras',
+    course: 'Hình học không gian',
+    views: 389
+  },
+  {
+    title: 'Công thức lượng giác cơ bản',
+    course: 'Lượng giác',
+    views: 367
+  },
+  {
+    title: 'Đạo hàm hàm số',
+    course: 'Giải tích',
+    views: 298
+  },
+  {
+    title: 'Xác suất có điều kiện',
+    course: 'Xác suất thống kê',
+    views: 245
+  }
+];
+ 
+// Data cho tài liệu được xem nhiều nhất
+const topDocumentsData = [
+  {
+    title: 'Bảng công thức toán học cấp 3',
+    type: 'PDF - Tài liệu tham khảo',
+    views: 678
+  },
+  {
+    title: 'Bài tập trắc nghiệm Đại số',
+    type: 'PDF - Bài tập',
+    views: 534
+  },
+  {
+    title: 'Sơ đồ tư duy Hình học',
+    type: 'PNG - Infographic',
+    views: 445
+  },
+  {
+    title: 'Đề thi thử THPT Quốc gia',
+    type: 'PDF - Đề thi',
+    views: 398
+  },
+  {
+    title: 'Lời giải chi tiết bài tập',
+    type: 'PDF - Hướng dẫn',
+    views: 367
+  }
+];
+ 
+// Data cho phân tích mức độ tương tác nội dung
+const contentEngagementData = [
+  {
+    content: 'Đại số cơ bản',
+    videoViews: 1234,
+    documentViews: 567,
+    downloads: 89
+  },
+  {
+    content: 'Hình học không gian',
+    videoViews: 987,
+    documentViews: 445,
+    downloads: 67
+  },
+  {
+    content: 'Lượng giác',
+    videoViews: 756,
+    documentViews: 398,
+    downloads: 54
+  },
+  {
+    content: 'Giải tích',
+    videoViews: 689,
+    documentViews: 289,
+    downloads: 43
+  },
+  {
+    content: 'Xác suất thống kê',
+    videoViews: 534,
+    documentViews: 234,
+    downloads: 32
+  }
+];
+ 
+// Data cho hiệu suất nội dung theo tuần
+const weeklyContentData = [
+  { week: 'T1', videoViews: 245, documentViews: 156, completionRate: 78 },
+  { week: 'T2', videoViews: 312, documentViews: 189, completionRate: 82 },
+  { week: 'T3', videoViews: 289, documentViews: 203, completionRate: 75 },
+  { week: 'T4', videoViews: 356, documentViews: 234, completionRate: 85 },
+  { week: 'T5', videoViews: 423, documentViews: 267, completionRate: 88 },
+  { week: 'T6', videoViews: 398, documentViews: 298, completionRate: 91 }
+];
+ 
+  const reputationData = [
+    { month: 'T1', reputation: 890 },
+    { month: 'T2', reputation: 920 },
+    { month: 'T3', reputation: 980 },
+    { month: 'T4', reputation: 1050 },
+    { month: 'T5', reputation: 1150 },
+    { month: 'T6', reputation: 1240 }
+  ];
+ 
+  // Data cho xu hướng hoạt động hàng tuần
+  const weeklyActivityData = [
+    { week: 'T1', answers: 5, comments: 12, votes: 23 },
+    { week: 'T2', answers: 8, comments: 15, votes: 28 },
+    { week: 'T3', answers: 6, comments: 10, votes: 25 },
+    { week: 'T4', answers: 9, comments: 18, votes: 32 },
+    { week: 'T5', answers: 7, comments: 14, votes: 29 },
+    { week: 'T6', answers: 11, comments: 20, votes: 35 }
+  ];
+ 
+  // Data cho phân tích thời gian phản hồi
+  const responseTimeData = [
+    { timeRange: '< 1h', count: 15 },
+    { timeRange: '1-6h', count: 12 },
+    { timeRange: '6-24h', count: 8 },
+    { timeRange: '1-3 ngày', count: 5 },
+    { timeRange: '> 3 ngày', count: 2 }
+  ];
+ 
+  // Data cho chỉ số hiệu suất
+  const performanceMetrics = [
+    {
+      label: 'Tỷ lệ câu trả lời hữu ích',
+      value: '94%',
+      percentage: 94,
+      color: '#10b981',
+      subtitle: 'Rất tốt so với trung bình'
+    },
+    {
+      label: 'Thời gian phản hồi trung bình',
+      value: '2.3h',
+      percentage: 85,
+      color: '#3b82f6',
+      subtitle: 'Nhanh hơn 85% giáo viên khác'
+    },
+    {
+      label: 'Mức độ tương tác',
+      value: '8.7/10',
+      percentage: 87,
+      color: '#f59e0b',
+      subtitle: 'Học sinh đánh giá cao'
+    },
+    {
+      label: 'Tần suất hoạt động',
+      value: '5.2 ngày/tuần',
+      percentage: 74,
+      color: '#8b5cf6',
+      subtitle: 'Hoạt động đều đặn'
+    }
+  ];
+ 
+  const activityData = [
+    { type: 'Câu trả lời', count: 34, color: '#3b82f6' },
+    { type: 'Bình luận', count: 67, color: '#f59e0b' },
+    { type: 'Votes nhận', count: 156, color: '#10b981' },
+    { type: 'Câu hỏi', count: 42, color: '#8b5cf6' }
+  ];
+ 
+  const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => (
+    <div className={`teastat-stat-card teastat-stat-card-${color}`}>
+      <div className="teastat-stat-content">
+        <div className="teastat-stat-info">
+          <p className="teastat-stat-title">{title}</p>
+          <p className="teastat-stat-value">{value}</p>
+          {subtitle && <p className="teastat-stat-subtitle">{subtitle}</p>}
         </div>
-
-        {(activeTab === 'tab1' ? chartsTab1 : chartsTab2).map(chart =>
-          chartDataMap[chart] ? (
-            <ChartCard
-              key={chart}
-              title={chartTitles[chart]}
-              chart={renderChart(chartTypes[chart], chartDataMap[chart])}
-            />
-          ) : (
-            <div
-              key={chart}
-              style={{
-                width: '100%',
-                margin: 16,
-                padding: 16,
-                backgroundColor: '#003366',
-                borderRadius: 12,
-                textAlign: 'center',
-                color: '#999',
-                height: 320,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              Đang tải {chartTitles[chart]}...
-            </div>
-          )
-        )}
+        <div className={`teastat-stat-icon teastat-stat-icon-${color}`}>
+          <Icon className="teastat-icon" />
+        </div>
       </div>
     </div>
   );
-}
+ 
+  const Sidebar = () => (
+    <div className="teastat-sidebar">
+      <div className="teastat-sidebar-header">
+        <h1 className="teastat-sidebar-title">Báo cáo Giáo viên</h1>
+      </div>
+      <nav className="teastat-sidebar-nav">
+        <button
+          onClick={() => setActiveTab('courses')}
+          className={`teastat-nav-button ${activeTab === 'courses' ? 'teastat-nav-button-active' : ''}`}
+        >
+          <BookOpen className="teastat-nav-icon" />
+          Khóa học
+        </button>
+        <button
+          onClick={() => setActiveTab('forum')}
+          className={`teastat-nav-button ${activeTab === 'forum' ? 'teastat-nav-button-active' : ''}`}
+        >
+          <MessageSquare className="teastat-nav-icon" />
+          Hoạt động diễn đàn
+        </button>
+      </nav>
+    </div>
+  );
+ 
+  const CoursesTab = () => (
+  <div className="teastat-tab-content">
+    {/* Overview Cards */}
+    <div className="teastat-stats-grid">
+      <StatCard
+        icon={BookOpen}
+        title="Tổng khóa học"
+        value={courseData.totalCourses}
+        subtitle={`${courseData.approvedCourses} đã duyệt`}
+      />
+      <StatCard
+        icon={Users}
+        title="Tổng học sinh"
+        value={courseData.totalStudents}
+        subtitle="Đã đăng ký"
+      />
+      <StatCard
+        icon={Video}
+        title="Tổng video"
+        value={courseData.totalVideos}
+        subtitle={`${Math.floor(courseData.totalDuration / 60)}h ${courseData.totalDuration % 60}p`}
+      />
+      <StatCard
+        icon={TrendingUp}
+        title="Tỷ lệ duyệt"
+        value={`${Math.round((courseData.approvedCourses / courseData.totalCourses) * 100)}%`}
+        subtitle="Nội dung được phê duyệt"
+      />
+    </div>
+ 
+    {/* Course Status */}
+    <div className="teastat-card">
+      <h3 className="teastat-card-title">Trạng thái khóa học</h3>
+      <div className="teastat-status-grid">
+        <div className="teastat-status-item">
+          <div className="teastat-status-icon teastat-status-icon-green">
+            <CheckCircle className="teastat-icon" />
+          </div>
+          <p className="teastat-status-value teastat-status-value-green">{courseData.approvedCourses}</p>
+          <p className="teastat-status-label">Đã duyệt</p>
+        </div>
+        <div className="teastat-status-item">
+          <div className="teastat-status-icon teastat-status-icon-yellow">
+            <Clock className="teastat-icon" />
+          </div>
+          <p className="teastat-status-value teastat-status-value-yellow">{courseData.pendingCourses}</p>
+          <p className="teastat-status-label">Chờ duyệt</p>
+        </div>
+        <div className="teastat-status-item">
+          <div className="teastat-status-icon teastat-status-icon-red">
+            <XCircle className="teastat-icon" />
+          </div>
+          <p className="teastat-status-value teastat-status-value-red">{courseData.rejectedCourses}</p>
+          <p className="teastat-status-label">Bị từ chối</p>
+        </div>
+      </div>
+    </div>
+ 
+    {/* Views Analytics - Dual Chart */}
+    <div className="teastat-dual-chart-container">
+      {/* Video Views */}
+      <div className="teastat-card teastat-half-card">
+        <h3 className="teastat-card-title">Lượt xem video bài giảng</h3>
+        <div className="teastat-chart-container">
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={videoViewsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="week" />
+              <YAxis />
+              <Tooltip />
+              <Area
+                type="monotone"
+                dataKey="views"
+                stroke="#3b82f6"
+                fill="#3b82f6"
+                fillOpacity={0.6}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="teastat-chart-summary">
+          Tổng: {videoViewsData.reduce((sum, item) => sum + item.views, 0)} lượt xem
+        </p>
+      </div>
+ 
+      {/* Document Views */}
+      <div className="teastat-card teastat-half-card">
+        <h3 className="teastat-card-title">Lượt xem tài liệu</h3>
+        <div className="teastat-chart-container">
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={documentViewsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="week" />
+              <YAxis />
+              <Tooltip />
+              <Area
+                type="monotone"
+                dataKey="views"
+                stroke="#10b981"
+                fill="#10b981"
+                fillOpacity={0.6}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="teastat-chart-summary">
+          Tổng: {documentViewsData.reduce((sum, item) => sum + item.views, 0)} lượt xem
+        </p>
+      </div>
+    </div>
+ 
+    {/* Top Viewed Content */}
+    <div className="teastat-dual-chart-container">
+      {/* Most Viewed Lessons */}
+      <div className="teastat-card teastat-half-card">
+        <h3 className="teastat-card-title">Bài học được xem nhiều nhất</h3>
+        <div className="teastat-ranking-list">
+          {topLessonsData.map((lesson, index) => (
+            <div key={index} className="teastat-ranking-item">
+              <div className="teastat-ranking-position">#{index + 1}</div>
+              <div className="teastat-ranking-content">
+                <p className="teastat-ranking-title">{lesson.title}</p>
+                <p className="teastat-ranking-subtitle">{lesson.course}</p>
+              </div>
+              <div className="teastat-ranking-stats">
+                <span className="teastat-ranking-views">{lesson.views} lượt xem</span>
+                <div className="teastat-ranking-bar">
+                  <div
+                    className="teastat-ranking-fill"
+                    style={{ width: `${(lesson.views / Math.max(...topLessonsData.map(l => l.views))) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+ 
+      {/* Most Viewed Documents */}
+      <div className="teastat-card teastat-half-card">
+        <h3 className="teastat-card-title">Tài liệu được xem nhiều nhất</h3>
+        <div className="teastat-ranking-list">
+          {topDocumentsData.map((doc, index) => (
+            <div key={index} className="teastat-ranking-item">
+              <div className="teastat-ranking-position">#{index + 1}</div>
+              <div className="teastat-ranking-content">
+                <p className="teastat-ranking-title">{doc.title}</p>
+                <p className="teastat-ranking-subtitle">{doc.type}</p>
+              </div>
+              <div className="teastat-ranking-stats">
+                <span className="teastat-ranking-views">{doc.views} lượt xem</span>
+                <div className="teastat-ranking-bar">
+                  <div
+                    className="teastat-ranking-fill teastat-ranking-fill-green"
+                    style={{ width: `${(doc.views / Math.max(...topDocumentsData.map(d => d.views))) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+ 
+    {/* Content Engagement Analysis */}
+    <div className="teastat-card">
+      <h3 className="teastat-card-title">Phân tích mức độ tương tác nội dung</h3>
+      <div className="teastat-chart-container">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={contentEngagementData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="content" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="videoViews" fill="#3b82f6" name="Lượt xem video" />
+            <Bar dataKey="documentViews" fill="#10b981" name="Lượt xem tài liệu" />
+            <Bar dataKey="downloads" fill="#f59e0b" name="Lượt tải xuống" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+ 
+    {/* Student Registration Trend */}
+    <div className="teastat-card">
+      <h3 className="teastat-card-title">Xu hướng đăng ký học sinh</h3>
+      <div className="teastat-chart-container">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={monthlyStudentData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="students" stroke="#8884d8" strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+ 
+    {/* Course Popularity */}
+    <div className="teastat-card">
+      <h3 className="teastat-card-title">Độ phổ biến khóa học</h3>
+      <div className="teastat-chart-container">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={coursePopularityData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="students" fill="#8884d8" name="Học sinh" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+ 
+    {/* Weekly Content Performance */}
+    <div className="teastat-card">
+      <h3 className="teastat-card-title">Hiệu suất nội dung theo tuần</h3>
+      <div className="teastat-chart-container">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={weeklyContentData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="week" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="videoViews" stroke="#3b82f6" strokeWidth={2} name="Video views" />
+            <Line type="monotone" dataKey="documentViews" stroke="#10b981" strokeWidth={2} name="Document views" />
+            <Line type="monotone" dataKey="completionRate" stroke="#f59e0b" strokeWidth={2} name="Completion rate %" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+ 
+    {/* Lesson View Completion */}
+    <div className="teastat-card">
+      <h3 className="teastat-card-title">Tỷ lệ hoàn thành bài học</h3>
+      <div className="teastat-progress-list">
+        {lessonViewData.map((lesson, index) => (
+          <div key={index} className="teastat-progress-item">
+            <div className="teastat-progress-label">{lesson.lesson}</div>
+            <div className="teastat-progress-bar-container">
+              <div className="teastat-progress-bar">
+                <div
+                  className="teastat-progress-bar-fill"
+                  style={{ width: `${(lesson.views / lesson.total) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="teastat-progress-text">
+              {lesson.views}/{lesson.total} ({Math.round((lesson.views / lesson.total) * 100)}%)
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+ 
+  const ForumTab = () => (
+    <div className="teastat-tab-content">
+      {/* Overview Cards */}
+      <div className="teastat-stats-grid">
+        <StatCard
+          icon={MessageSquare}
+          title="Câu trả lời"
+          value={forumData.totalAnswers}
+          subtitle={`${forumData.acceptedAnswers} được chấp nhận`}
+        />
+        <StatCard
+          icon={ThumbsUp}
+          title="Tổng votes"
+          value={forumData.totalVotes}
+          subtitle="Đánh giá tích cực"
+        />
+        <StatCard
+          icon={Award}
+          title="Reputation"
+          value={forumData.reputation}
+          subtitle="Điểm uy tín"
+        />
+        <StatCard
+          icon={Star}
+          title="Bình luận"
+          value={forumData.totalComments}
+          subtitle={`${forumData.helpfulComments} hữu ích`}
+        />
+      </div>
+ 
+      {/* Dual Circular Progress Charts */}
+      <div className="teastat-dual-chart-container">
+        {/* Answer Acceptance Rate */}
+        <div className="teastat-card teastat-half-card">
+          <h3 className="teastat-card-title">Tỷ lệ câu trả lời được chấp nhận</h3>
+          <div className="teastat-circular-progress">
+            <div className="teastat-circular-chart">
+              <svg className="teastat-circular-svg" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#e5e7eb"
+                  strokeWidth="3"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="3"
+                  strokeDasharray={`${(forumData.acceptedAnswers / forumData.totalAnswers) * 100}, 100`}
+                />
+              </svg>
+              <div className="teastat-circular-text">
+                <span className="teastat-circular-percentage">
+                  {Math.round((forumData.acceptedAnswers / forumData.totalAnswers) * 100)}%
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="teastat-circular-description">
+            {forumData.acceptedAnswers} trên {forumData.totalAnswers} câu trả lời được chấp nhận
+          </p>
+        </div>
+ 
+        {/* Question Approval Rate */}
+        <div className="teastat-card teastat-half-card">
+          <h3 className="teastat-card-title">Tỷ lệ câu hỏi được duyệt</h3>
+          <div className="teastat-circular-progress">
+            <div className="teastat-circular-chart">
+              <svg className="teastat-circular-svg" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#e5e7eb"
+                  strokeWidth="3"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="3"
+                  strokeDasharray={`${(forumData.approvedQuestions / forumData.totalQuestions) * 100}, 100`}
+                />
+              </svg>
+              <div className="teastat-circular-text">
+                <span className="teastat-circular-percentage">
+                  {Math.round((forumData.approvedQuestions / forumData.totalQuestions) * 100)}%
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="teastat-circular-description">
+            {forumData.approvedQuestions} trên {forumData.totalQuestions} câu hỏi được duyệt
+          </p>
+        </div>
+      </div>
+ 
+      {/* Reputation Growth */}
+      <div className="teastat-card">
+        <h3 className="teastat-card-title">Phát triển reputation</h3>
+        <div className="teastat-chart-container">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={reputationData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="reputation" stroke="#10b981" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+ 
+      {/* Weekly Activity Trends */}
+      <div className="teastat-card">
+        <h3 className="teastat-card-title">Xu hướng hoạt động hàng tuần</h3>
+        <div className="teastat-chart-container">
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={weeklyActivityData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="week" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="answers"
+                stackId="1"
+                stroke="#3b82f6"
+                fill="#3b82f6"
+                fillOpacity={0.6}
+                name="Câu trả lời"
+              />
+              <Area
+                type="monotone"
+                dataKey="comments"
+                stackId="1"
+                stroke="#f59e0b"
+                fill="#f59e0b"
+                fillOpacity={0.6}
+                name="Bình luận"
+              />
+              <Area
+                type="monotone"
+                dataKey="votes"
+                stackId="1"
+                stroke="#10b981"
+                fill="#10b981"
+                fillOpacity={0.6}
+                name="Votes"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+ 
+      {/* Response Time Analysis */}
+      <div className="teastat-card">
+        <h3 className="teastat-card-title">Phân tích thời gian phản hồi</h3>
+        <div className="teastat-chart-container">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={responseTimeData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="timeRange" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#8b5cf6" name="Số lượng câu trả lời" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+ 
+      {/* Activity Breakdown */}
+      <div className="teastat-card">
+        <h3 className="teastat-card-title">Phân tích hoạt động</h3>
+        <div className="teastat-activity-grid">
+          <div className="teastat-pie-chart-container">
+            <ResponsiveContainer width="100%" height={250}>
+              <RechartsPieChart>
+                <Pie
+                  data={activityData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {activityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="teastat-activity-legend">
+            {activityData.map((item, index) => (
+              <div key={index} className="teastat-legend-item">
+                <div className="teastat-legend-content">
+                  <div
+                    className="teastat-legend-color"
+                    style={{ backgroundColor: item.color }}
+                  ></div>
+                  <span className="teastat-legend-label">{item.type}</span>
+                </div>
+                <span className="teastat-legend-value">{item.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+ 
+      {/* Top Performance Metrics */}
+      <div className="teastat-card">
+        <h3 className="teastat-card-title">Chỉ số hiệu suất hàng đầu</h3>
+        <div className="teastat-performance-grid">
+          {performanceMetrics.map((metric, index) => (
+            <div key={index} className="teastat-performance-item">
+              <div className="teastat-performance-header">
+                <span className="teastat-performance-label">{metric.label}</span>
+                <span className="teastat-performance-value">{metric.value}</span>
+              </div>
+              <div className="teastat-performance-bar">
+                <div
+                  className="teastat-performance-fill"
+                  style={{
+                    width: `${metric.percentage}%`,
+                    backgroundColor: metric.color
+                  }}
+                ></div>
+              </div>
+              <span className="teastat-performance-subtitle">{metric.subtitle}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+ 
+      {/* Recent Activity */}
+      <div className="teastat-card">
+        <h3 className="teastat-card-title">Hoạt động gần đây</h3>
+        <div className="teastat-activity-list">
+          <div className="teastat-activity-item teastat-activity-item-green">
+            <CheckCircle className="teastat-activity-icon" />
+            <div className="teastat-activity-content">
+              <p className="teastat-activity-title">Câu trả lời được chấp nhận</p>
+              <p className="teastat-activity-subtitle">Bài "Giải phương trình bậc hai" - 2 giờ trước</p>
+            </div>
+          </div>
+          <div className="teastat-activity-item teastat-activity-item-blue">
+            <ThumbsUp className="teastat-activity-icon" />
+            <div className="teastat-activity-content">
+              <p className="teastat-activity-title">Nhận được 3 votes tích cực</p>
+              <p className="teastat-activity-subtitle">Câu trả lời về "Tích phân từng phần" - 4 giờ trước</p>
+            </div>
+          </div>
+          <div className="teastat-activity-item teastat-activity-item-purple">
+            <Award className="teastat-activity-icon" />
+            <div className="teastat-activity-content">
+              <p className="teastat-activity-title">Đạt mốc 1200 reputation</p>
+              <p className="teastat-activity-subtitle">Tăng 50 điểm trong tuần này</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+ 
+  return (
+    <div className="teastat-dashboard">
+      <Sidebar />
+      <div className="teastat-main-content">
+        <div className="teastat-header">
+          <h2 className="teastat-main-title">
+            {activeTab === 'courses' ? 'Thống kê Khóa học' : 'Hoạt động Diễn đàn'}
+          </h2>
+          <p className="teastat-main-subtitle">
+            {activeTab === 'courses'
+              ? 'Tổng quan về hiệu suất giảng dạy và tương tác học sinh'
+              : 'Phân tích đóng góp và uy tín trong cộng đồng học thuật'
+            }
+          </p>
+        </div>
+ 
+        {activeTab === 'courses' ? <CoursesTab /> : <ForumTab />}
+      </div>
+    </div>
+  );
+};
+ 
+export default TeacherDashboard;

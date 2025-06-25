@@ -1,0 +1,683 @@
+/* Teacher Dashboard CSS with teastat prefix */
+ 
+.teastat-dashboard {
+  display: flex;
+  background-color: #f3f4f6;
+  min-height: 100vh;
+}
+ 
+/* Sidebar */
+.teastat-sidebar {
+  width: 256px;
+  background-color: white;
+  box-shadow: none;
+  height: 100vh;
+}
+ 
+.teastat-sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+ 
+.teastat-sidebar-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0;
+}
+ 
+.teastat-sidebar-nav {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column; /* Đảm bảo các button xếp theo chiều dọc */
+}
+ 
+.teastat-nav-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  text-align: left;
+  border: none;
+  background: none;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+ 
+.teastat-nav-button:hover {
+  background-color: #eff6ff;
+}
+ 
+.teastat-nav-button-active {
+  background-color: #eff6ff;
+  border-right: 4px solid #3b82f6;
+  color: #1d4ed8;
+}
+ 
+.teastat-nav-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+}
+ 
+/* Main Content */
+.teastat-main-content {
+  flex: 1;
+  padding: 32px;
+}
+ 
+.teastat-header {
+  margin-bottom: 24px;
+}
+ 
+.teastat-main-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+ 
+.teastat-main-subtitle {
+  color: #6b7280;
+  margin: 0;
+}
+ 
+/* Tab Content */
+.teastat-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+ 
+/* Stats Grid */
+.teastat-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+ 
+@media (min-width: 768px) {
+  .teastat-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+ 
+@media (min-width: 1024px) {
+  .teastat-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+ 
+/* Stat Card */
+.teastat-stat-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  border-left: 4px solid #3b82f6;
+}
+ 
+.teastat-stat-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+ 
+.teastat-stat-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+}
+ 
+.teastat-stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+ 
+.teastat-stat-subtitle {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+}
+ 
+.teastat-stat-icon {
+  padding: 12px;
+  border-radius: 50%;
+  background-color: #dbeafe;
+}
+ 
+.teastat-stat-icon-blue {
+  background-color: #dbeafe;
+}
+ 
+.teastat-icon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+ 
+/* Card */
+.teastat-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+}
+ 
+.teastat-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #1f2937;
+}
+ 
+/* Status Grid */
+.teastat-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+ 
+.teastat-status-item {
+  text-align: center;
+}
+ 
+.teastat-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 8px auto;
+  border-radius: 50%;
+}
+ 
+.teastat-status-icon-green {
+  background-color: #d1fae5;
+}
+ 
+.teastat-status-icon-green .teastat-icon {
+  color: #059669;
+}
+ 
+.teastat-status-icon-yellow {
+  background-color: #fef3c7;
+}
+ 
+.teastat-status-icon-yellow .teastat-icon {
+  color: #d97706;
+}
+ 
+.teastat-status-icon-red {
+  background-color: #fee2e2;
+}
+ 
+.teastat-status-icon-red .teastat-icon {
+  color: #dc2626;
+}
+ 
+.teastat-status-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 0 4px 0;
+}
+ 
+.teastat-status-value-green {
+  color: #059669;
+}
+ 
+.teastat-status-value-yellow {
+  color: #d97706;
+}
+ 
+.teastat-status-value-red {
+  color: #dc2626;
+}
+ 
+.teastat-status-label {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+ 
+/* Chart Container */
+.teastat-chart-container {
+  width: 100%;
+}
+ 
+/* Progress List */
+.teastat-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+ 
+.teastat-progress-item {
+  display: flex;
+  align-items: center;
+}
+ 
+.teastat-progress-label {
+  width: 80px;
+  font-size: 14px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+ 
+.teastat-progress-bar-container {
+  flex: 1;
+  margin: 0 16px;
+}
+ 
+.teastat-progress-bar {
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 8px;
+}
+ 
+.teastat-progress-bar-fill {
+  background-color: #3b82f6;
+  height: 8px;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+ 
+.teastat-progress-text {
+  font-size: 14px;
+  color: #6b7280;
+  width: 80px;
+  text-align: right;
+  flex-shrink: 0;
+}
+ 
+/* Circular Progress */
+.teastat-circular-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+ 
+.teastat-circular-chart {
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+ 
+.teastat-circular-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+ 
+.teastat-circular-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+ 
+.teastat-circular-percentage {
+  font-size: 24px;
+  font-weight: bold;
+  color: #3b82f6;
+}
+ 
+.teastat-circular-description {
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 16px 0 0 0;
+}
+ 
+/* Activity Grid */
+.teastat-activity-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+ 
+@media (min-width: 1024px) {
+  .teastat-activity-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+ 
+.teastat-pie-chart-container {
+  width: 100%;
+}
+ 
+.teastat-activity-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+ 
+.teastat-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+ 
+.teastat-legend-content {
+  display: flex;
+  align-items: center;
+}
+ 
+.teastat-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+ 
+.teastat-legend-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+ 
+.teastat-legend-value {
+  font-size: 18px;
+  font-weight: bold;
+}
+ 
+/* Activity List */
+.teastat-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+ 
+.teastat-activity-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-radius: 8px;
+}
+ 
+.teastat-activity-item-green {
+  background-color: #f0fdf4;
+}
+ 
+.teastat-activity-item-green .teastat-activity-icon {
+  color: #16a34a;
+}
+ 
+.teastat-activity-item-blue {
+  background-color: #eff6ff;
+}
+ 
+.teastat-activity-item-blue .teastat-activity-icon {
+  color: #2563eb;
+}
+ 
+.teastat-activity-item-purple {
+  background-color: #faf5ff;
+}
+ 
+.teastat-activity-item-purple .teastat-activity-icon {
+  color: #9333ea;
+}
+ 
+.teastat-activity-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+ 
+.teastat-activity-content {
+  flex: 1;
+}
+ 
+.teastat-activity-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  color: #1f2937;
+}
+ 
+.teastat-activity-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
+ 
+/* Responsive Design */
+@media (max-width: 768px) {
+  .teastat-dashboard {
+    flex-direction: column;
+  }
+  
+  .teastat-sidebar {
+    width: 100%;
+    height: auto;
+  }
+  
+  .teastat-main-content {
+    padding: 16px;
+  }
+  
+  .teastat-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .teastat-status-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .teastat-activity-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .teastat-progress-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .teastat-progress-label,
+  .teastat-progress-text {
+    width: 100%;
+  }
+  
+  .teastat-progress-bar-container {
+    margin: 0;
+    width: 100%;
+  }
+}
+ 
+/* Dual Chart Container */
+.teastat-dual-chart-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+ 
+.teastat-half-card {
+  margin-bottom: 0 !important;
+}
+ 
+/* Performance Metrics Grid */
+.teastat-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+ 
+.teastat-performance-item {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+}
+ 
+.teastat-performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+ 
+.teastat-performance-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+ 
+.teastat-performance-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1f2937;
+}
+ 
+.teastat-performance-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+ 
+.teastat-performance-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+ 
+.teastat-performance-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+ 
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .teastat-dual-chart-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .teastat-performance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+ 
+/* Chart Summary */
+.teastat-chart-summary {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+ 
+/* Ranking List Styles */
+.teastat-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+ 
+.teastat-ranking-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+ 
+.teastat-ranking-position {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+ 
+.teastat-ranking-content {
+  flex: 1;
+  margin-right: 12px;
+}
+ 
+.teastat-ranking-title {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+  font-size: 14px;
+}
+ 
+.teastat-ranking-subtitle {
+  color: #6b7280;
+  margin: 0;
+  font-size: 12px;
+}
+ 
+.teastat-ranking-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 120px;
+}
+ 
+.teastat-ranking-views {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+ 
+.teastat-ranking-bar {
+  width: 80px;
+  height: 4px;
+  background-color: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+}
+ 
+.teastat-ranking-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+ 
+.teastat-ranking-fill-green {
+  background-color: #10b981;
+}
+ 
+/* Responsive adjustments for ranking */
+@media (max-width: 768px) {
+  .teastat-ranking-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .teastat-ranking-position {
+    margin-right: 0;
+  }
+  
+  .teastat-ranking-content {
+    margin-right: 0;
+  }
+  
+  .teastat-ranking-stats {
+    align-items: center;
+    min-width: auto;
+  }
+}
