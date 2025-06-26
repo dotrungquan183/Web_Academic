@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentCoursesLayout from "../../Layout";
+//import StudentCoursesLayout from "../../Layout";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../../../../auth/authHelper";
 import { FaBookOpen, FaFire, FaUserTie, FaUsers, FaClock } from "react-icons/fa";
@@ -101,7 +101,7 @@ const StudentListCourses = () => {
   const freeCourses = courses.filter(course => parseFloat(course.fee) === 0);
 
   return (
-    <StudentCoursesLayout>
+
       <div style={styles.layoutStyle}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
@@ -332,7 +332,7 @@ const StudentListCourses = () => {
           </div>
         </div>
       </div>
-    </StudentCoursesLayout>
+
   );
 };
 
@@ -361,8 +361,8 @@ const styles = {
     border: "1px solid #ddd",
     marginBottom: "30px",
     marginTop: "15px",
-    marginLeft: "-70px",
-    width: "850px",
+    marginLeft: "-125px",
+    width: "1100px",
     color: "#003366",
   },
   headerWithButton: {

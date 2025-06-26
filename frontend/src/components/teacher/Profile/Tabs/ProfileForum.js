@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../../../auth/authHelper";
-import TeacherProfileLayout from "../Layout";
+//import TeacherProfileLayout from "../Layout";
 import { renderWithLatex } from "../../Tabs/TeacherForumTab/TeacherLatexInputKaTeX";
 
 const getAvatarUrl = (user) => {
@@ -211,7 +211,6 @@ const TeacherProfileForum = () => {
     navigate(`/teacherforum/question/${id}`);
   };
   return (
-    <TeacherProfileLayout>
       <div style={styles.pageLayout}>
         {/* Top Section */}
         <div style={styles.topBox}>
@@ -697,17 +696,19 @@ const TeacherProfileForum = () => {
           </div>
         </div>
       </div>
-    </TeacherProfileLayout>
   );
 }
 const styles = {
   pageLayout: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-    margin: "40px 20px 100px 100px",
-    color: "#003366",
-  },
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
+  maxWidth: "1300px",    // Giới hạn độ rộng tối đa
+  width: "100%",         // Nhưng vẫn responsive
+  margin: "40px auto",   // Canh giữa màn hình, 40px top-bottom
+  padding: "0 20px",     // Thêm padding ngang để không sát màn hình
+  color: "#003366",
+},
   topBox: {
     display: "flex",
     gap: "20px",

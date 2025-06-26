@@ -2,7 +2,7 @@ import { useState, useEffect} from "react";
 import { useParams,  useNavigate  } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
-import StudentCoursesLayout from "../../Layout";
+//import StudentCoursesLayout from "../../Layout";
 import { FaEdit } from "react-icons/fa";
 import {jwtDecode} from "jwt-decode";
 import Modal from "./Modal";
@@ -273,7 +273,6 @@ const handleDocumentView = async (lesson) => {
   if (!course) return <div>Đang tải...</div>;
 
   return (
-    <StudentCoursesLayout>
       <div style={styles.pageLayout}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
@@ -467,7 +466,6 @@ const handleDocumentView = async (lesson) => {
           </div>
         </div>
       </div>
-    </StudentCoursesLayout>
   );
 };
 
@@ -476,18 +474,21 @@ const styles = {
     display: "flex",
     flexDirection: "row",
     gap: "20px",
-    marginLeft: "160px",
+    padding: "0 40px",
     alignItems: "flex-start",
+    width: "100%",
+    boxSizing: "border-box",
+    marginBottom: "40px", 
   },
   containerStyle: {
     backgroundColor: "#ffffff",
     padding: "15px",
     borderRadius: "8px",
     border: "1px solid #ddd",
-    marginBottom: "30px",
-    marginLeft: "-70px",
-    width: "850px",
+    marginTop: "15px",
+    flex: 3, 
     color: "#003366",
+    boxSizing: "border-box",
   },
   headerWithButton: {
     display: "flex",
@@ -537,11 +538,13 @@ const styles = {
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   },
   sidebarWrapper: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
+  marginTop: "15px", // Dịch xuống 20px
+},
+
   sidebarBox: {
     backgroundColor: "#f5f5f5",
     padding: "16px",

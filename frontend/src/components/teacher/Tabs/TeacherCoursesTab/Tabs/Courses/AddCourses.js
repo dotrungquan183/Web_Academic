@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaBook, FaPlus, FaVideo, FaFileAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import TeacherCoursesLayout from "../../Layout";
+//import TeacherCoursesLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 
 function TeacherAddCourses() {
@@ -235,7 +235,6 @@ const handleFormChange = (e) => {
     }
   };  
   return (
-    <TeacherCoursesLayout>
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
@@ -425,7 +424,6 @@ const handleFormChange = (e) => {
           </form>
         </div>
       </div>
-    </TeacherCoursesLayout>
   );
 }
 

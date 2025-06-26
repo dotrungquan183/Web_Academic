@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../../../../../auth/authHelper";
-import TeacherCoursesLayout from "../../Layout";
+//import TeacherCoursesLayout from "../../Layout";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import StudentListModal from "./StudentListModal";
 import {
@@ -132,7 +132,6 @@ const TeacherDetailCourses = () => {
   console.log("🔐 userId từ token:", userId);
   console.log("📚 userId của khóa học:", course.user);
   return (
-    <TeacherCoursesLayout>
       <div style={styles.pageLayout}>
         <div style={styles.containerStyle}>
           <div style={styles.headerWithButton}>
@@ -340,7 +339,6 @@ const TeacherDetailCourses = () => {
           </div>
         </div>
       </div>
-    </TeacherCoursesLayout>
   );
 };
 
@@ -349,18 +347,21 @@ const styles = {
     display: "flex",
     flexDirection: "row",
     gap: "20px",
-    marginLeft: "160px",
+    padding: "0 40px",
     alignItems: "flex-start",
+    width: "100%",
+    boxSizing: "border-box",
+    marginBottom: "40px", 
   },
   containerStyle: {
     backgroundColor: "#ffffff",
     padding: "15px",
     borderRadius: "8px",
     border: "1px solid #ddd",
-    marginBottom: "30px",
-    marginLeft: "-70px",
-    width: "850px",
+    marginTop: "15px",
+    flex: 3, 
     color: "#003366",
+    boxSizing: "border-box",
   },
   headerWithButton: {
     display: "flex",
@@ -410,17 +411,19 @@ const styles = {
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   },
   sidebarWrapper: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
+  marginTop: "15px", // Dịch xuống 20px
+},
+
   sidebarBox: {
     backgroundColor: "#f5f5f5",
     padding: "16px",
     borderRadius: "10px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-    color: "#003366",
+    color:"#003366",
   },
   sidebarTitle: {
     display: "flex",
@@ -428,7 +431,7 @@ const styles = {
     gap: "8px",
     marginBottom: "10px",
     fontSize: "18px",
-    color: "#003366",
+    color: "#003366", 
   },
   editButton: {
     padding: "8px 12px",
@@ -440,7 +443,6 @@ const styles = {
     fontWeight: "bold",
     fontSize: "15px"
   },
-
 };
 
 export default TeacherDetailCourses;
