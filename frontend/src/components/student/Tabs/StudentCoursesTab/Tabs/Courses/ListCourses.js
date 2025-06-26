@@ -194,7 +194,7 @@ const StudentListCourses = () => {
                     <h3 style={styles.courseTitle}>{course.title}</h3>
                     <p style={styles.coursePrice}>{course.fee} VNĐ</p>
                     <p style={styles.courseInfo}>
-                      <FaUserTie style={{ marginRight: "4px" }} /> {course.student}
+                      <FaUserTie style={{ marginRight: "4px" }} /> {course.teacher}
                       <span style={{ marginLeft: "12px" }}>🎬 {course.video_count} video</span>
                       <FaClock style={{ margin: "0 6px 0 12px" }} /> {course.total_duration}
                     </p>

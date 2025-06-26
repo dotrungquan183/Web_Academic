@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import TeacherForumLayout from "../../TeacherLayout";
+import AdminForumLayout from "../../TeacherLayout";
 
 function TeacherForumTag() {
   const [data, setData] = useState([]);
@@ -41,7 +41,7 @@ function TeacherForumTag() {
   }, [searchQuery, data]);
 
   return (
-    <TeacherForumLayout>
+    <AdminForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Chủ đề</h2>
@@ -118,7 +118,7 @@ function TeacherForumTag() {
           <p style={{ marginLeft: "160px" }}>Không có dữ liệu.</p>
         )}
       </div>
-    </TeacherForumLayout>
+    </AdminForumLayout>
   );
 }
 

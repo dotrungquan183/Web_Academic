@@ -143,71 +143,85 @@ function StudentForumQuestion() {
           <p>Đang tải dữ liệu...</p>
         ) : filteredData.length > 0 ? (
           <ul style={{ listStyleType: "none", padding: 0 }}>
-            {filteredData.map((question) => (
-              <li
-                key={question.id}
-                style={questionContainerStyle}
-                onClick={async () => {
-                  const token = getToken();
-                  let userId = null;
+            {filteredData
+              // Sắp xếp mới nhất lên đầu
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .map((question) => (
+                <li
+                  key={question.id}
+                  style={questionContainerStyle}
+                  onClick={async () => {
+                    const token = getToken();
+                    let userId = null;
 
-                  if (token) {
-                    try {
-                      const decoded = jwtDecode(token);
-                      userId = decoded.user_id;
-                    } catch (error) {
-                      console.error("Token không hợp lệ:", error);
+                    if (token) {
+                      try {
+                        const decoded = jwtDecode(token);
+                        userId = decoded.user_id;
+                      } catch (error) {
+                        console.error("Token không hợp lệ:", error);
+                      }
                     }
-                  }
 
-                  if (!userId) {
-                    console.error("User chưa đăng nhập hoặc token không hợp lệ.");
-                    return;
-                  }
+                    if (!userId) {
+                      console.error(
+                        "User chưa đăng nhập hoặc token không hợp lệ."
+                      );
+                      return;
+                    }
 
-                  try {
-                    await fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        question_id: question.id,
-                        user_id: userId,
-                      }),
-                    });
-                  } catch (err) {
-                    console.error("Lỗi khi cập nhật view:", err);
-                  }
+                    try {
+                      await fetch(
+                        "http://localhost:8000/api/student/student_forum/student_question/student_showquestion/",
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            question_id: question.id,
+                            user_id: userId,
+                          }),
+                        }
+                      );
+                    } catch (err) {
+                      console.error("Lỗi khi cập nhật view:", err);
+                    }
 
-                  navigate(`/studentforum/question/${question.id}`);
-                }}
-              >
-                <div style={questionContentStyle}>
-                  <h3>{question.title}</h3>
-                </div>
-                <div style={questionMetaStyle}>
-                  <span>👤 {question.username}</span>
-                  <span>👀 {question.views || 0}</span>
-                  <span>👍 {votesMap[question.id] ?? 0}</span>
-                  <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
-                  <span>
-                    🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
-                    {new Date(question.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </span>
-                  <span>🔖 {question.tags && question.tags.length > 0 ? question.tags.join(", ") : "No tags"}</span>
-                  <span>💰 {question.bounty_amount || 0}</span>
-                </div>
-              </li>
-            ))}
+                    navigate(`/studentforum/question/${question.id}`);
+                  }}
+                >
+                  <div style={questionContentStyle}>
+                    <h3>{question.title}</h3>
+                  </div>
+                  <div style={questionMetaStyle}>
+                    <span>👤 {question.username}</span>
+                    <span>👀 {question.views || 0}</span>
+                    <span>👍 {votesMap[question.id] ?? 0}</span>
+                    <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
+                    <span>
+                      🕒 {new Date(question.created_at).toLocaleDateString('vi-VN')},{" "}
+                      {new Date(question.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </span>
+                    <span>
+                      🔖{" "}
+                      {question.tags && question.tags.length > 0
+                        ? question.tags.join(", ")
+                        : "No tags"}
+                    </span>
+                    <span>💰 {question.bounty_amount || 0}</span>
+                  </div>
+                </li>
+              ))}
           </ul>
         ) : (
           <p>Không có câu hỏi nào.</p>
         )}
+
 
       </div>
     </StudentForumLayout>

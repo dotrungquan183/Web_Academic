@@ -79,9 +79,8 @@ import TeacherProfileForum from "./components/teacher/Profile/Tabs/ProfileForum"
 import AdminMenu from "./components/admin/AdminMenu";
 import AdminForumTab from "./components/admin/Tabs/AdminForumTab/Menu"
 import AdminForumQuestion from "./components/admin/Tabs/AdminForumTab/Tabs/Questions/Question"
-import AdminForumUnanswer from "./components/admin/Tabs/AdminForumTab/Tabs/Unanswer"
-import AdminForumTag from "./components/admin/Tabs/AdminForumTab/Tabs/Tag"
-import AdminForumSave from "./components/admin/Tabs/AdminForumTab/Tabs/Save"
+import AdminForumTag from "./components/admin/Tabs/AdminForumTab/Tabs/Tags/Tag"
+import AdminTagsForumQuestion from "./components/admin/Tabs/AdminForumTab/Tabs/Tags/Question";
 import AdminResultTab from "./components/admin/Tabs/AdminResultTab"
 import AdminListCourses from "./components/admin/Tabs/AdminCoursesTab/Tabs/Courses/ListCourses"; 
 import AdminDetailCourses from "./components/admin/Tabs/AdminCoursesTab/Tabs/Courses/DetailCourses";
@@ -260,9 +259,8 @@ function App() {
         <Route path="/adminresult" element={<AdminLayout><AdminResultTab /></AdminLayout>} />
         <Route path="/adminforum/question" element={<AdminLayout><AdminForumQuestion /></AdminLayout>} />
         <Route path="/adminforum/question/:id" element={<AdminLayout><AdminForumQuestionDetail /></AdminLayout>} />
-        <Route path="/adminforum/unanswer" element={<AdminLayout><AdminForumUnanswer /></AdminLayout>} />
         <Route path="/adminforum/tag" element={<AdminLayout><AdminForumTag /></AdminLayout>} />
-        <Route path="/adminforum/save" element={<AdminLayout><AdminForumSave /></AdminLayout>} />
+        <Route path="/adminforum/tag/:tagId" element={<AdminLayout><AdminTagsForumQuestion /></AdminLayout>} />
         <Route path="/adminmanage" element={<AdminLayout><AdminManageAccount /></AdminLayout>} />
         <Route path="/adminmanagesystem" element={<AdminLayout><AdminManageDetailAccount /></AdminLayout>} />
         {/* Đăng nhập */}

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { getToken } from "../../auth/authHelper";
+import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   MessageSquare,
@@ -32,247 +34,77 @@ import {
 import './TeacherDashboard.css';
  
 const TeacherDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('courses');
  
-  // Mock data - trong thực tế sẽ fetch từ API
-  const courseData = {
-    totalCourses: 12,
-    totalStudents: 248,
-    totalVideos: 86,
-    totalDuration: 2340, // minutes
-    approvedCourses: 10,
-    pendingCourses: 2,
-    rejectedCourses: 0
-  };
- 
-  const forumData = {
-    totalAnswers: 34,
-    acceptedAnswers: 28,
-    totalVotes: 156,
-    reputation: 1240,
-    totalComments: 67,
-    helpfulComments: 52,
-    // Thêm data cho biểu đồ câu hỏi được duyệt
-    totalQuestions: 42,
-    approvedQuestions: 38
-  };
- 
-  const monthlyStudentData = [
-    { month: 'T1', students: 45 },
-    { month: 'T2', students: 52 },
-    { month: 'T3', students: 48 },
-    { month: 'T4', students: 61 },
-    { month: 'T5', students: 58 },
-    { month: 'T6', students: 67 }
-  ];
- 
-  const coursePopularityData = [
-    { name: 'Đại số cơ bản', students: 78, videos: 12, duration: 480 },
-    { name: 'Hình học không gian', students: 56, videos: 8, duration: 320 },
-    { name: 'Lượng giác', students: 42, videos: 10, duration: 380 },
-    { name: 'Giải tích', students: 38, videos: 15, duration: 580 },
-    { name: 'Xác suất thống kê', students: 34, videos: 9, duration: 280 }
-  ];
- 
-  const lessonViewData = [
-    { lesson: 'Bài 1', views: 78, total: 78 },
-    { lesson: 'Bài 2', views: 72, total: 78 },
-    { lesson: 'Bài 3', views: 65, total: 78 },
-    { lesson: 'Bài 4', views: 58, total: 78 },
-    { lesson: 'Bài 5', views: 45, total: 78 }
-  ];
- 
- 
-// Mock data mới cho các biểu đồ bổ sung
- 
-// Data cho lượt xem video theo tuần
-const videoViewsData = [
-  { week: 'T1', views: 245 },
-  { week: 'T2', views: 312 },
-  { week: 'T3', views: 289 },
-  { week: 'T4', views: 356 },
-  { week: 'T5', views: 423 },
-  { week: 'T6', views: 398 }
-];
- 
-// Data cho lượt xem tài liệu theo tuần
-const documentViewsData = [
-  { week: 'T1', views: 156 },
-  { week: 'T2', views: 189 },
-  { week: 'T3', views: 203 },
-  { week: 'T4', views: 234 },
-  { week: 'T5', views: 267 },
-  { week: 'T6', views: 298 }
-];
- 
-// Data cho bài học được xem nhiều nhất
-const topLessonsData = [
-  {
-    title: 'Giải phương trình bậc hai',
-    course: 'Đại số cơ bản',
-    views: 456
-  },
-  {
-    title: 'Định lý Pythagoras',
-    course: 'Hình học không gian',
-    views: 389
-  },
-  {
-    title: 'Công thức lượng giác cơ bản',
-    course: 'Lượng giác',
-    views: 367
-  },
-  {
-    title: 'Đạo hàm hàm số',
-    course: 'Giải tích',
-    views: 298
-  },
-  {
-    title: 'Xác suất có điều kiện',
-    course: 'Xác suất thống kê',
-    views: 245
-  }
-];
- 
-// Data cho tài liệu được xem nhiều nhất
-const topDocumentsData = [
-  {
-    title: 'Bảng công thức toán học cấp 3',
-    type: 'PDF - Tài liệu tham khảo',
-    views: 678
-  },
-  {
-    title: 'Bài tập trắc nghiệm Đại số',
-    type: 'PDF - Bài tập',
-    views: 534
-  },
-  {
-    title: 'Sơ đồ tư duy Hình học',
-    type: 'PNG - Infographic',
-    views: 445
-  },
-  {
-    title: 'Đề thi thử THPT Quốc gia',
-    type: 'PDF - Đề thi',
-    views: 398
-  },
-  {
-    title: 'Lời giải chi tiết bài tập',
-    type: 'PDF - Hướng dẫn',
-    views: 367
-  }
-];
- 
-// Data cho phân tích mức độ tương tác nội dung
-const contentEngagementData = [
-  {
-    content: 'Đại số cơ bản',
-    videoViews: 1234,
-    documentViews: 567,
-    downloads: 89
-  },
-  {
-    content: 'Hình học không gian',
-    videoViews: 987,
-    documentViews: 445,
-    downloads: 67
-  },
-  {
-    content: 'Lượng giác',
-    videoViews: 756,
-    documentViews: 398,
-    downloads: 54
-  },
-  {
-    content: 'Giải tích',
-    videoViews: 689,
-    documentViews: 289,
-    downloads: 43
-  },
-  {
-    content: 'Xác suất thống kê',
-    videoViews: 534,
-    documentViews: 234,
-    downloads: 32
-  }
-];
- 
-// Data cho hiệu suất nội dung theo tuần
-const weeklyContentData = [
-  { week: 'T1', videoViews: 245, documentViews: 156, completionRate: 78 },
-  { week: 'T2', videoViews: 312, documentViews: 189, completionRate: 82 },
-  { week: 'T3', videoViews: 289, documentViews: 203, completionRate: 75 },
-  { week: 'T4', videoViews: 356, documentViews: 234, completionRate: 85 },
-  { week: 'T5', videoViews: 423, documentViews: 267, completionRate: 88 },
-  { week: 'T6', videoViews: 398, documentViews: 298, completionRate: 91 }
-];
- 
-  const reputationData = [
-    { month: 'T1', reputation: 890 },
-    { month: 'T2', reputation: 920 },
-    { month: 'T3', reputation: 980 },
-    { month: 'T4', reputation: 1050 },
-    { month: 'T5', reputation: 1150 },
-    { month: 'T6', reputation: 1240 }
-  ];
- 
-  // Data cho xu hướng hoạt động hàng tuần
-  const weeklyActivityData = [
-    { week: 'T1', answers: 5, comments: 12, votes: 23 },
-    { week: 'T2', answers: 8, comments: 15, votes: 28 },
-    { week: 'T3', answers: 6, comments: 10, votes: 25 },
-    { week: 'T4', answers: 9, comments: 18, votes: 32 },
-    { week: 'T5', answers: 7, comments: 14, votes: 29 },
-    { week: 'T6', answers: 11, comments: 20, votes: 35 }
-  ];
- 
-  // Data cho phân tích thời gian phản hồi
-  const responseTimeData = [
-    { timeRange: '< 1h', count: 15 },
-    { timeRange: '1-6h', count: 12 },
-    { timeRange: '6-24h', count: 8 },
-    { timeRange: '1-3 ngày', count: 5 },
-    { timeRange: '> 3 ngày', count: 2 }
-  ];
- 
-  // Data cho chỉ số hiệu suất
-  const performanceMetrics = [
-    {
-      label: 'Tỷ lệ câu trả lời hữu ích',
-      value: '94%',
-      percentage: 94,
-      color: '#10b981',
-      subtitle: 'Rất tốt so với trung bình'
-    },
-    {
-      label: 'Thời gian phản hồi trung bình',
-      value: '2.3h',
-      percentage: 85,
-      color: '#3b82f6',
-      subtitle: 'Nhanh hơn 85% giáo viên khác'
-    },
-    {
-      label: 'Mức độ tương tác',
-      value: '8.7/10',
-      percentage: 87,
-      color: '#f59e0b',
-      subtitle: 'Học sinh đánh giá cao'
-    },
-    {
-      label: 'Tần suất hoạt động',
-      value: '5.2 ngày/tuần',
-      percentage: 74,
-      color: '#8b5cf6',
-      subtitle: 'Hoạt động đều đặn'
+  const [courseData, setCourseData] = useState({});
+  const [forumData, setForumData] = useState({});
+  const [monthlyStudentData, setMonthlyStudentData] = useState([]);
+  const [coursePopularityData, setCoursePopularityData] = useState([]);
+  const [lessonViewData, setLessonViewData] = useState([]);
+  const [videoViewsData, setVideoViewsData] = useState([]);
+  const [documentViewsData, setDocumentViewsData] = useState([]);
+  const [topLessonsData, setTopLessonsData] = useState([]);
+  const [topDocumentsData, setTopDocumentsData] = useState([]);
+  const [contentEngagementData, setContentEngagementData] = useState([]);
+  const [weeklyContentData, setWeeklyContentData] = useState([]);
+  const [reputationData, setReputationData] = useState([]);
+  const [weeklyActivityData, setWeeklyActivityData] = useState([]);
+  const [responseTimeData, setResponseTimeData] = useState([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState([]);
+  const [activityData, setActivityData] = useState([]);
+
+useEffect(() => {
+  const fetchData = async () => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      navigate("/login");
+      return;
     }
-  ];
- 
-  const activityData = [
-    { type: 'Câu trả lời', count: 34, color: '#3b82f6' },
-    { type: 'Bình luận', count: 67, color: '#f59e0b' },
-    { type: 'Votes nhận', count: 156, color: '#10b981' },
-    { type: 'Câu hỏi', count: 42, color: '#8b5cf6' }
-  ];
+
+    try {
+      const res = await fetch("http://localhost:8000/api/teacher/teacher_insight/teacher_insight_courses/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await res.json();
+      console.log("✅ DATA NHẬN TỪ SERVER:", result);
+
+      if (res.ok) {
+        setCourseData(result.courseData || {});
+        setForumData(result.forumData || {});
+        setMonthlyStudentData(result.monthlyStudentData || []);
+        setCoursePopularityData(result.coursePopularityData || []);
+        setLessonViewData(result.lessonViewData || []);
+        setVideoViewsData(result.videoViewsData || []);
+        setDocumentViewsData(result.documentViewsData || []);
+        setTopLessonsData(result.topLessonsData || []);
+        setTopDocumentsData(result.topDocumentsData || []);
+        setContentEngagementData(result.contentEngagementData || []);
+        setWeeklyContentData(result.weeklyContentData || []);
+        setReputationData(result.reputationData || []);
+        setWeeklyActivityData(result.weeklyActivityData || []);
+        setResponseTimeData(result.responseTimeData || []);
+        setPerformanceMetrics(result.performanceMetrics || []);
+        setActivityData(result.activityData || []);
+      } else {
+        console.error("❌ Lỗi từ server:", result);
+        alert("❌ Không thể lấy dữ liệu dashboard.");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi fetch dữ liệu:", error);
+      alert("❌ Có lỗi khi tải dữ liệu dashboard.");
+    }
+  };
+
+  fetchData();
+}, [navigate]);
+
+
  
   const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => (
     <div className={`teastat-stat-card teastat-stat-card-${color}`}>
@@ -675,17 +507,18 @@ const weeklyContentData = [
       <div className="teastat-card">
         <h3 className="teastat-card-title">Phát triển reputation</h3>
         <div className="teastat-chart-container">
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={reputationData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="reputation" stroke="#10b981" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+  <ResponsiveContainer width="100%" height={300}>
+    <LineChart data={reputationData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="user" />  {/* 👉 đổi từ month sang user */}
+      <YAxis />
+      <Tooltip />
+      <Legend />
+      <Line type="monotone" dataKey="reputation" stroke="#10b981" strokeWidth={2} />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
+
       </div>
  
       {/* Weekly Activity Trends */}

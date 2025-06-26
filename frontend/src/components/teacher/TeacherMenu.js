@@ -265,9 +265,6 @@ function TeacherMenu() {
         <li className={location.pathname.startsWith("/teacherforum") ? "active" : ""}>
           <Link to="/teacherforum">DIỄN ĐÀN HỌC TẬP</Link>
         </li>
-        <li className={location.pathname === "/teachercontact" ? "active" : ""}>
-          <Link to="/teachercontact">LIÊN HỆ</Link>
-        </li>
       </ul>
     </div>
   );

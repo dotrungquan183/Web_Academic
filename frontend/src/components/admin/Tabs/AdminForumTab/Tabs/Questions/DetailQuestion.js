@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import TeacherForumLayout from "../../Layout";
+import AdminForumLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -94,7 +94,7 @@ function AdminForumQuestionDetail() {
     };
   }, [showEmojiPickerForQuestion]);
   useEffect(() => {
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_hotquestion/")
+    fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_hotquestion/")
       .then((res) => {
         if (!res.ok) {
           throw new Error("Failed to fetch hot questions");
@@ -115,7 +115,7 @@ function AdminForumQuestionDetail() {
     console.log("Current questionId:", id);
     if (!id) return;
 
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_relatedquestion/${id}/`)
+    fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_relatedquestion/${id}/`)
       .then(res => {
         if (!res.ok) {
           throw new Error("Failed to fetch related questions");
@@ -150,7 +150,7 @@ function AdminForumQuestionDetail() {
   // Lấy dữ liệu câu hỏi và danh sách câu trả lời
   useEffect(() => {
     // Lấy câu hỏi
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/")
+    fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/")
       .then((res) => res.json())
       .then((data) => {
         const selectedQuestion = data.find((q) => q.id.toString() === id);
@@ -161,7 +161,7 @@ function AdminForumQuestionDetail() {
       });
 
     // Lấy câu trả lời
-    fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
+    fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/?question_id=${id}`)
       .then((res) => res.json())
       .then((data) => {
         const token = getToken();
@@ -212,7 +212,7 @@ function AdminForumQuestionDetail() {
   const fetchComments = async (questionId) => {
     try {
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=question&content_id=${questionId}`
+        `http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/?type_comment=question&content_id=${questionId}`
       );
 
       setComments(prev => ({
@@ -234,7 +234,7 @@ function AdminForumQuestionDetail() {
   const fetchAnswerComments = async (answerId) => {
     try {
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/?type_comment=answer&content_id=${answerId}`
+        `http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/?type_comment=answer&content_id=${answerId}`
       );
 
       //console.log("Dữ liệu comment trả về:", res.data); // 👉 LOG ở đây
@@ -289,7 +289,7 @@ function AdminForumQuestionDetail() {
         formData.append("comments", file); // khớp với field trong Django model
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/", {
+      const response = await fetch("http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`, // KHÔNG set Content-Type khi dùng FormData
@@ -395,7 +395,7 @@ function AdminForumQuestionDetail() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
+        `http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`,
         {
           method: "PUT",
           headers: {
@@ -469,7 +469,7 @@ function AdminForumQuestionDetail() {
     }
 
     if (window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
-      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/`, {
+      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -552,47 +552,44 @@ function AdminForumQuestionDetail() {
   };
 
   const handleSubmitEditCommentQuestion = async (commentId, newContent, questionId) => {
-    const token = getToken();
-    if (!token) {
-      alert("❌ Không có token xác thực");
-      console.error("handleSubmitEditCommentQuestion: Missing token");
+  const token = getToken();
+  if (!token) {
+    alert("❌ Bạn chưa đăng nhập!");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        // ✅ Gửi cả content và type_comment
+        body: JSON.stringify({ 
+          content: newContent, 
+          type_comment: "question" 
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
       return;
     }
 
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ content: newContent }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
-        console.error("handleSubmitEditCommentQuestion: Server returned error", {
-          status: response.status,
-          body: result,
-        });
-        return;
-      }
-
-      alert("✅ Bình luận đã được cập nhật!");
-      console.log("handleSubmitEditCommentQuestion: Cập nhật thành công", result);
-
-      // ✅ Reload lại danh sách comment của câu hỏi sau khi sửa
-      await fetchComments(questionId);
-    } catch (error) {
-      alert("❌ Có lỗi xảy ra khi gửi request.");
-      console.error("handleSubmitEditCommentQuestion: Lỗi khi gọi API", error);
-    }
-  };
+    alert("✅ Bình luận đã được cập nhật!");
+    // ✅ Reload lại danh sách comment sau khi sửa
+    await fetchComments(questionId); 
+  } catch (error) {
+    console.error("❌ Có lỗi xảy ra khi gửi request:", error);
+    alert("❌ Có lỗi xảy ra khi gửi request.");
+  }
+};
 
   const handleDeleteCommentQuestion = (questionId, commentId) => {
     const token = getToken();
@@ -634,7 +631,7 @@ function AdminForumQuestionDetail() {
     }
 
     if (window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
-      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/`, {
+      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -725,7 +722,7 @@ function AdminForumQuestionDetail() {
     }
 
     const token = getToken();
-    fetch("http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/", {
+    fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_detailquestion/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -738,7 +735,7 @@ function AdminForumQuestionDetail() {
       }),
     }).then(() => {
       // Sau khi gửi vote thành công, tải lại câu hỏi và câu trả lời từ server
-      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/`)
+      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/`)
         .then((res) => res.json())
         .then((data) => {
           const selectedQuestion = data.find((q) => q.id.toString() === id);
@@ -747,7 +744,7 @@ function AdminForumQuestionDetail() {
           }
         });
 
-      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
+      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/?question_id=${id}`)
         .then((res) => res.json())
         .then((data) => {
           console.log("📥 Raw API data:", data); // 🧪 Log tại đây
@@ -794,7 +791,7 @@ function AdminForumQuestionDetail() {
         content: newAnswer.trim(),
       };
 
-      const response = await fetch("http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/", {
+      const response = await fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -828,7 +825,7 @@ function AdminForumQuestionDetail() {
       window.location.reload();
 
       // Sau khi đăng câu trả lời mới, tải lại danh sách câu trả lời
-      fetch(`http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/?question_id=${id}`)
+      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/?question_id=${id}`)
         .then((res) => res.json())
         .then((data) => {
           const formattedAnswers = data.map((ans) => {
@@ -903,7 +900,7 @@ function AdminForumQuestionDetail() {
       const question_id = parseInt(id);
       const answer_id = isEditing;
 
-      const url = `http://localhost:8000/api/student/student_forum/student_question/student_ansquestion/${answer_id}/`;
+      const url = `http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/${answer_id}/`;
       console.log("🔧 Gửi PUT đến:", url);
 
       const res = await fetch(url, {
@@ -979,7 +976,7 @@ function AdminForumQuestionDetail() {
     try {
       // ✅ Nếu bạn đã có dữ liệu câu hỏi rồi, bỏ đoạn GET này đi!
       const getQuestionRes = await fetch(
-        `http://localhost:8000/api/student/student_forum/student_question/student_askquestion/${questionId}/`,
+        `http://localhost:8000/api/admin/admin_forum/admin_question/admin_askquestion/${questionId}/`,
         {
           method: "GET",
           headers: {
@@ -995,7 +992,7 @@ function AdminForumQuestionDetail() {
       const questionData = await getQuestionRes.json();
 
       const putRes = await fetch(
-        `http://localhost:8000/api/student/student_forum/student_question/student_askquestion/${questionId}/`,
+        `http://localhost:8000/api/admin/admin_forum/admin_question/admin_askquestion/${questionId}/`,
         {
           method: "PUT",
           headers: {
@@ -1039,7 +1036,7 @@ function AdminForumQuestionDetail() {
   console.log(relatedQuestions);
 
   return (
-    <TeacherForumLayout>
+    <AdminForumLayout>
       <div style={layoutStyle}>
         <div style={containerStyle}>
           <div style={questionContainerStyle}>
@@ -2011,7 +2008,7 @@ function AdminForumQuestionDetail() {
                 {relatedQuestions.map((question) => (
                   <li key={question.id} style={{ marginBottom: "10px", color: "#003366" }}>
                     <Link
-                      to={`/studentforum/question/${question.id}`}
+                      to={`/adminforum/question/${question.id}`}
                       style={{ textDecoration: "none", color: "#003366" }}
                     >
                       {question.title}
@@ -2033,7 +2030,7 @@ function AdminForumQuestionDetail() {
               {hotQuestions.map((question, index) => (
                 <li key={index} style={{ marginBottom: "10px", color: "#003366" }}>
                   <Link
-                    to={`/studentforum/question/${question.id}`}
+                    to={`/adminforum/question/${question.id}`}
                     style={{ textDecoration: "none", color: "#003366" }}
                   >
                     {question.title}
@@ -2044,7 +2041,7 @@ function AdminForumQuestionDetail() {
           </div>
         </div>
       </div>
-    </TeacherForumLayout>
+    </AdminForumLayout>
   );
 }
 

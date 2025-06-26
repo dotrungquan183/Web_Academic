@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FiHelpCircle, FiXCircle, FiTag } from "react-icons/fi";
+import { FiHelpCircle, FiTag } from "react-icons/fi";
 
 function Sidebar() {
   const location = useLocation();
@@ -18,19 +18,7 @@ function Sidebar() {
             color: isQuestionTab ? "white" : "#003366",
           }}
         >
-          <FiHelpCircle style={styles.icon} /> Câu hỏi
-        </button>
-      </Link>
-
-      <Link to="/adminforum/unanswer" style={styles.link}>
-        <button
-          style={{
-            ...styles.button,
-            backgroundColor: isUnansweredTab ? "#003366" : "transparent",
-            color: isUnansweredTab ? "white" : "#003366",
-          }}
-        >
-          <FiXCircle style={styles.icon} /> Chưa trả lời
+          <FiHelpCircle style={styles.icon} /> Câu hỏi chưa duyệt
         </button>
       </Link>
 
@@ -42,7 +30,7 @@ function Sidebar() {
             color: isTagTab ? "white" : "#003366",
           }}
         >
-          <FiTag style={styles.icon} /> Thẻ
+          <FiTag style={styles.icon} /> Danh sách câu hỏi
         </button>
       </Link>
     </div>

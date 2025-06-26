@@ -13,7 +13,7 @@ function Register() {
     confirmPassword: "",
     birth_date: "",
     gender: "Nam",
-    user_type: "Sinh viên",
+    user_type: "Học sinh",
     address: "",
     avatar: null,
   });
@@ -77,8 +77,8 @@ function Register() {
               <input type="date" name="birth_date" onChange={handleChange} style={styles.input} />
               <input type="email" name="email" placeholder="Email" required onChange={handleChange} style={styles.input} />
               <select name="user_type" value={formData.user_type} onChange={handleChange} style={styles.select}>
-                <option value="Sinh viên">Sinh viên</option>
-                <option value="Giảng viên">Giảng viên</option>
+                <option value="Học sinh">Học sinh</option>
+                <option value="Giáo viên">Giáo viên</option>
               </select>
               <input type="password" name="password" placeholder="Mật khẩu" required onChange={handleChange} style={styles.input} />
             </div>

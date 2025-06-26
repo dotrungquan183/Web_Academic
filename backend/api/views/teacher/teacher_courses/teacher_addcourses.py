@@ -63,17 +63,25 @@ class TeacherAddCoursesView(APIView):
             description = request.data.get('description', '')
             tags = request.data.get('tags', '')
             price_str = request.data.get('price', '0')
+            level = request.data.get('courseLevel', '')
+            intro_video = request.data.get('introVideo', '')
+            chapters_data = request.data.get('chapters')
+            thumbnail_file = request.FILES.get('courseImage')  # 👈 thumbnail
             try:
                 price = Decimal(price_str)
             except InvalidOperation:
-                return Response({'error': 'Giá trị phí không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
-            level = request.data.get('courseLevel', '')
-            intro_video = request.data.get('introVideo', '')  # chỉ là link
-            chapters_data = request.data.get('chapters')
+                return Response(
+                    {'error': 'Giá trị phí không hợp lệ.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             if not title:
-                return Response({'error': 'Tiêu đề khóa học là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Tiêu đề khóa học là bắt buộc.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
+            # Tạo khóa học — thumbnail truyền vào luôn
             course = Course.objects.create(
                 title=title,
                 intro=description,
@@ -81,17 +89,19 @@ class TeacherAddCoursesView(APIView):
                 fee=price,
                 level=level,
                 intro_video=intro_video,
-                user=user
+                user=user,
+                thumbnail=thumbnail_file  # 👈 thumbnail
             )
 
             total_duration = timedelta()
             video_count = 0
 
             if isinstance(chapters_data, str):
+                import json
                 chapters_data = json.loads(chapters_data)
 
-            document_files = request.FILES.getlist("document_link")
-            file_pointer = 0  # dùng để trỏ tới đúng file cho mỗi lesson
+            document_files = request.FILES.getlist('document_link')
+            file_pointer = 0
 
             for chapter_data in chapters_data:
                 chapter = Chapter.objects.create(
@@ -105,12 +115,10 @@ class TeacherAddCoursesView(APIView):
                     embed_url = self.convert_to_embed_url(video_url) if video_url else ''
                     duration = self.get_youtube_duration(video_url) if video_url else timedelta()
 
-                    # Cộng dồn duration và tăng video_count nếu có video
                     if video_url:
                         total_duration += duration
                         video_count += 1
 
-                    # Lấy file theo thứ tự
                     document_file = None
                     if file_pointer < len(document_files):
                         document_file = document_files[file_pointer]
@@ -124,16 +132,20 @@ class TeacherAddCoursesView(APIView):
                         document_link=document_file
                     )
 
-
-
             course.total_duration = total_duration
             course.video_count = video_count
             course.save()
 
-            return Response({'message': 'Tạo khóa học thành công.', 'course_id': course.id}, status=status.HTTP_201_CREATED)
+            return Response(
+                {'message': 'Tạo khóa học thành công.', 'course_id': course.id},
+                status=status.HTTP_201_CREATED
+            )
 
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def put(self, request, *args, **kwargs):
         user, error_response = get_authenticated_user(request)
@@ -144,27 +156,42 @@ class TeacherAddCoursesView(APIView):
         try:
             course = Course.objects.get(id=course_id, user=user)
         except Course.DoesNotExist:
-            return Response({'error': 'Không tìm thấy khóa học hoặc bạn không có quyền chỉnh sửa.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {'error': 'Không tìm thấy khóa học hoặc bạn không có quyền chỉnh sửa.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         try:
             title = request.data.get('title')
             description = request.data.get('description', '')
             tags = request.data.get('tags', '')
             price_str = request.data.get('price', '0')
-            try:
-                price = Decimal(price_str)
-            except InvalidOperation:
-                return Response({'error': 'Giá trị phí không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
             level = request.data.get('courseLevel', course.level)
             intro_video = request.data.get('introVideo', course.intro_video)
             chapters_data = request.data.get('chapters')
+            thumbnail_file = request.FILES.get('courseImage')  # xử lý thumbnail mới
 
-            if title: course.title = title
-            if description: course.intro = description
-            if tags is not None: course.tags = tags
-            if price is not None: course.fee = price
-            if level: course.level = level
-            if intro_video: course.intro_video = intro_video
+            # Giá
+            try:
+                price = Decimal(price_str)
+            except InvalidOperation:
+                return Response(
+                    {'error': 'Giá trị phí không hợp lệ.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Cập nhật thông tin khóa học
+            if title:
+                course.title = title
+            if description is not None:
+                course.intro = description
+            if tags is not None:
+                course.tags = tags
+            course.fee = price
+            course.level = level
+            course.intro_video = intro_video
+            if thumbnail_file:
+                course.thumbnail = thumbnail_file
 
             course.save()
 
@@ -172,13 +199,14 @@ class TeacherAddCoursesView(APIView):
             video_count = 0
 
             if isinstance(chapters_data, str):
+                import json
                 chapters_data = json.loads(chapters_data)
 
-            # Xoá toàn bộ chương và bài học cũ
+            # Xóa chương cũ
             course.chapters.all().delete()
 
-            document_files = request.FILES.getlist("document_link")
-            file_pointer = 0  # dùng để trỏ tới đúng file cho mỗi lesson
+            document_files = request.FILES.getlist('document_link')
+            file_pointer = 0
 
             for chapter_data in chapters_data:
                 chapter = Chapter.objects.create(
@@ -192,7 +220,12 @@ class TeacherAddCoursesView(APIView):
                     embed_url = self.convert_to_embed_url(video_url) if video_url else ''
                     duration = self.get_youtube_duration(video_url) if video_url else timedelta()
 
-                    # Lấy file theo thứ tự
+                    # Cộng dồn thời lượng và video_count
+                    if video_url:
+                        total_duration += duration
+                        video_count += 1
+
+                    # Lấy file bài giảng
                     document_file = None
                     if file_pointer < len(document_files):
                         document_file = document_files[file_pointer]
@@ -206,15 +239,20 @@ class TeacherAddCoursesView(APIView):
                         document_link=document_file
                     )
 
-
             course.total_duration = total_duration
             course.video_count = video_count
             course.save()
 
-            return Response({'message': 'Cập nhật khóa học thành công.'}, status=status.HTTP_200_OK)
-
+            return Response(
+                {'message': 'Cập nhật khóa học thành công.'},
+                status=status.HTTP_200_OK
+            )
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
     def get(self, request):
         user, error_response = get_authenticated_user(request)

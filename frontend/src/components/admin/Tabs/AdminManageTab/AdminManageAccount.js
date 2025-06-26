@@ -132,8 +132,8 @@ const AdminManageAccount = () => {
 
   const today = new Date().toISOString().slice(0, 10); // Lấy yyyy-mm-dd hôm nay
   const totalUsers = users.length;
-  const totalTeachers = users.filter((u) => u.user_type === 'Giảng viên').length;
-  const totalStudents = users.filter((u) => u.user_type === 'Sinh viên').length;
+  const totalTeachers = users.filter((u) => u.user_type === 'Giáo viên').length;
+  const totalStudents = users.filter((u) => u.user_type === 'Học sinh').length;
   const loggedInToday = users.filter(
     (u) => u.last_login && u.last_login.startsWith(today)
   ).length;
@@ -154,14 +154,14 @@ const AdminManageAccount = () => {
 
     // Search filter
     if (searchTerm) {
-  const q = searchTerm.toLowerCase();
-  filtered = filtered.filter((user) =>
-    (user.full_name ?? '').toLowerCase().includes(q) ||
-    (user.username ?? '').toLowerCase().includes(q) ||
-    (user.email ?? '').toLowerCase().includes(q) ||
-    (user.phone ?? '').toLowerCase().includes(q)
-  );
-}
+      const q = searchTerm.toLowerCase();
+      filtered = filtered.filter((user) =>
+        (user.full_name ?? '').toLowerCase().includes(q) ||
+        (user.username ?? '').toLowerCase().includes(q) ||
+        (user.email ?? '').toLowerCase().includes(q) ||
+        (user.phone ?? '').toLowerCase().includes(q)
+      );
+    }
 
 
     // Type filter
@@ -216,34 +216,129 @@ const AdminManageAccount = () => {
     setShowModal(true);
   };
 
-  const handleSaveUser = () => {
-    if (modalType === 'create') {
-      const newUser = {
-        ...selectedUser,
-        id: users.length + 1,
-        user_id: users.length + 1,
-        avatar: '/api/placeholder/50/50',
-        last_login: null,
-        date_joined: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      };
-      setUsers([...users, newUser]);
-    } else if (modalType === 'edit') {
-      setUsers(users.map(user => user.id === selectedUser.id ? selectedUser : user));
+  const handleSaveUser = async () => {
+    try {
+      if (modalType === 'create') {
+        try {
+          const formData = new FormData();
+          formData.append('username', selectedUser.username);
+          formData.append('password', selectedUser.password);
+          formData.append('email', selectedUser.email || '');
+          formData.append('full_name', selectedUser.full_name || '');
+          formData.append('phone', selectedUser.phone || '');
+          formData.append('birth_date', selectedUser.birth_date || '');
+          formData.append('gender', selectedUser.gender || '');
+          formData.append('user_type', selectedUser.user_type || '');
+          formData.append('address', selectedUser.address || '');
+
+          // Nếu người dùng chọn file avatar
+          if (selectedUser.avatarFile) {
+            formData.append('avatar', selectedUser.avatarFile); // file gốc
+          }
+
+          const response = await fetch('http://localhost:8000/api/admin/admin_user/', {
+            method: 'POST',
+            body: formData, // không set Content-Type
+          });
+
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Lỗi tạo người dùng');
+          }
+
+          alert('Tạo tài khoản thành công');
+          // reload hoặc fetch lại danh sách user
+          window.location.reload();
+        } catch (error) {
+          console.error('Error:', error);
+          alert(`Tạo thất bại: ${error.message}`);
+        }
+      }
+      else if (modalType === 'edit') {
+        // PUT để update, ví dụ: update cả is_active
+        const response = await fetch('http://localhost:8000/api/admin/admin_user/', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: selectedUser.id,
+            is_active: selectedUser.is_active,
+            // Các trường bạn muốn update bổ sung
+            full_name: selectedUser.full_name,
+            phone: selectedUser.phone,
+            birth_date: selectedUser.birth_date,
+            gender: selectedUser.gender,
+            user_type: selectedUser.user_type,
+            address: selectedUser.address,
+            avatar: selectedUser.avatar
+          }),
+        });
+
+        if (!response.ok) throw new Error('Lỗi update người dùng');
+        alert('Cập nhật thành công');
+      }
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert('Có lỗi xảy ra: ' + error.message);
+    } finally {
+      setShowModal(false);
     }
-    setShowModal(false);
   };
 
-  const handleDeleteUser = (userId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
-      setUsers(users.filter(user => user.id !== userId));
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
+
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/admin_user/', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Xóa người dùng thất bại.');
+      }
+
+      // Xóa thành công thì update list local
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      alert('Xóa người dùng thành công.');
+    } catch (error) {
+      console.error(error);
+      alert(`Có lỗi xảy ra: ${error.message}`);
     }
   };
 
-  const toggleUserStatus = (userId) => {
-    setUsers(users.map(user =>
-      user.id === userId ? { ...user, is_active: !user.is_active } : user
-    ));
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    const confirmToggle = window.confirm(
+      `Bạn có chắc chắn muốn ${currentStatus ? "khóa" : "mở"} tài khoản này không?`
+    );
+
+    if (!confirmToggle) {
+      return; // Người dùng bấm Cancel
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/admin_user/', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, is_active: !currentStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Lỗi khi cập nhật is_active');
+      }
+
+      alert(`Cập nhật trạng thái thành công!`);
+      window.location.reload(); // Reload lại trang
+    } catch (error) {
+      console.error(error);
+      alert(`Có lỗi xảy ra: ${error.message}`);
+    }
   };
+
 
   const getUserTypeColor = (type) => {
     switch (type) {
@@ -320,8 +415,8 @@ const AdminManageAccount = () => {
               >
                 <option value="all">Loại tài khoản</option>
                 <option value="admin">Admin</option>
-                <option value="giáo viên">Giáo viên</option>
-                <option value="học sinh">Học sinh</option>
+                <option value="Giáo viên">Giáo viên</option>
+                <option value="Học sinh">Học sinh</option>
               </select>
 
               {/* Status Filter */}
@@ -396,8 +491,9 @@ const AdminManageAccount = () => {
                     </td>
                     <td>
                       <button
-                        onClick={() => toggleUserStatus(user.id)}
-                        class={`aduserman-status-btn ${user.is_active ? 'aduserman-active' : 'aduserman-inactive'}`}
+                        onClick={() => toggleUserStatus(user.user_id, user.is_active)}
+                        className={`aduserman-status-btn ${user.is_active ? 'aduserman-active' : 'aduserman-inactive'}`}
+                        style={{ cursor: "pointer" }}
                       >
                         {user.is_active ? (
                           <>
@@ -411,6 +507,7 @@ const AdminManageAccount = () => {
                           </>
                         )}
                       </button>
+
                     </td>
                     <td class="aduserman-text-light">
                       {user.last_login ? new Date(user.last_login).toLocaleString('vi-VN') : 'Chưa từng đăng nhập'}
@@ -487,6 +584,47 @@ const AdminManageAccount = () => {
                     className="aduserman-input"
                   />
                 </div>
+                <div className="aduserman-form-group">
+                  <label className="aduserman-label">Mật khẩu</label>
+                  <input
+                    type="password"
+                    value={selectedUser?.password || ''}
+                    onChange={(e) => setSelectedUser({ ...selectedUser, password: e.target.value })}
+                    className="aduserman-input"
+                    placeholder="Nhập mật khẩu"
+                  />
+                </div>
+                {/* Avatar */}
+                <div className="aduserman-form-group">
+                  <label className="aduserman-label">Ảnh đại diện</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={modalType === "view"}
+                    className="aduserman-input"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSelectedUser((prev) => ({
+                          ...prev,
+                          avatarFile: file, // Gán file raw vào state
+                          avatarPreview: URL.createObjectURL(file), // Dùng để preview
+                        }));
+                      }
+                    }}
+                  />
+
+                  {/* Preview */}
+                  {selectedUser?.avatarPreview && (
+                    <img
+                      src={selectedUser.avatarPreview}
+                      alt="Preview Avatar"
+                      className="mt-2 w-24 h-24 object-cover rounded-full border"
+                    />
+                  )}
+                </div>
+
+
 
                 {/* Email */}
                 <div className="aduserman-form-group">
@@ -560,8 +698,8 @@ const AdminManageAccount = () => {
                     disabled={modalType === 'view'}
                     className="aduserman-select"
                   >
-                    <option value="học sinh">Học sinh</option>
-                    <option value="giáo viên">Giáo viên</option>
+                    <option value="Học sinh">Học sinh</option>
+                    <option value="Giáo viên">Giáo viên</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -643,28 +781,6 @@ const AdminManageAccount = () => {
                           className="aduserman-checkbox"
                         />
                         <span>Tài khoản hoạt động</span>
-                      </label>
-
-                      <label className="aduserman-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={selectedUser?.is_staff || false}
-                          onChange={(e) => setSelectedUser({ ...selectedUser, is_staff: e.target.checked })}
-                          className="aduserman-checkbox"
-                        />
-                        <span>Là nhân viên</span>
-                      </label>
-
-                      <label className="aduserman-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={selectedUser?.is_superuser || false}
-                          onChange={(e) =>
-                            setSelectedUser({ ...selectedUser, is_superuser: e.target.checked })
-                          }
-                          className="aduserman-checkbox"
-                        />
-                        <span>Quản trị viên</span>
                       </label>
                     </div>
                   </div>

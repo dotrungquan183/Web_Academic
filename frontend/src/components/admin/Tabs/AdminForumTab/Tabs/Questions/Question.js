@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import TeacherForumLayout from "../../Layout";
+import AdminForumLayout from "../../Layout";
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../../../../auth/authHelper';
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
@@ -15,8 +15,6 @@ function AdminForumQuestion() {
   const [qualityFilter, setQualityFilter] = useState("");
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
   // Lọc dữ liệu theo từ khóa
   const filteredData = data
     ? data.filter((q) =>
@@ -34,7 +32,7 @@ function AdminForumQuestion() {
       if (interestFilter) params.append("interest", interestFilter);
       if (qualityFilter) params.append("quality", qualityFilter);
 
-      const response = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_showquestion/?${params.toString()}`);
+      const response = await fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/?${params.toString()}`);
       const result = await response.json();
       const formattedData = Array.isArray(result) ? result : result ? [result] : [];
       setData(formattedData);
@@ -44,7 +42,7 @@ function AdminForumQuestion() {
 
       await Promise.all(formattedData.map(async (q) => {
         try {
-          const res = await fetch(`http://localhost:8000/api/student/student_forum/student_question/student_detailquestion/${q.id}/`);
+          const res = await fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_detailquestion/${q.id}/`);
           const detail = await res.json();
 
           if (detail.total_vote_score !== undefined) {
@@ -73,46 +71,10 @@ function AdminForumQuestion() {
 
 
   return (
-    <TeacherForumLayout>
+    <AdminForumLayout>
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h2 style={{ color: "#003366" }}>Câu hỏi</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div>
-              <label htmlFor="start-time"><strong>Từ:</strong></label><br />
-              <input
-                type="datetime-local"
-                id="start-time"
-                name="start-time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                style={{
-                  padding: "6px 8px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  width: "237px" // 👈 chỉnh độ rộng ở đây
-                }}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="end-time"><strong>Đến:</strong></label><br />
-              <input
-                type="datetime-local"
-                id="end-time"
-                name="end-time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                style={{
-                  padding: "6px 8px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  width: "237px" // 👈 chỉnh độ rộng ở đây
-                }}
-              />
-            </div>
-
-          </div>
         </div>
         <div style={contentStyle}>
           <div style={questionCountStyle}>
@@ -198,7 +160,7 @@ function AdminForumQuestion() {
                   }
 
                   try {
-                    await fetch("http://localhost:8000/api/student/student_forum/student_question/student_showquestion/", {
+                    await fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/", {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
@@ -275,7 +237,7 @@ function AdminForumQuestion() {
         )}
 
       </div>
-    </TeacherForumLayout>
+    </AdminForumLayout>
   );
 }
 

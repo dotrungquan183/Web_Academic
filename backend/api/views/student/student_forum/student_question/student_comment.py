@@ -156,61 +156,70 @@ class StudentCommentView(View):
             return error_response
 
         try:
-            data = json.loads(request.body)
-            new_content = data.get("content")
-            type_comment = data.get("type_comment")
+            # 📥 Lấy JSON body
+            data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
 
-            if not new_content or not type_comment:
-                return JsonResponse({"error": "Missing content or type_comment"}, status=400)
+        new_content = data.get("content")
+        type_comment = data.get("type_comment")
 
-            CommentModel, fk_name = self._get_model_and_fk(type_comment)
-            if not CommentModel:
-                return JsonResponse({"error": "Invalid type_comment"}, status=400)
+        if not new_content or not type_comment:
+            return JsonResponse({"error": "Missing content or type_comment"}, status=400)
 
+        CommentModel, fk_name = self._get_model_and_fk(type_comment)
+        if not CommentModel:
+            return JsonResponse({"error": "Invalid type_comment"}, status=400)
+
+        try:
             comment = CommentModel.objects.get(id=comment_id)
-
-            if comment.user.id != user.id:
-                return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
-
-            comment.content = new_content
-            comment.created_at = now()  # Cập nhật thời gian
-            comment.save()
-
-            return JsonResponse({"message": "Comment updated successfully."}, status=200)
-
         except ObjectDoesNotExist:
             return JsonResponse({"error": "Comment not found."}, status=404)
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON."}, status=400)
+        if comment.user.id != user.id:
+            return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
 
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+        comment.content = new_content
+        comment.created_at = now()  # Cập nhật thời gian
+        comment.save()
+
+        return JsonResponse({"message": "Comment updated successfully."}, status=200)
+
+
 
     def delete(self, request, comment_id, *args, **kwargs):
         user, error_response = get_authenticated_user(request)
         if error_response:
             return error_response
 
+        # 📥 Lấy type_comment qua query string
+        type_comment = request.GET.get("type_comment")
+        if not type_comment:
+            return JsonResponse(
+                {"error": "Missing type_comment"}, status=400
+            )
+
+        # 📥 Xác định model và foreign key
+        CommentModel, fk_name = self._get_model_and_fk(type_comment)
+        if not CommentModel:
+            return JsonResponse(
+                {"error": "Invalid type_comment"}, status=400
+            )
+
         try:
-            type_comment = request.GET.get("type_comment")
-            if not type_comment:
-                return JsonResponse({"error": "Missing type_comment"}, status=400)
-
-            CommentModel, fk_name = self._get_model_and_fk(type_comment)
-            if not CommentModel:
-                return JsonResponse({"error": "Invalid type_comment"}, status=400)
-
             comment = CommentModel.objects.get(id=comment_id)
-
-            if comment.user.id != user.id:
-                return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
-
-            comment.delete()
-            return JsonResponse({"message": "Comment deleted successfully."}, status=200)
-
         except ObjectDoesNotExist:
-            return JsonResponse({"error": "Comment not found."}, status=404)
+            return JsonResponse(
+                {"error": "Comment not found."}, status=404
+            )
 
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+        if comment.user.id != user.id:
+            return JsonResponse(
+                {"error": "You are not the owner of this comment."}, status=403
+            )
+
+        comment.delete()
+        return JsonResponse(
+            {"message": "Comment deleted successfully."}, status=200
+        )
+

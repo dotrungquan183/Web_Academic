@@ -33,7 +33,7 @@ def login_view(request):
 
     # Map role
     user_type = user_info.user_type.lower()
-    role_map = {"sinh viên": "student", "giảng viên": "teacher", "admin": "admin"}
+    role_map = {"học sinh": "student", "giáo viên": "teacher", "admin": "admin"}
     role = role_map.get(user_type, "user")
 
     # Xử lý avatar

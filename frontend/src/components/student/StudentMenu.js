@@ -168,9 +168,6 @@ function StudentMenu() {
         <li className={location.pathname.startsWith("/studentforum") ? "active" : ""}>
           <Link to="/studentforum">DIỄN ĐÀN HỌC TẬP</Link>
         </li>
-        <li className={location.pathname === "/studentcontact" ? "active" : ""}>
-          <Link to="/studentcontact">LIÊN HỆ</Link>
-        </li>
       </ul>
     </div>
   );

@@ -169,7 +169,7 @@ function TeacherAskQuestion() {
                 <input
                   type="number"
                   name="bounty_amount"
-                  placeholder="Treo thưởng (VND)"
+                  placeholder="Treo thưởng (điểm uy tín)"
                   value={formData.bounty_amount}
                   onChange={handleChange}
                   style={styles.input}

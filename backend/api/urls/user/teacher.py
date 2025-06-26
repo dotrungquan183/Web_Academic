@@ -24,6 +24,7 @@ from api.views.teacher.teacher_profile.teacher_stat import TeacherProfileStatVie
 from api.views.teacher.teacher_profile.teacher_vote import TeacherProfileVoteView
 from api.views.teacher.teacher_profile.teacher_account import TeacherProfileAccountView
 from api.views.teacher.teacher_insight.teacher_insight_forum import TeacherInsightDataView
+from api.views.teacher.teacher_insight.teacher_insight_courses import TeacherDashboardCoursesView
 from api.views.teacher.teacher_courses.teacher_listregistrycourses import TeacherListRegistryCoursesView
 from api.views.teacher.teacher_toolbar.teacher_notify import TeacherNotificationView
 from api.views.auth.login import login_view
@@ -60,6 +61,7 @@ urlpatterns = [
     path('teacher/teacher_profile/teacher_vote/', TeacherProfileVoteView.as_view(), name='teacher_profile_vote'),
     path('teacher/teacher_profile/teacher_account/', TeacherProfileAccountView.as_view(), name='teacher_profile_account'),
     path('teacher/teacher_insight/teacher_insight_forum/', TeacherInsightDataView.as_view(), name='teacher_insight'),
+    path('teacher/teacher_insight/teacher_insight_courses/', TeacherDashboardCoursesView.as_view(), name='teacher_insight_courses'),
     path('teacher/teacher_toolbar/teacher_notify/', TeacherNotificationView.as_view(), name='teacher_notify'),
 ]
 

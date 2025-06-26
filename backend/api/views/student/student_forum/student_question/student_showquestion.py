@@ -99,7 +99,41 @@ class StudentShowQuestionView(APIView):
             })
 
         return Response(question_list)
+    def post(self, request):
+        question_id = request.data.get("question_id")
+        user_id = request.data.get("user_id")
 
+        if not question_id:
+            return Response({"error": "Thiếu question_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            question = Question.objects.get(pk=question_id)
+        except Question.DoesNotExist:
+            return Response({"error": "Không tìm thấy câu hỏi"}, status=status.HTTP_404_NOT_FOUND)
+
+        user = None
+        if user_id is not None:
+            try:
+                user = User.objects.get(pk=user_id)
+            except User.DoesNotExist:
+                return Response({"error": "Không tìm thấy người dùng"}, status=status.HTTP_404_NOT_FOUND)
+
+        today = timezone.now().date()
+
+        # Ghi nhận lượt xem
+        view, created = View.objects.get_or_create(
+            user=user,
+            question=question,
+            view_date=today,
+            defaults={'view_count': 1}
+        )
+
+        if not created:
+            view.view_count += 1
+            view.save()
+
+        return Response({"message": "Đã ghi nhận lượt xem"}, status=status.HTTP_200_OK)
+    
     def delete(self, request, question_id, *args, **kwargs):
         # Lấy thông tin người dùng đã xác thực
         user, error_response = get_authenticated_user(request)
