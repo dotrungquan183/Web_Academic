@@ -6,6 +6,6 @@ class AdminView(APIView):
     def get(self, request):
         data = {
             "title": "Admin",
-            "content": "Bố là Admin"
+            "content": "abc"
         }
         return Response(data, status=status.HTTP_200_OK)

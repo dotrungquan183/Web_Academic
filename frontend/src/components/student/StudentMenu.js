@@ -115,7 +115,7 @@ function StudentMenu() {
                 </Link>
               </li>
               <li>
-                <Link to="/settings">
+                <Link to="/account">
                   <FaWrench className="submenu-icon" /> Tài khoản
                 </Link>
               </li>

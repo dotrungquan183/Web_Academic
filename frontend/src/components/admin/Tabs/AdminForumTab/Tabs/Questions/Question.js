@@ -65,6 +65,60 @@ function AdminForumQuestion() {
     }
   }, [timeFilter, bountyFilter, interestFilter, qualityFilter]);
 
+  const handleApprove = async (questionId) => {
+    if (!window.confirm("Bạn có chắc muốn PHÊ DUYỆT câu hỏi này không?")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/admin/admin_forum/admin_question/${questionId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message || "Phê duyệt thành công!");
+        window.location.reload();
+      } else {
+        alert(result.error || "Phê duyệt thất bại!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi phê duyệt:", error);
+      alert("Có lỗi xảy ra khi phê duyệt!");
+    }
+  };
+
+  const handleReject = async (questionId) => {
+    if (!window.confirm("Bạn có chắc muốn TỪ CHỐI (xóa) câu hỏi này không?")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/${questionId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message || "Từ chối (xóa) thành công!");
+        window.location.reload();
+      } else {
+        alert(result.error || "Từ chối thất bại!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi từ chối:", error);
+      alert("Có lỗi xảy ra khi từ chối!");
+    }
+  };
+
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
@@ -137,104 +191,124 @@ function AdminForumQuestion() {
           <p>Đang tải dữ liệu...</p>
         ) : filteredData.length > 0 ? (
           <ul style={{ listStyleType: "none", padding: 0 }}>
-            {filteredData.map((question) => (
-              <li
-                key={question.id}
-                style={questionContainerStyle}
-                onClick={async () => {
-                  const token = getToken();
-                  let userId = null;
+            {filteredData
+              .slice() // copy mảng tránh mutate
+              .sort((a, b) => a.is_approve - b.is_approve) // đưa câu hỏi chưa duyệt lên đầu
+              .map((question) => (
+                <li
+                  key={question.id}
+                  style={questionContainerStyle}
+                  onClick={async () => {
+                    const token = getToken();
+                    let userId = null;
 
-                  if (token) {
-                    try {
-                      const decoded = jwtDecode(token);
-                      userId = decoded.user_id;
-                    } catch (error) {
-                      console.error("Token không hợp lệ:", error);
+                    if (token) {
+                      try {
+                        const decoded = jwtDecode(token);
+                        userId = decoded.user_id;
+                      } catch (error) {
+                        console.error("Token không hợp lệ:", error);
+                      }
                     }
-                  }
 
-                  if (!userId) {
-                    console.error("User chưa đăng nhập hoặc token không hợp lệ.");
-                    return;
-                  }
+                    if (!userId) {
+                      console.error("User chưa đăng nhập hoặc token không hợp lệ.");
+                      return;
+                    }
 
-                  try {
-                    await fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        question_id: question.id,
-                        user_id: userId,
-                      }),
-                    });
-                  } catch (err) {
-                    console.error("Lỗi khi cập nhật view:", err);
-                  }
+                    try {
+                      await fetch("http://localhost:8000/api/admin/admin_forum/admin_question/admin_showquestion/", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          question_id: question.id,
+                          user_id: userId,
+                        }),
+                      });
+                    } catch (err) {
+                      console.error("Lỗi khi cập nhật view:", err);
+                    }
 
-                  navigate(`/adminforum/question/${question.id}`);
-                }}
-              >
-                <div style={{ position: "relative", border: "1px solid #ccc", padding: "16px", borderRadius: "8px", marginBottom: "16px" }}>
-                  {/* Nút Phê duyệt và Từ chối */}
+                    navigate(`/adminforum/question/${question.id}`);
+                  }}
+                >
                   <div
                     style={{
-                      position: "absolute",
-                      top: "8px",
-                      right: "8px",
-                      display: "flex",
-                      gap: "10px",
-                      zIndex: 2,
+                      position: "relative",
+                      border: "1px solid #ccc",
+                      padding: "16px",
+                      borderRadius: "8px",
+                      marginBottom: "16px",
                     }}
-                    onClick={(e) => e.stopPropagation()} // Ngăn không navigate khi click icon
                   >
-                    <FaCheckCircle
-                      size={25}
-                      color="#48b169"
-                      title="Phê duyệt"
-                      style={{ cursor: "pointer" }}
-                      
-                    />
-                    <FaTimesCircle
-                      size={25}
-                      color="red"
-                      title="Từ chối"
-                      style={{ cursor: "pointer" }}
-                    />
-                  </div>
+                    {/* Nút Phê duyệt và Từ chối */}
+                    {question.is_approve === 0 && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                          display: "flex",
+                          gap: "10px",
+                          zIndex: 2,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FaCheckCircle
+                          size={25}
+                          color="#48b169"
+                          title="Phê duyệt"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => handleApprove(question.id)}
+                        />
+                        <FaTimesCircle
+                          size={25}
+                          color="red"
+                          title="Từ chối"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => handleReject(question.id)}
+                        />
+                      </div>
+                    )}
 
-                  {/* Nội dung câu hỏi */}
-                  <div style={questionContentStyle}>
-                    <h3>{question.title}</h3>
-                  </div>
+                    {/* Nội dung câu hỏi */}
+                    <div style={questionContentStyle}>
+                      <h3>{question.title}</h3>
+                    </div>
 
-                  {/* Metadata */}
-                  <div style={questionMetaStyle}>
-                    <span>👤 {question.username}</span>
-                    <span>👀 {question.views || 0}</span>
-                    <span>👍 {votesMap[question.id] ?? 0}</span>
-                    <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
-                    <span>
-                      🕒 {new Date(question.created_at).toLocaleDateString()},&nbsp;
-                      {new Date(question.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
-                    </span>
-                    <span>🔖 {question.tags && question.tags.length > 0 ? question.tags.join(", ") : "No tags"}</span>
-                    <span>💰 {question.bounty_amount || 0}</span>
+                    {/* Metadata */}
+                    <div style={questionMetaStyle}>
+                      <span>👤 {question.username}</span>
+                      <span>👀 {question.views || 0}</span>
+                      <span>👍 {votesMap[question.id] ?? 0}</span>
+                      <span>💬 {answersMap[question.id] ?? 0} câu trả lời</span>
+                      <span>
+                        🕒{" "}
+                        {new Date(question.created_at).toLocaleDateString()},{" "}
+                        {new Date(question.created_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </span>
+                      <span>
+                        🔖{" "}
+                        {question.tags && question.tags.length > 0
+                          ? question.tags.join(", ")
+                          : "No tags"}
+                      </span>
+                      <span>💰 {question.bounty_amount || 0}</span>
+                    </div>
                   </div>
-                </div>
-
-              </li>
-            ))}
+                </li>
+              ))}
           </ul>
         ) : (
           <p>Không có câu hỏi nào.</p>
         )}
+
 
       </div>
     </AdminForumLayout>

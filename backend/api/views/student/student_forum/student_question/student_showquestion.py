@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Prefetch, Sum
-from api.models import Question, QuestionTagMap, View, UserInformation, Vote, Answer, Comment
+from api.models import Question, QuestionTagMap, View, UserInformation, VoteForQuestion, VoteForAnswer, Answer, CommentForAnswer, CommentForQuestion
 from django.utils import timezone
 from django.contrib.auth.models import User
 from api.views.auth.authHelper import get_authenticated_user
@@ -135,43 +135,43 @@ class StudentShowQuestionView(APIView):
         return Response({"message": "Đã ghi nhận lượt xem"}, status=status.HTTP_200_OK)
     
     def delete(self, request, question_id, *args, **kwargs):
-        # Lấy thông tin người dùng đã xác thực
+        # Xác thực người dùng
         user, error_response = get_authenticated_user(request)
         if error_response:
-            return error_response  # Trả về phản hồi lỗi nếu có
+            return error_response  # Trả về lỗi nếu xác thực thất bại
 
         try:
-            # Tìm câu hỏi theo question_id
+            # Tìm câu hỏi
             question = Question.objects.get(id=question_id)
 
-            # Kiểm tra quyền sở hữu câu hỏi
-            if question.user.id != user.id:  # So sánh ID người dùng
+            # Kiểm tra quyền sở hữu
+            if question.user.id != user.id:
                 return Response({"error": "Bạn không có quyền xoá câu hỏi này!"}, status=status.HTTP_403_FORBIDDEN)
 
-            # Bắt đầu xóa các dữ liệu liên quan
-            # Xóa tất cả các lượt bình chọn (votes) liên quan đến câu hỏi
-            Vote.objects.filter(vote_for='question', content_id=question_id).delete()
+            # Xoá vote + comment cho câu hỏi
+            VoteForQuestion.objects.filter(question=question).delete()
+            CommentForQuestion.objects.filter(question=question).delete()
 
-            # Xóa tất cả các lượt xem (views) liên quan đến câu hỏi
-            View.objects.filter(question=question).delete()
-
-            # Xóa tất cả các bình luận (comments) liên quan đến câu hỏi
-            Comment.objects.filter(type_comment='question', content_id=question_id).delete()
-
-            # Xóa các thẻ (tags) liên quan đến câu hỏi
+            # Xoá liên kết thẻ
             QuestionTagMap.objects.filter(question=question).delete()
 
-            # Xóa tất cả các câu trả lời (answers) liên quan đến câu hỏi
-            Answer.objects.filter(question=question).delete()
+            # Xoá các câu trả lời và liên quan
+            answers = Answer.objects.filter(question=question)
+            for answer in answers:
+                VoteForAnswer.objects.filter(answer=answer).delete()
+                CommentForAnswer.objects.filter(answer=answer).delete()
+            answers.delete()
 
-            # Xóa câu hỏi
+            # Xoá câu hỏi
             question.delete()
 
-            return Response({"message": "Đã xoá câu hỏi và tất cả các liên quan thành công!"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Đã xoá câu hỏi và tất cả các liên quan thành công!"},
+                status=status.HTTP_200_OK
+            )
 
         except Question.DoesNotExist:
             return Response({"error": "Câu hỏi không tồn tại."}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            # Nếu có lỗi bất thường nào khác
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -18,7 +18,7 @@ function Sidebar() {
             color: isQuestionTab ? "white" : "#003366",
           }}
         >
-          <FiHelpCircle style={styles.icon} /> Câu hỏi chưa duyệt
+          <FiHelpCircle style={styles.icon} /> Câu hỏi
         </button>
       </Link>
 
@@ -30,7 +30,7 @@ function Sidebar() {
             color: isTagTab ? "white" : "#003366",
           }}
         >
-          <FiTag style={styles.icon} /> Danh sách câu hỏi
+          <FiTag style={styles.icon} /> Thẻ
         </button>
       </Link>
     </div>

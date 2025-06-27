@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Prefetch, Sum
-from api.models import Question, QuestionTagMap, View, UserInformation, Vote, Answer, Comment
+from api.models import Question, QuestionTagMap, View, UserInformation,Answer,VoteForAnswer, VoteForQuestion, CommentForAnswer, CommentForQuestion
 from django.utils import timezone
 from django.contrib.auth.models import User
 from api.views.auth.authHelper import get_authenticated_user
@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 class AdminShowQuestionView(APIView):
     def get(self, request):
-        # ✅ Lấy tất cả câu hỏi đã được duyệt
-        questions = Question.objects.filter(is_approve=0)
+        questions = Question.objects
         time_filter = request.GET.get("time")
         bounty_filter = request.GET.get("bounty")
         interest_filter = request.GET.get("interest")
@@ -95,10 +94,12 @@ class AdminShowQuestionView(APIView):
                 "username": question.user.username,
                 "avatar": avatar,
                 "user_id": question.user.id,
-                "accepted_answer_id": question.accepted_answer_id
+                "accepted_answer_id": question.accepted_answer_id,
+                "is_approve": question.is_approve  # ✅ Thêm vào đây
             })
 
         return Response(question_list)
+
     def post(self, request):
         question_id = request.data.get("question_id")
         user_id = request.data.get("user_id")
@@ -135,43 +136,46 @@ class AdminShowQuestionView(APIView):
         return Response({"message": "Đã ghi nhận lượt xem"}, status=status.HTTP_200_OK)
     
     def delete(self, request, question_id, *args, **kwargs):
-        # Lấy thông tin người dùng đã xác thực
-        user, error_response = get_authenticated_user(request)
-        if error_response:
-            return error_response  # Trả về phản hồi lỗi nếu có
-
         try:
-            # Tìm câu hỏi theo question_id
+            # Tìm câu hỏi
             question = Question.objects.get(id=question_id)
 
-            # Kiểm tra quyền sở hữu câu hỏi
-            if question.user.id != user.id:  # So sánh ID người dùng
-                return Response({"error": "Bạn không có quyền xoá câu hỏi này!"}, status=status.HTTP_403_FORBIDDEN)
+            # Xoá các votes liên quan đến câu hỏi
+            VoteForQuestion.objects.filter(question=question).delete()
 
-            # Bắt đầu xóa các dữ liệu liên quan
-            # Xóa tất cả các lượt bình chọn (votes) liên quan đến câu hỏi
-            Vote.objects.filter(vote_for='question', content_id=question_id).delete()
+            # Xoá các bình luận liên quan đến câu hỏi
+            CommentForQuestion.objects.filter(question=question).delete()
 
-            # Xóa tất cả các lượt xem (views) liên quan đến câu hỏi
-            View.objects.filter(question=question).delete()
-
-            # Xóa tất cả các bình luận (comments) liên quan đến câu hỏi
-            Comment.objects.filter(type_comment='question', content_id=question_id).delete()
-
-            # Xóa các thẻ (tags) liên quan đến câu hỏi
+            # Xoá các thẻ liên kết với câu hỏi
             QuestionTagMap.objects.filter(question=question).delete()
 
-            # Xóa tất cả các câu trả lời (answers) liên quan đến câu hỏi
-            Answer.objects.filter(question=question).delete()
+            # Lấy tất cả câu trả lời thuộc về câu hỏi này
+            answers = Answer.objects.filter(question=question)
 
-            # Xóa câu hỏi
+            # Lặp qua và xoá vote/comment cho mỗi câu trả lời
+            for answer in answers:
+                VoteForAnswer.objects.filter(answer=answer).delete()
+                CommentForAnswer.objects.filter(answer=answer).delete()
+
+            # Xoá các câu trả lời
+            answers.delete()
+
+            # Xoá câu hỏi
             question.delete()
 
-            return Response({"message": "Đã xoá câu hỏi và tất cả các liên quan thành công!"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Đã xoá câu hỏi và toàn bộ dữ liệu liên quan!"},
+                status=status.HTTP_200_OK
+            )
 
         except Question.DoesNotExist:
-            return Response({"error": "Câu hỏi không tồn tại."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Câu hỏi không tồn tại."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         except Exception as e:
-            # Nếu có lỗi bất thường nào khác
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

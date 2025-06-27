@@ -190,6 +190,7 @@ function AdminForumQuestionDetail() {
             totalVote: ans.totalVote, // ✅ thêm
             user_id: ans.user_id, // ✅ thêm
             question_id: ans.question_id, // ✅ thêm
+            is_approve: ans.is_approve,
           };
         });
 
@@ -333,225 +334,62 @@ function AdminForumQuestionDetail() {
   };
 
 
-
-
-  const handleEditCommentAnswer = (answerId, commentId) => {
-    const token = getToken();
-    if (!token) {
-      alert("❌ Bạn chưa đăng nhập!");
-      return;
-    }
-
-    const decoded = jwtDecode(token);
-    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-    const commentList = answerComments[answerId] || [];
-    console.log("📌 Danh sách comment của answerId =", answerId);
-    console.table(commentList);
-
-    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-    if (!comment) {
-      alert("❌ Không tìm thấy bình luận!");
-      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
-      return;
-    }
-
-    console.log("🧩 Full comment object:", comment);
-
-    // 🧠 Lấy user ID từ comment
-    const commentUserId =
-      typeof comment.user_id !== "undefined"
-        ? comment.user_id
-        : typeof comment.user === "object" && comment.user !== null
-          ? comment.user.id
-          : comment.user ?? null;
-
-    console.log("👤 currentUserId:", currentUserId);
-    console.log("✏️ commentUserId:", commentUserId);
-
-    if (Number(commentUserId) !== Number(currentUserId)) {
-      alert("❌ Bạn không có quyền chỉnh sửa bình luận này!");
-      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
-      return;
-    }
-
-    const newContent = prompt("📝 Nhập nội dung mới cho bình luận:", comment.content);
-    if (newContent === null || newContent.trim() === "") {
-      alert("❌ Nội dung không hợp lệ!");
-      return;
-    }
-
-    handleSubmitEditCommentAnswer(commentId, newContent, answerId);
-  };
-
-
-  const handleSubmitEditCommentAnswer = async (commentId, newContent, answerId) => {
-    const token = getToken();
-    if (!token) {
-      alert("❌ Không có token xác thực");
-      console.error("handleSubmitEditComment: Missing token");
-      return;
-    }
+  const handleApprove = async (answerId) => {
+    if (!window.confirm("Bạn có chắc muốn PHÊ DUYỆT câu trả lời này không?")) return;
 
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`,
+      const res = await fetch(
+        `http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/${answerId}/`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ content: newContent }),
         }
       );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
-        console.error("handleSubmitEditComment: Server returned error", {
-          status: response.status,
-          body: result,
-        });
-        return;
+      const result = await res.json();
+      if (res.ok) {
+        alert(result.message || "Phê duyệt thành công!");
+        window.location.reload(); // Reload lại trang
+      } else {
+        alert(result.error || "Phê duyệt thất bại!");
       }
-
-      alert("✅ Bình luận đã được cập nhật!");
-      console.log("handleSubmitEditComment: Cập nhật thành công", result);
-
-      // ✅ Reload lại danh sách comment sau khi sửa
-      await fetchAnswerComments(answerId);
-    } catch (error) {
-      alert("❌ Có lỗi xảy ra khi gửi request.");
-      console.error("handleSubmitEditComment: Lỗi khi gọi API", error);
+    } catch (err) {
+      console.error("❌ Lỗi khi phê duyệt:", err);
+      alert("Có lỗi xảy ra khi phê duyệt!");
     }
   };
 
-  const handleDeleteCommentAnswer = (answerId, commentId) => {
-    const token = getToken();
-    if (!token) {
-      alert("❌ Bạn chưa đăng nhập!");
-      return;
-    }
+  const handleReject = async (answerId) => {
+    if (!window.confirm("Bạn có chắc muốn TỪ CHỐI (xóa) câu trả lời này không?")) return;
 
-    const decoded = jwtDecode(token);
-    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/admin/admin_forum/admin_question/admin_ansquestion/${answerId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    const commentList = answerComments[answerId] || [];
-    console.log("📌 Danh sách comment của answerId =", answerId);
-    console.table(commentList);
-
-    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-    if (!comment) {
-      alert("❌ Không tìm thấy bình luận!");
-      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
-      return;
-    }
-
-    console.log("🧩 Full comment object:", comment);
-
-    // 🧠 Lấy user ID từ comment
-    const commentUserId =
-      typeof comment.user_id !== "undefined"
-        ? comment.user_id
-        : typeof comment.user === "object" && comment.user !== null
-          ? comment.user.id
-          : comment.user ?? null;
-
-    console.log("👤 currentUserId:", currentUserId);
-    console.log("✏️ commentUserId:", commentUserId);
-
-    if (Number(commentUserId) !== Number(currentUserId)) {
-      alert("❌ Bạn không có quyền xoá bình luận này!");
-      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
-      return;
-    }
-
-    if (window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
-      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => {
-          if (res.ok) {
-            // Cập nhật lại danh sách comment nếu cần
-            setAnswerComments((prev) => {
-              const updated = { ...prev };
-              updated[answerId] = updated[answerId].filter((c) => c.id !== commentId);
-              return updated;
-            });
-            alert("✅ Đã xoá bình luận thành công!");
-          } else {
-            alert("❌ Không thể xoá bình luận này.");
-          }
-        })
-        .catch((error) => console.error("❌ Lỗi khi xoá bình luận:", error));
+      const result = await res.json();
+      if (res.ok) {
+        alert(result.message || "Từ chối (xóa) thành công!");
+        window.location.reload(); // Reload lại trang
+      } else {
+        alert(result.error || "Từ chối thất bại!");
+      }
+    } catch (err) {
+      console.error("❌ Lỗi khi từ chối:", err);
+      alert("Có lỗi xảy ra khi từ chối!");
     }
   };
 
-  const handleEditCommentQuestion = (questionId, commentId) => {
-    const token = getToken();
-    if (!token) {
-      alert("❌ Bạn chưa đăng nhập!");
-      return;
-    }
 
-    const decoded = jwtDecode(token);
-    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-    const rawData = comments[questionId];
-
-    let commentList = [];
-
-    // ✅ Nếu là 1 comment object → chuyển thành array
-    if (rawData && !Array.isArray(rawData) && typeof rawData === "object") {
-      commentList = [rawData];
-    } else if (Array.isArray(rawData)) {
-      commentList = rawData;
-    }
-
-    console.log("📌 Danh sách comment của questionId =", questionId);
-    console.table(commentList);
-
-    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-    if (!comment) {
-      alert("❌ Không tìm thấy bình luận!");
-      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
-      return;
-    }
-
-    console.log("🧩 Full comment object:", comment);
-
-    const commentUserId =
-      typeof comment.user_id !== "undefined"
-        ? comment.user_id
-        : typeof comment.user === "object" && comment.user !== null
-          ? comment.user.id
-          : comment.user ?? null;
-
-    console.log("👤 currentUserId:", currentUserId);
-    console.log("✏️ commentUserId:", commentUserId);
-
-    if (Number(commentUserId) !== Number(currentUserId)) {
-      alert("❌ Bạn không có quyền chỉnh sửa bình luận này!");
-      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
-      return;
-    }
-
-    const newContent = prompt("📝 Nhập nội dung mới cho bình luận:", comment.content);
-    if (newContent === null || newContent.trim() === "") {
-      alert("❌ Nội dung không hợp lệ!");
-      return;
-    }
-
-    handleSubmitEditCommentQuestion(commentId, newContent, questionId);
-  };
-
-  const handleSubmitEditCommentQuestion = async (commentId, newContent, questionId) => {
+const handleEditCommentAnswer = async (answerId, commentId) => {
   const token = getToken();
   if (!token) {
     alert("❌ Bạn chưa đăng nhập!");
@@ -567,10 +405,87 @@ function AdminForumQuestionDetail() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        // ✅ Gửi cả content và type_comment
-        body: JSON.stringify({ 
-          content: newContent, 
-          type_comment: "question" 
+        body: JSON.stringify({
+          type_comment: "answer"  // ✅ Duyệt bình luận cho câu trả lời
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+      console.error("❌ Lỗi server:", result);
+      return;
+    }
+
+    alert("✅ Bình luận đã được phê duyệt!");
+    await fetchAnswerComments(answerId); // 🔄 Reload danh sách comment
+  } catch (error) {
+    alert("❌ Có lỗi xảy ra khi gửi yêu cầu.");
+    console.error("❌ Lỗi khi gọi API:", error);
+  }
+};
+
+
+
+  const handleDeleteCommentAnswer = (answerId, commentId) => {
+  const token = getToken();
+  if (!token) {
+    alert("❌ Bạn chưa đăng nhập!");
+    return;
+  }
+
+  if (!window.confirm("❓ Bạn có chắc muốn xoá bình luận này không?")) {
+    return;
+  }
+
+  fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/?type_comment=answer`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json().then((data) => ({ status: res.status, body: data })))
+    .then(({ status, body }) => {
+      if (status === 200) {
+        setAnswerComments((prev) => {
+          const updated = { ...prev };
+          updated[answerId] = updated[answerId].filter((c) => c.id !== commentId);
+          return updated;
+        });
+        alert("✅ Đã xoá bình luận thành công!");
+      } else {
+        alert(`❌ Lỗi khi xoá: ${body.error || "Không rõ lỗi"}`);
+        console.error("❌ Xoá lỗi:", body);
+      }
+    })
+    .catch((error) => {
+      alert("❌ Có lỗi xảy ra khi gửi request.");
+      console.error("❌ Lỗi khi xoá bình luận:", error);
+    });
+};
+
+
+ const handleEditCommentQuestion = async (questionId, commentId) => {
+  const token = getToken();
+  if (!token) {
+    alert("❌ Bạn chưa đăng nhập!");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type_comment: "question",   // ✅ Chỉ cần type_comment
         }),
       }
     );
@@ -582,78 +497,55 @@ function AdminForumQuestionDetail() {
       return;
     }
 
-    alert("✅ Bình luận đã được cập nhật!");
-    // ✅ Reload lại danh sách comment sau khi sửa
-    await fetchComments(questionId); 
+    alert("✅ Bình luận đã được phê duyệt!");
+    await fetchComments(questionId); // 🔄 Reload danh sách comment
   } catch (error) {
-    console.error("❌ Có lỗi xảy ra khi gửi request:", error);
-    alert("❌ Có lỗi xảy ra khi gửi request.");
+    console.error("❌ Lỗi khi gửi yêu cầu phê duyệt:", error);
+    alert("❌ Đã xảy ra lỗi khi phê duyệt bình luận.");
   }
 };
 
+
+
   const handleDeleteCommentQuestion = (questionId, commentId) => {
-    const token = getToken();
-    if (!token) {
-      alert("❌ Bạn chưa đăng nhập!");
-      return;
-    }
+  const token = getToken();
+  if (!token) {
+    alert("❌ Bạn chưa đăng nhập!");
+    return;
+  }
 
-    const decoded = jwtDecode(token);
-    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+  if (!window.confirm("❓ Bạn có chắc muốn xoá bình luận này không?")) {
+    return;
+  }
 
-    const commentList = comments[questionId] || [];
-    console.log("📌 Danh sách comment của questionId =", questionId);
-    console.table(commentList);
+  fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/?type_comment=question`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json().then((data) => ({ status: res.status, body: data })))
+    .then(({ status, body }) => {
+      if (status === 200) {
+        // ✅ Cập nhật lại danh sách comment
+        setComments((prev) => {
+          const updated = { ...prev };
+          updated[questionId] = updated[questionId].filter((c) => c.id !== commentId);
+          return updated;
+        });
+        alert("✅ Đã xoá bình luận thành công!");
+      } else {
+        alert(`❌ Lỗi khi xoá: ${body.error || "Không rõ lỗi"}`);
+        console.error("❌ Xoá lỗi:", body);
+      }
+    })
+    .catch((error) => {
+      alert("❌ Có lỗi xảy ra khi gửi request.");
+      console.error("❌ Lỗi khi xoá bình luận:", error);
+    });
+};
 
-    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-    if (!comment) {
-      alert("❌ Không tìm thấy bình luận!");
-      console.warn("❌ Không tìm thấy commentId trong danh sách:", commentId);
-      return;
-    }
-
-    console.log("🧩 Full comment object:", comment);
-
-    const commentUserId =
-      typeof comment.user_id !== "undefined"
-        ? comment.user_id
-        : typeof comment.user === "object" && comment.user !== null
-          ? comment.user.id
-          : comment.user ?? null;
-
-    console.log("👤 currentUserId:", currentUserId);
-    console.log("🗑️ commentUserId:", commentUserId);
-
-    if (Number(commentUserId) !== Number(currentUserId)) {
-      alert("❌ Bạn không có quyền xoá bình luận này!");
-      console.warn("🚫 Không phải chủ sở hữu của comment:", comment);
-      return;
-    }
-
-    if (window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
-      fetch(`http://localhost:8000/api/admin/admin_forum/admin_question/admin_comment/${commentId}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => {
-          if (res.ok) {
-            // Cập nhật lại danh sách comment
-            setComments((prev) => {
-              const updated = { ...prev };
-              updated[questionId] = updated[questionId].filter((c) => c.id !== commentId);
-              return updated;
-            });
-            alert("✅ Đã xoá bình luận thành công!");
-          } else {
-            alert("❌ Không thể xoá bình luận này.");
-          }
-        })
-        .catch((error) => console.error("❌ Lỗi khi xoá bình luận:", error));
-    }
-  };
 
   // Xử lý vote
   const handleVote = (action, type = "question", contentId = null) => {
@@ -1040,50 +932,6 @@ function AdminForumQuestionDetail() {
       <div style={layoutStyle}>
         <div style={containerStyle}>
           <div style={questionContainerStyle}>
-            {/* Nút xoá ở góc phải trên */}
-            <div
-              style={{
-                position: "absolute",
-                top: "8px",
-                right: "8px",
-                display: "flex",
-                gap: "10px",
-                zIndex: 2,
-              }}
-              onClick={(e) => e.stopPropagation()} // Ngăn không navigate khi click icon
-            >
-              <button
-                title="Phê duyệt"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#d4edda")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-              >
-                <FaCheckCircle size={25} color="#48b169" />
-              </button>
-
-              <button
-                title="Từ chối"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-              >
-                <FaTimesCircle size={25} color="red" />
-              </button>
-            </div>
             <div style={questionContentStyle}>
               <div
                 style={{
@@ -1240,49 +1088,63 @@ function AdminForumQuestionDetail() {
                 {showCommentInputId === question.id && (
                   <div style={{ marginTop: "10px" }}>
                     {/* Hiển thị các comment (giới hạn số lượng) */}
-                    {(comments[question.id] || []).slice(0, visibleCommentCount[question.id] || 0).map((c) => (
-                      <div key={c.id} style={{ marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>
-                        <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                          <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
-                          <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
+                    {(comments[question.id] || [])
+                      .sort((a, b) => a.is_approve - b.is_approve) // Ưu tiên comment chưa duyệt (is_approve = 0)
+                      .slice(0, visibleCommentCount[question.id] || 0)
+                      .map((c) => (
+                        <div key={c.id} style={{ marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>
+                          <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                            <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
+                            <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
 
-                          <FaCheckCircle 
-                            style={{ marginRight: "8px", cursor: "pointer" , color:"green"}}
-                            onClick={() => handleEditCommentQuestion(question.id, c.id)}
-                          />
-                          <FaTimesCircle 
-                            style={{ cursor: "pointer", color: "red" }}
-                            onClick={() => handleDeleteCommentQuestion(question.id, c.id)}
-                          />
-                        </div>
+                            {c.is_approve === 0 && (
+                              <>
+                                <FaCheckCircle
+                                  style={{ marginRight: "8px", cursor: "pointer", color: "green" }}
+                                  onClick={() => handleEditCommentQuestion(question.id, c.id)}
+                                  title="Phê duyệt"
+                                />
+                                <FaTimesCircle
+                                  style={{ cursor: "pointer", color: "red" }}
+                                  onClick={() => handleDeleteCommentQuestion(question.id, c.id)}
+                                  title="Từ chối"
+                                />
+                              </>
+                            )}
+                          </div>
 
-                        {/* Sử dụng renderWithLatex để hiển thị nội dung comment có công thức */}
-                        <div style={{ marginLeft: "10px" }}>
-                          {renderWithLatex(c.content)}
-                          {c.file_url && (() => {
-                            const ext = c.file_name?.split('.').pop().toLowerCase();
-                            const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+                          {/* Hiển thị nội dung comment + file nếu có */}
+                          <div style={{ marginLeft: "10px" }}>
+                            {renderWithLatex(c.content)}
+                            {c.file_url && (() => {
+                              const ext = c.file_name?.split('.').pop().toLowerCase();
+                              const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
 
-                            if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
-                              return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
-                            }
-                            if (["mp4", "webm", "ogg"].includes(ext)) {
+                              if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                                return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
+                              }
+                              if (["mp4", "webm", "ogg"].includes(ext)) {
+                                return (
+                                  <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                                    <source src={fullFileUrl} type={`video/${ext}`} />
+                                    Trình duyệt không hỗ trợ phát video.
+                                  </video>
+                                );
+                              }
                               return (
-                                <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
-                                  <source src={fullFileUrl} type={`video/${ext}`} />
-                                  Your browser does not support the video tag.
-                                </video>
+                                <a
+                                  href={fullFileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ display: "block", marginTop: "10px" }}
+                                >
+                                  Xem tệp đính kèm
+                                </a>
                               );
-                            }
-                            return (
-                              <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
-                                Xem trước
-                              </a>
-                            );
-                          })()}
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
 
                     {/* Nút "Hiển thị thêm bình luận" nếu còn bình luận chưa hiển thị */}
@@ -1475,52 +1337,57 @@ function AdminForumQuestionDetail() {
                 {answers.map((ans) => (
                   <li key={ans.id} style={answerItemStyle}>
                     <div style={{ ...singleAnswerBox, position: "relative" }}>
-                      {/* Nút xoá ở góc phải trên */}
-                      {String(userId) === String(ans.user_id) && (
-                        <div
-  style={{
-    position: "absolute",
-    top: "8px",
-    right: "8px",
-    display: "flex",
-    gap: "10px",
-    zIndex: 2,
-  }}
-  onClick={(e) => e.stopPropagation()} // Ngăn không navigate khi click icon
->
-  <button
-    title="Phê duyệt"
-    style={{
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-      padding: "4px",
-      borderRadius: "4px",
-      transition: "background-color 0.2s",
-    }}
-    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#d4edda")}
-    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-  >
-    <FaCheckCircle size={25} color="#48b169" />
-  </button>
 
-  <button
-    title="Từ chối"
-    style={{
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-      padding: "4px",
-      borderRadius: "4px",
-      transition: "background-color 0.2s",
-    }}
-    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
-    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-  >
-    <FaTimesCircle size={25} color="red" />
-  </button>
-</div>
+                      {ans.is_approve === 0 && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "8px",
+                            right: "8px",
+                            display: "flex",
+                            gap: "10px",
+                            zIndex: 2,
+                          }}
+                          onClick={(e) => e.stopPropagation()} // Ngăn không navigate khi click icon
+                        >
+                          <button
+                            title="Phê duyệt"
+                            style={{
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "4px",
+                              borderRadius: "4px",
+                              transition: "background-color 0.2s",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#d4edda")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                            onClick={() => handleApprove(ans.id)}
+                          >
+                            <FaCheckCircle size={25} color="#48b169" />
+                          </button>
+
+                          <button
+                            title="Từ chối"
+                            style={{
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "4px",
+                              borderRadius: "4px",
+                              transition: "background-color 0.2s",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f8d7da")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                            onClick={() => handleReject(ans.id)}
+                          >
+                            <FaTimesCircle size={25} color="red" />
+                          </button>
+                        </div>
                       )}
+
+
+
 
                       {/* Checkbox đánh dấu là đúng */}
                       {parseInt(userId) === parseInt(question.user_id) && (
@@ -1686,66 +1553,77 @@ function AdminForumQuestionDetail() {
                           {activeAnswerId === ans.id && (
                             <div style={{ marginTop: "10px" }}>
                               {/* Hiển thị các comment */}
-                              {(answerComments[ans.id] || []).slice(0, visibleAnswerComments[ans.id] || 5).map((c) => (
-                                <div
-                                  key={c.id}
-                                  style={{
-                                    marginBottom: "10px",
-                                    borderBottom: "1px solid #ddd",
-                                    paddingBottom: "5px",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                                    <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
-                                    <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
-
-                                    <FaCheckCircle 
-                                      style={{ marginRight: "8px", cursor: "pointer", color: "green" }}
-                                      onClick={() => handleEditCommentAnswer(ans.id, c.id)}
-                                    />
-                                    <FaTimesCircle 
-                                      style={{ cursor: "pointer", color: "red" }}
-                                      onClick={() => handleDeleteCommentAnswer(ans.id, c.id)}
-                                    />
-                                  </div>
+                              {(answerComments[ans.id] || [])
+                                .sort((a, b) => a.is_approve - b.is_approve) // Đưa comment chưa duyệt lên đầu
+                                .slice(0, visibleAnswerComments[ans.id] || 5)
+                                .map((c) => (
                                   <div
+                                    key={c.id}
                                     style={{
-                                      marginLeft: "10px",
-                                      maxWidth: "100%",
-                                      overflowX: "auto",
-                                      overflowY: "auto",
-                                      maxHeight: "300px",
-                                      wordBreak: "break-word",
-                                      whiteSpace: "normal",
-                                      lineBreak: "anywhere",
+                                      marginBottom: "10px",
+                                      borderBottom: "1px solid #ddd",
+                                      paddingBottom: "5px",
                                     }}
                                   >
-                                    {renderWithLatex(c.content)}
+                                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                                      <span style={{ marginRight: "8px" }}>👤 {c.username}</span>
+                                      <span style={{ fontSize: "12px", color: "#666", marginRight: "8px" }}>⏰ {c.created_at}</span>
 
-                                    {c.file_url && (() => {
-                                      const ext = c.file_name?.split('.').pop().toLowerCase();
-                                      const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+                                      {c.is_approve === 0 && (
+                                        <>
+                                          <FaCheckCircle
+                                            style={{ marginRight: "8px", cursor: "pointer", color: "green" }}
+                                            title="Phê duyệt"
+                                            onClick={() => handleEditCommentAnswer(ans.id, c.id)}
+                                          />
+                                          <FaTimesCircle
+                                            style={{ cursor: "pointer", color: "red" }}
+                                            title="Từ chối"
+                                            onClick={() => handleDeleteCommentAnswer(ans.id, c.id)}
+                                          />
+                                        </>
+                                      )}
+                                    </div>
 
-                                      if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
-                                        return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
-                                      }
-                                      if (["mp4", "webm", "ogg"].includes(ext)) {
+                                    <div
+                                      style={{
+                                        marginLeft: "10px",
+                                        maxWidth: "100%",
+                                        overflowX: "auto",
+                                        overflowY: "auto",
+                                        maxHeight: "300px",
+                                        wordBreak: "break-word",
+                                        whiteSpace: "normal",
+                                        lineBreak: "anywhere",
+                                      }}
+                                    >
+                                      {renderWithLatex(c.content)}
+
+                                      {c.file_url && (() => {
+                                        const ext = c.file_name?.split('.').pop().toLowerCase();
+                                        const fullFileUrl = c.file_url.startsWith("http") ? c.file_url : `http://127.0.0.1:8000${c.file_url}`;
+
+                                        if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                                          return <img src={fullFileUrl} alt="comment file" style={{ maxWidth: "100%", marginTop: "10px" }} />;
+                                        }
+                                        if (["mp4", "webm", "ogg"].includes(ext)) {
+                                          return (
+                                            <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                                              <source src={fullFileUrl} type={`video/${ext}`} />
+                                              Trình duyệt không hỗ trợ phát video.
+                                            </video>
+                                          );
+                                        }
                                         return (
-                                          <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
-                                            <source src={fullFileUrl} type={`video/${ext}`} />
-                                            Your browser does not support the video tag.
-                                          </video>
+                                          <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
+                                            Xem tệp đính kèm
+                                          </a>
                                         );
-                                      }
-                                      return (
-                                        <a href={fullFileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: "10px" }}>
-                                          Xem trước
-                                        </a>
-                                      );
-                                    })()}
+                                      })()}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+
 
 
                               {/* Nút hiển thị thêm bình luận */}

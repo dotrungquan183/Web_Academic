@@ -203,7 +203,7 @@ class AdminDetailQuestionView(APIView):
 
         try:
             # Chỉ lấy câu hỏi đã được duyệt
-            question = Question.objects.get(id=question_id, is_approve=0)
+            question = Question.objects.get(id=question_id)
         except Question.DoesNotExist:
             logger.error(f"Question not found or not approved: {question_id}")
             return Response({"error": "Câu hỏi không tồn tại hoặc chưa được duyệt"}, status=status.HTTP_404_NOT_FOUND)

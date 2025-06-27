@@ -125,10 +125,9 @@ class AdminCommentView(View):
             if not CommentModel:
                 return JsonResponse({"error": "Invalid type_comment"}, status=400)
 
-            # ✅ Chỉ lấy comment đã được duyệt (is_approve = 0)
+            # ✅ Lấy toàn bộ comment (không lọc is_approve để có thể hiển thị hết)
             comments = CommentModel.objects.filter(
-                **{fk_name: content_id},
-                is_approve=0
+                **{fk_name: content_id}
             ).select_related("user").order_by("-created_at")
 
             data = [
@@ -140,6 +139,7 @@ class AdminCommentView(View):
                     "created_at": c.created_at.strftime("%d/%m/%Y %H:%M"),
                     "file_url": c.file.url if c.file else None,
                     "file_name": c.file.name.split("/")[-1] if c.file else None,
+                    "is_approve": c.is_approve,
                 }
                 for c in comments
             ]
@@ -151,32 +151,22 @@ class AdminCommentView(View):
 
 
     def put(self, request, comment_id=None, *args, **kwargs):
-        user, error_response = get_authenticated_user(request)
-        if error_response:
-            return error_response
-
         try:
             data = json.loads(request.body)
-            new_content = data.get("content")
             type_comment = data.get("type_comment")
 
-            if not new_content or not type_comment:
-                return JsonResponse({"error": "Missing content or type_comment"}, status=400)
+            if not type_comment:
+                return JsonResponse({"error": "Missing type_comment"}, status=400)
 
             CommentModel, fk_name = self._get_model_and_fk(type_comment)
             if not CommentModel:
                 return JsonResponse({"error": "Invalid type_comment"}, status=400)
 
             comment = CommentModel.objects.get(id=comment_id)
-
-            if comment.user.id != user.id:
-                return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
-
-            comment.content = new_content
-            comment.created_at = now()  # Cập nhật thời gian
+            comment.is_approve = 1
             comment.save()
 
-            return JsonResponse({"message": "Comment updated successfully."}, status=200)
+            return JsonResponse({"message": "✅ Comment approved successfully."}, status=200)
 
         except ObjectDoesNotExist:
             return JsonResponse({"error": "Comment not found."}, status=404)
@@ -187,13 +177,10 @@ class AdminCommentView(View):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-    def delete(self, request, comment_id, *args, **kwargs):
-        user, error_response = get_authenticated_user(request)
-        if error_response:
-            return error_response
-
+    def delete(self, request, comment_id=None, *args, **kwargs):
         try:
             type_comment = request.GET.get("type_comment")
+
             if not type_comment:
                 return JsonResponse({"error": "Missing type_comment"}, status=400)
 
@@ -202,12 +189,9 @@ class AdminCommentView(View):
                 return JsonResponse({"error": "Invalid type_comment"}, status=400)
 
             comment = CommentModel.objects.get(id=comment_id)
-
-            if comment.user.id != user.id:
-                return JsonResponse({"error": "You are not the owner of this comment."}, status=403)
-
             comment.delete()
-            return JsonResponse({"message": "Comment deleted successfully."}, status=200)
+
+            return JsonResponse({"message": "🗑️ Comment deleted successfully."}, status=200)
 
         except ObjectDoesNotExist:
             return JsonResponse({"error": "Comment not found."}, status=404)

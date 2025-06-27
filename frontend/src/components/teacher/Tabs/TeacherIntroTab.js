@@ -8,10 +8,8 @@ import {
   Smartphone,
   Wrench,
   Sparkles,
-  Users,
   Award,
   ChevronRight,
-  Star
 } from 'lucide-react';
  
 function TeacherIntroTab() {
@@ -83,12 +81,6 @@ function TeacherIntroTab() {
     }
   ];
  
-  const stats = [
-    { number: "10,000+", label: "Giáo viên đang sử dụng", icon: <Users className="teaintro-stat-icon" /> },
-    { number: "50,000+", label: "Học viên được quản lý", icon: <BookOpen className="teaintro-stat-icon" /> },
-    { number: "99.9%", label: "Thời gian hoạt động", icon: <Shield className="teaintro-stat-icon" /> },
-    { number: "4.9/5", label: "Đánh giá từ người dùng", icon: <Star className="teaintro-stat-icon" /> }
-  ];
  
   return (
     <div className="teaintro-container">
@@ -109,21 +101,6 @@ function TeacherIntroTab() {
               Nền tảng toàn diện và tiện lợi được thiết kế dành riêng cho giáo viên.
               Giao diện thân thiện, dễ sử dụng, giúp tối ưu hóa quy trình giảng dạy và quản lý học viên.
             </p>
-          </div>
- 
-          {/* Stats */}
-          <div className="teaintro-stats-grid">
-            {stats.map((stat, index) => (
-              <div key={index} className="teaintro-stat-card">
-                <div className="teaintro-stat-icon-wrapper">
-                  <div className="teaintro-stat-icon-bg">
-                    {stat.icon}
-                  </div>
-                </div>
-                <div className="teaintro-stat-number">{stat.number}</div>
-                <div className="teaintro-stat-label">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

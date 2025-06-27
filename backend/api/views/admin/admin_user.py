@@ -11,6 +11,10 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from django.http import QueryDict
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class AdminUserView(View):
     def get(self, request):
@@ -125,65 +129,70 @@ class AdminUserView(View):
 
 
 
-    def put(self, request):
-        data = json.loads(request.body)
+    def put(self, request, *args, **kwargs):
+        if request.content_type.startswith("multipart/form-data"):
+            # Parse multipart từ PUT request thủ công
+            put_data = QueryDict(request.body, encoding='utf-8')
+            data = put_data.copy()
+            files = request.FILES
+        else:
+            try:
+                import json
+                data = json.loads(request.body)
+                files = {}
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Lỗi định dạng JSON'}, status=400)
 
-        user_id = data.get('user_id')
-        is_active = data.get('is_active', None)  
-
-        if not user_id:
-            return JsonResponse(
-                {'error': 'user_id là bắt buộc'},
-                status=400
-            )
+        # ===== Xử lý user_id =====
+        raw_user_id = data.get("user_id")
+        try:
+            user_id = int(raw_user_id)
+        except (TypeError, ValueError):
+            return JsonResponse({'error': f"user_id không hợp lệ: {raw_user_id}"}, status=400)
 
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return JsonResponse(
-                {'error': 'User không tồn tại'},
-                status=404
-            )
+            return JsonResponse({'error': 'User không tồn tại'}, status=404)
 
-        # Nếu không truyền thêm trường nào ngoài is_active => chỉ update is_active
-        # Nếu có truyền thêm thông tin khác => update cả UserInformation
-        extra_fields = {k: v for k, v in data.items() if k not in ['user_id', 'is_active']}
+        # ===== Đổi mật khẩu =====
+        new_password = data.get("new_password", "").strip()
+        old_password = data.get("old_password", "").strip()
 
-        if extra_fields:
-            # Cập nhật is_active nếu có
-            if is_active is not None:
-                user.is_active = is_active
-                user.save()
+        if new_password:
+            if not old_password:
+                return JsonResponse({'error': 'Phải nhập mật khẩu cũ để đổi mật khẩu'}, status=400)
 
-            # Cập nhật UserInformation
-            info, created = UserInformation.objects.get_or_create(user=user)
-            info.full_name = extra_fields.get('full_name', info.full_name)
-            info.phone = extra_fields.get('phone', info.phone)
-            info.birth_date = extra_fields.get('birth_date', info.birth_date)
-            info.gender = extra_fields.get('gender', info.gender)
-            info.user_type = extra_fields.get('user_type', info.user_type)
-            info.address = extra_fields.get('address', info.address)
-            info.avatar = extra_fields.get('avatar', info.avatar)
-            info.save()
+            authenticated = authenticate(username=user.username, password=old_password)
+            if not authenticated:
+                return JsonResponse({'error': 'Mật khẩu cũ không đúng'}, status=400)
 
-            return JsonResponse(
-                {'message': 'Cập nhật thông tin người dùng thành công'},
-                status=200
-            )
-        else:
-            # Nếu không có extra_fields thì chỉ update is_active
-            if is_active is None:
-                return JsonResponse(
-                    {'error': 'Vui lòng truyền is_active hoặc các trường thông tin để update'},
-                    status=400
-                )
-
-            user.is_active = is_active
+            user.set_password(new_password)
             user.save()
-            return JsonResponse(
-                {'message': 'Cập nhật is_active thành công'},
-                status=200
-            )
+
+        # ===== Cập nhật trạng thái hoạt động =====
+        is_active_raw = data.get("is_active")
+        if is_active_raw is not None:
+            user.is_active = str(is_active_raw).lower() in ["true", "1"]
+            user.save()
+
+        # ===== Thông tin người dùng =====
+        info, _ = UserInformation.objects.get_or_create(user=user)
+
+        info.full_name = data.get("full_name", info.full_name)
+        info.phone = data.get("phone", info.phone)
+        info.birth_date = data.get("birth_date", info.birth_date)
+        info.gender = data.get("gender", info.gender)
+        info.user_type = data.get("user_type", info.user_type)
+        info.address = data.get("address", info.address)
+
+        avatar = files.get("avatar")
+        if avatar:
+            info.avatar = avatar
+
+        info.save()
+
+        return JsonResponse({'message': 'Cập nhật người dùng thành công'}, status=200)
 
     def delete(self, request):
     

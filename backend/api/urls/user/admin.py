@@ -21,6 +21,7 @@ from api.views.admin.admin_courses.admin_addcourses import AdminAddCoursesView
 from api.views.admin.admin_courses.admin_bestcourses import AdminBestCoursesView
 from api.views.admin.admin_courses.admin_detailcourses import AdminDetailCoursesView
 from api.views.admin.admin_courses.admin_listregistrycourses import AdminListRegistryCoursesView
+from api.views.admin.admin_update import AdminUserUpdateView
 
 urlpatterns = [
     path('admin/admin_view/', AdminView.as_view(), name='admin'),
@@ -55,4 +56,5 @@ urlpatterns = [
     path('admin/admin_courses/admin_detailcourses/<int:pk>/', AdminDetailCoursesView.as_view(), name='admin_detailcourses_id'),
     path('admin/admin_courses/admin_listregistrycourses/', AdminListRegistryCoursesView.as_view(), name='admin_listregistrycourses'),
     path('admin/admin_courses/admin_listregistrycourses/<int:course_id>/', AdminListRegistryCoursesView.as_view(), name='admin_listregistrycourses_id'),
+    path('admin/admin_update/', AdminUserUpdateView.as_view(), name='admin_update'),
 ]
