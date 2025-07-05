@@ -141,26 +141,29 @@ const TeacherDetailCourses = () => {
           {/* Nhóm 2 nút ở góc trên bên phải */}
           <div>
             {userId === course.user && (
-              <button
-                style={{ ...styles.editButton, marginRight: "10px", backgroundColor: "#003366" }}
-                onClick={() => handleDelete(course.id)}
-              >
-                <FaTrash style={{ marginRight: "6px" }} />
-                Xóa
-              </button>
+              <>
+                <button
+                  style={{ ...styles.editButton, marginRight: "10px", backgroundColor: "#003366" }}
+                  onClick={() => handleDelete(course.id)}
+                >
+                  <FaTrash style={{ marginRight: "6px" }} />
+                  Xóa
+                </button>
+
+                <button
+                  style={styles.editButton}
+                  onClick={() =>
+                    navigate(`/teachercourses/listcourses/addcourses/${course.id}`, {
+                      state: { course },
+                    })
+                  }
+                >
+                  <FaEdit style={{ marginRight: "10px" }} />
+                  Chỉnh sửa
+                </button>
+              </>
             )}
 
-            <button
-              style={styles.editButton}
-              onClick={() =>
-                navigate(`/teachercourses/listcourses/addcourses/${course.id}`, {
-                  state: { course },
-                })
-              }
-            >
-              <FaEdit style={{ marginRight: "10px" }} />
-              Chỉnh sửa
-            </button>
 
             <button
               style={{ ...styles.editButton, marginLeft: "10px" }}
