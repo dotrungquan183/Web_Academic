@@ -95,7 +95,6 @@ class TeacherDashboardCoursesView(APIView):
 
         # ====== WEEKLY ACTIVITY ======
         from django.utils import timezone
-        from datetime import timedelta
 
         now = timezone.now()
         weeklyActivityData = []

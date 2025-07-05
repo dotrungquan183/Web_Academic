@@ -55,8 +55,7 @@ INSTALLED_APPS = [
     "corsheaders",
     'django_extensions',
     "rest_framework_simplejwt",
-    'api',
-
+    'api.apps.ApiConfig',
 ]
  
  

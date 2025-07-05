@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Question,  Chapter, Lesson, LessonVideoView, Reputation,ReputationPermission
+from .models import Course, Question,  Chapter, Lesson, LessonVideoView, Reputation,ReputationPermission, Homework, HomeworkQuestion, HomeworkChoice
 import datetime
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,8 +11,30 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ["id", "title", "content"]
 
+# serializers.py
+
+class HomeworkChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeworkChoice
+        fields = '__all__'
+
+class HomeworkQuestionSerializer(serializers.ModelSerializer):
+    choices = HomeworkChoiceSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = HomeworkQuestion
+        fields = '__all__'
+
+class HomeworkSerializer(serializers.ModelSerializer):
+    questions = HomeworkQuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Homework
+        fields = '__all__'
+
 class LessonSerializer(serializers.ModelSerializer):
     formatted_duration = serializers.SerializerMethodField()
+    homeworks = HomeworkSerializer(many=True, read_only=True)
 
     class Meta:
         model = Lesson

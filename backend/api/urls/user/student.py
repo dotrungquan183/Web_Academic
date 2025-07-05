@@ -27,6 +27,7 @@ from api.views.student.student_courses.student_detailcourses import StudentDetai
 from api.views.student.student_courses.student_registrycourses import StudentRegistryCoursesView
 from api.views.student.student_courses.student_viewvideocourses import StudentLessonVideoView
 from api.views.student.student_courses.student_viewdocumentcourses import StudentLessonDocumentView
+from api.views.student.student_courses.student_homework import StudentSubmitHomeworkView
 
 from api.views.auth.login import login_view
 from api.views.auth.forgotpassword import forgotpassword_view
@@ -71,5 +72,6 @@ urlpatterns = [
     path("student/student_forum/student_question/<int:question_id>/", StudentAskQuestionView.as_view()),
     path('student/student_forum/student_question/student_relatedquestion/<int:question_id>/', StudentRelatedQuestionView.as_view(), name='student_related_questions'),
     path('student/student_forum/student_question/student_hotquestion/', StudentHotQuestionView.as_view(), name='student_hot_questions'),
+    path('student/student_courses/student_homework/', StudentSubmitHomeworkView.as_view(), name='student_submit_homework'),
 ]
 

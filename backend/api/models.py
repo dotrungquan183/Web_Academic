@@ -187,6 +187,7 @@ class Question(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt câu hỏi"
     )
+    image = models.FileField(upload_to='image_for_questions/', null=True, blank=True, verbose_name="Tệp đính kèm")
     def save(self, *args, **kwargs):
         # Check auto approve setting
         setting = AutoApproveSetting.objects.filter(type='question').first()
@@ -208,7 +209,7 @@ class Answer(models.Model):
     is_approve = models.SmallIntegerField(
         default=0, verbose_name="Duyệt câu trả lời"
     )
-
+    image = models.FileField(upload_to='image_for_answers/', null=True, blank=True, verbose_name="Tệp đính kèm")
     def save(self, *args, **kwargs):
         setting = AutoApproveSetting.objects.filter(type='answer').first()
         if setting and setting.is_auto_approve_active():
@@ -316,7 +317,6 @@ class VoteForQuestion(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        managed = False
         unique_together = ('user', 'question')
         db_table = 'votes_for_questions'
 
@@ -341,7 +341,6 @@ class VoteForAnswer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        managed = False
         unique_together = ('user', 'answer')
         db_table = 'votes_for_answers'
 
@@ -485,3 +484,69 @@ class LoginHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username} logged at {self.login_time}"
+    
+
+# --- Thêm mới cho hệ thống bài tập ---
+
+class Homework(models.Model):
+    lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE, related_name='homeworks')  # ✅ Thêm related_name
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Homework: {self.title} (Lesson ID: {self.lesson_id})"
+
+    class Meta:
+        db_table = 'homeworks'
+
+
+
+class HomeworkQuestion(models.Model):
+    homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, choices=[('single', 'Single Choice'), ('multiple', 'Multiple Choice')], default='single')
+
+    def __str__(self):
+        return f"Q: {self.question_text[:50]}..."
+
+    class Meta:
+        db_table = 'homework_questions'
+
+
+class HomeworkChoice(models.Model):
+    question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE, related_name='choices')
+    choice_text = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Choice: {self.choice_text} ({'Correct' if self.is_correct else 'Wrong'})"
+
+    class Meta:
+        db_table = 'homework_choices'
+
+
+class HomeworkSubmission(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    homework = models.ForeignKey(Homework, on_delete=models.CASCADE)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    score = models.FloatField(default=0)
+
+    def __str__(self):
+        return f"Submission by {self.student.username} for Homework {self.homework_id}"
+
+    class Meta:
+        db_table = 'homework_submissions'
+        unique_together = ('student', 'homework')
+
+
+class HomeworkSubmissionAnswer(models.Model):
+    submission = models.ForeignKey(HomeworkSubmission, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
+    selected_choice = models.ForeignKey(HomeworkChoice, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Answer: Q{self.question_id} - Choice {self.selected_choice_id}"
+
+    class Meta:
+        db_table = 'homework_submission_answers'

@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from api.models import Course, Chapter, Lesson
+from api.models import Course, Chapter, Lesson, Homework, HomeworkQuestion, HomeworkChoice
 from api.views.auth.authHelper import get_authenticated_user
 from pytube import YouTube
 import json
@@ -66,22 +66,16 @@ class TeacherAddCoursesView(APIView):
             level = request.data.get('courseLevel', '')
             intro_video = request.data.get('introVideo', '')
             chapters_data = request.data.get('chapters')
-            thumbnail_file = request.FILES.get('courseImage')  # 👈 thumbnail
+            thumbnail_file = request.FILES.get('courseImage')
+
             try:
                 price = Decimal(price_str)
             except InvalidOperation:
-                return Response(
-                    {'error': 'Giá trị phí không hợp lệ.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'error': 'Giá trị phí không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
 
             if not title:
-                return Response(
-                    {'error': 'Tiêu đề khóa học là bắt buộc.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'error': 'Tiêu đề khóa học là bắt buộc.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Tạo khóa học — thumbnail truyền vào luôn
             course = Course.objects.create(
                 title=title,
                 intro=description,
@@ -90,7 +84,7 @@ class TeacherAddCoursesView(APIView):
                 level=level,
                 intro_video=intro_video,
                 user=user,
-                thumbnail=thumbnail_file  # 👈 thumbnail
+                thumbnail=thumbnail_file
             )
 
             total_duration = timedelta()
@@ -124,7 +118,7 @@ class TeacherAddCoursesView(APIView):
                         document_file = document_files[file_pointer]
                         file_pointer += 1
 
-                    Lesson.objects.create(
+                    lesson = Lesson.objects.create(
                         chapter=chapter,
                         title=lesson_data['title'],
                         video=embed_url,
@@ -132,20 +126,40 @@ class TeacherAddCoursesView(APIView):
                         document_link=document_file
                     )
 
+                    # Tạo bài tập nếu có exercise
+                    if 'exercise' in lesson_data:
+                        homework = Homework.objects.create(
+                            lesson=lesson,
+                            title=lesson.title,
+                            description=lesson.title
+                        )
+                        for ex in lesson_data['exercise']:
+                            answers = ex.get('answers', [])
+                            correct_count = sum(1 for ans in answers if ans.get('is_correct', False))
+                            question_type = 'multiple' if correct_count > 1 else 'single'
+
+                            question = HomeworkQuestion.objects.create(
+                                homework=homework,
+                                question_text=ex['question'],
+                                question_type=question_type
+)
+
+                            for ans in ex.get('answers', []):
+                                HomeworkChoice.objects.create(
+                                    question=question,
+                                    choice_text=ans['choice_text'],
+                                    is_correct=ans['is_correct']
+                                )
+
             course.total_duration = total_duration
             course.video_count = video_count
             course.save()
 
-            return Response(
-                {'message': 'Tạo khóa học thành công.', 'course_id': course.id},
-                status=status.HTTP_201_CREATED
-            )
+            return Response({'message': 'Tạo khóa học thành công.', 'course_id': course.id}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def put(self, request, *args, **kwargs):
         user, error_response = get_authenticated_user(request)
@@ -156,10 +170,7 @@ class TeacherAddCoursesView(APIView):
         try:
             course = Course.objects.get(id=course_id, user=user)
         except Course.DoesNotExist:
-            return Response(
-                {'error': 'Không tìm thấy khóa học hoặc bạn không có quyền chỉnh sửa.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Không tìm thấy khóa học hoặc bạn không có quyền chỉnh sửa.'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             title = request.data.get('title')
@@ -169,18 +180,14 @@ class TeacherAddCoursesView(APIView):
             level = request.data.get('courseLevel', course.level)
             intro_video = request.data.get('introVideo', course.intro_video)
             chapters_data = request.data.get('chapters')
-            thumbnail_file = request.FILES.get('courseImage')  # xử lý thumbnail mới
+            thumbnail_file = request.FILES.get('courseImage')
 
-            # Giá
             try:
                 price = Decimal(price_str)
             except InvalidOperation:
-                return Response(
-                    {'error': 'Giá trị phí không hợp lệ.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'error': 'Giá trị phí không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Cập nhật thông tin khóa học
+            # Cập nhật
             if title:
                 course.title = title
             if description is not None:
@@ -192,7 +199,6 @@ class TeacherAddCoursesView(APIView):
             course.intro_video = intro_video
             if thumbnail_file:
                 course.thumbnail = thumbnail_file
-
             course.save()
 
             total_duration = timedelta()
@@ -202,7 +208,7 @@ class TeacherAddCoursesView(APIView):
                 import json
                 chapters_data = json.loads(chapters_data)
 
-            # Xóa chương cũ
+            # Xóa toàn bộ chương, bài học, bài tập cũ
             course.chapters.all().delete()
 
             document_files = request.FILES.getlist('document_link')
@@ -220,18 +226,16 @@ class TeacherAddCoursesView(APIView):
                     embed_url = self.convert_to_embed_url(video_url) if video_url else ''
                     duration = self.get_youtube_duration(video_url) if video_url else timedelta()
 
-                    # Cộng dồn thời lượng và video_count
                     if video_url:
                         total_duration += duration
                         video_count += 1
 
-                    # Lấy file bài giảng
                     document_file = None
                     if file_pointer < len(document_files):
                         document_file = document_files[file_pointer]
                         file_pointer += 1
 
-                    Lesson.objects.create(
+                    lesson = Lesson.objects.create(
                         chapter=chapter,
                         title=lesson_data['title'],
                         video=embed_url,
@@ -239,19 +243,39 @@ class TeacherAddCoursesView(APIView):
                         document_link=document_file
                     )
 
+                    if 'exercise' in lesson_data:
+                        homework = Homework.objects.create(
+                            lesson=lesson,
+                            title=lesson.title,
+                            description=lesson.title
+                        )
+                        for ex in lesson_data['exercise']:
+                            answers = ex.get('answers', [])
+                            correct_count = sum(1 for ans in answers if ans.get('is_correct', False))
+                            question_type = 'multiple' if correct_count > 1 else 'single'
+
+                            question = HomeworkQuestion.objects.create(
+                                homework=homework,
+                                question_text=ex['question'],
+                                question_type=question_type
+                            )
+
+                            for ans in ex.get('answers', []):
+                                HomeworkChoice.objects.create(
+                                    question=question,
+                                    choice_text=ans['choice_text'],
+                                    is_correct=ans['is_correct']
+                                )
+
             course.total_duration = total_duration
             course.video_count = video_count
             course.save()
 
-            return Response(
-                {'message': 'Cập nhật khóa học thành công.'},
-                status=status.HTTP_200_OK
-            )
+            return Response({'message': 'Cập nhật khóa học thành công.'}, status=status.HTTP_200_OK)
+
         except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
     def get(self, request):
