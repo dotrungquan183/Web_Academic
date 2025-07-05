@@ -11,8 +11,7 @@ import {
   GraduationCap,
   Award,
   ChevronRight,
-  Target,
-  Users
+  Target
 } from 'lucide-react';
  
 function StudentIntroTab() {
@@ -135,28 +134,7 @@ function StudentIntroTab() {
                     Được tin tưởng bởi hàng ngàn học viên trên toàn quốc
                   </p>
                 </div>
-                
-                {/* Stats Section */}
-                <div className="stuintro-stats-grid">
-                  <div className="stuintro-stat-item">
-                    <div className="stuintro-stat-icon">
-                      <Users className="stuintro-icon" />
-                    </div>
-                    <div className="stuintro-stat-content">
-                      <div className="stuintro-stat-number">50K+</div>
-                      <div className="stuintro-stat-label">Học viên</div>
-                    </div>
-                  </div>
-                  <div className="stuintro-stat-item">
-                    <div className="stuintro-stat-icon">
-                      <BookOpen className="stuintro-icon" />
-                    </div>
-                    <div className="stuintro-stat-content">
-                      <div className="stuintro-stat-number">1000+</div>
-                      <div className="stuintro-stat-label">Khóa học</div>
-                    </div>
-                  </div>
-                </div>
+              
               </div>
             </div>
           </div>

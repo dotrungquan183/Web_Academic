@@ -1,11 +1,144 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaBook, FaPlus, FaVideo, FaFileAlt, FaEdit, FaTrash } from "react-icons/fa";
+import { FaBook, FaPlus, FaVideo, FaFileAlt, FaEdit, FaTrash, FaTimes, FaSave } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 //import TeacherCoursesLayout from "../../Layout";
 import { getToken } from "../../../../../auth/authHelper";
+import { renderWithLatex } from "../../../TeacherForumTab/TeacherLatexInputKaTeX"
 
 function TeacherAddCourses() {
+  const [addingExerciseIndex, setAddingExerciseIndex] = useState({ chapter: null, lesson: null });
+  const [, setIsAddingNewExercise] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState(null);
+  const [exerciseFormData, setExerciseFormData] = useState({
+    question: '',
+    correctAnswer: null,
+    answers: [{ choice_text: '', is_correct: false }],
+  });
+
+  const handleLessonChange = (chapterIndex, lessonIndex, field, value) => {
+    const updated = [...chapters];
+    const lesson = updated[chapterIndex].lessons[lessonIndex];
+
+    // Nếu đang xử lý bài tập (exercise.*)
+    if (field.startsWith("exercise.")) {
+      const path = field.split(".");
+      // ví dụ: ["exercise", "answers", "0", "choice_text"]
+      if (path[1] === "answers" && path.length === 4) {
+        const answerIndex = parseInt(path[2]);
+        const answerField = path[3];
+        lesson.exercise.answers[answerIndex][answerField] = value;
+      } else if (path[1] === "correctAnswer") {
+        lesson.exercise.correctAnswer = value;
+      } else if (path.length === 2) {
+        // ví dụ: "exercise.question"
+        lesson.exercise[path[1]] = value;
+      }
+    } else {
+      // Trường hợp bình thường
+      lesson[field] = value;
+    }
+
+    setChapters(updated);
+  };
+
+
+  const handleAddAnswer = () => {
+    setExerciseFormData({
+      ...exerciseFormData,
+      answers: [...exerciseFormData.answers, { choice_text: '', is_correct: false }],
+    });
+  };
+
+  const handleAddExercise = (chapterIndex, lessonIndex) => {
+    if (
+      chapterIndex === undefined ||
+      lessonIndex === undefined ||
+      !chapters[chapterIndex] ||
+      !chapters[chapterIndex].lessons ||
+      !chapters[chapterIndex].lessons[lessonIndex]
+    ) {
+      console.error("Invalid chapterIndex or lessonIndex in handleAddExercise");
+      return;
+    }
+
+    const updated = [...chapters];
+    const lesson = updated[chapterIndex].lessons[lessonIndex];
+
+    if (!lesson.exercise) lesson.exercise = [];
+    lesson.exercise.push(exerciseFormData);
+
+    setChapters(updated);
+    setExerciseFormData({ question: '', correctAnswer: null, answers: [{ choice_text: '', is_correct: false }] });
+    setIsAddingNewExercise(false);
+    setIsEditing(false); // 👉 TẮT form sửa nếu đang bật
+  };
+
+
+
+  const handleEdit = (chapterIndex, lessonIndex, index) => {
+    const lesson = chapters[chapterIndex].lessons[lessonIndex];
+    const exerciseToEdit = lesson.exercise[index];
+
+    // Deep copy để không làm hỏng dữ liệu gốc
+    const deepCopiedExercise = {
+      ...exerciseToEdit,
+      answers: exerciseToEdit.answers.map((a) => ({ ...a })),
+    };
+
+    setExerciseFormData(deepCopiedExercise);
+    setEditingQuestionIndex(index);
+    setAddingExerciseIndex({ chapter: chapterIndex, lesson: lessonIndex }); // ✅ vẫn giữ
+    setIsEditing(true); // ✅ cờ này quyết định hiển thị form sửa
+  };
+
+  const handleDeleteExercise = (chapterIndex, lessonIndex, index) => {
+    const updated = [...chapters];
+    updated[chapterIndex].lessons[lessonIndex].exercise.splice(index, 1);
+    setChapters(updated);
+  };
+
+
+  const handleCancelAdd = () => {
+    setExerciseFormData({ question: '', correctAnswer: null, answers: [{ choice_text: '', is_correct: false }] });
+    setIsAddingNewExercise(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingQuestionIndex(null);
+    setExerciseFormData({ question: '', correctAnswer: null, answers: [{ choice_text: '', is_correct: false }] });
+  };
+
+  const handleInputChange = (e, index = null) => {
+    const { name, value, checked } = e.target;
+    if (index !== null) {
+      const updatedAnswers = [...exerciseFormData.answers];
+      if (name === 'choice_text') updatedAnswers[index].choice_text = value;
+      if (name === 'is_correct') updatedAnswers[index].is_correct = checked;
+      setExerciseFormData({ ...exerciseFormData, answers: updatedAnswers });
+    } else {
+      setExerciseFormData({ ...exerciseFormData, [name]: value });
+    }
+  };
+
+const handleSaveEdit = () => {
+  const updatedChapters = [...chapters];
+  const lesson = updatedChapters[addingExerciseIndex.chapter].lessons[addingExerciseIndex.lesson];
+
+  if (!lesson.exercise) lesson.exercise = [];
+
+  // Thay thế đúng câu hỏi tại index đang sửa
+  lesson.exercise[editingQuestionIndex] = { ...exerciseFormData };
+
+  setChapters(updatedChapters);
+  setEditingQuestionIndex(null);        // reset chỉ số
+  setIsEditing(false);                  // ẩn form sửa
+  setAddingExerciseIndex({ chapter: null, lesson: null }); // ✅ ẩn luôn form thêm
+};
+
+
   const navigate = useNavigate();
   const location = useLocation();
   const hasCheckedPermissionRef = useRef(false);
@@ -38,64 +171,98 @@ function TeacherAddCourses() {
       const decoded = jwtDecode(token);
       const currentUserId = decoded.user_id || decoded.id || decoded.sub;
       const course = location.state.course;
+
+      // Kiểm tra quyền truy cập
       if (course.teacher_id && course.teacher_id !== currentUserId) {
         alert("Bạn không có quyền chỉnh sửa khóa học này!");
         navigate("/teachercourses/listcourses");
         return;
       }
 
+      // 👉 Gán dữ liệu course vào form
       setFormData({
         title: course.title || "",
         description: course.intro || "",
-        tags: course.tags || "", 
+        tags: course.tags || "",
         price: course.fee || 0,
         courseImage: course.thumbnail || null,
         introVideo: course.intro_video || "",
-        qr_code: course.qr_code || null, // 🆕 Thêm dòng này
+        qr_code: course.qr_code || null,
       });
-      setChapters(course.chapters || []);
+
+      // 👉 Tiền xử lý dữ liệu chapters để phù hợp với frontend structure
+      const chaptersWithExercises = (course.chapters || []).map((chapter) => {
+        const lessons = (chapter.lessons || []).map((lesson) => {
+          // Nếu có homework, lấy bài đầu tiên
+          const firstHomework = lesson.homeworks?.[0];
+          const exercise = firstHomework?.questions?.map((q) => ({
+            question: q.question_text,
+            question_type: q.question_type,
+            answers: q.choices?.map((c) => ({
+              choice_text: c.choice_text,
+              is_correct: c.is_correct,
+            })) || [],
+          })) || [];
+
+          return {
+            ...lesson,
+            exercise, // <-- Gán exercise để React dùng ở render
+          };
+        });
+
+        return {
+          ...chapter,
+          lessons,
+        };
+      });
+
+      setChapters(chaptersWithExercises);
+
+
+      setChapters(chaptersWithExercises);
     }
   }, [location.state, navigate]);
 
-const handleFormChange = (e) => {
-  const { name, value, files } = e.target;
 
-  if (name === "courseImage" || name === "qr_code") {
-    setFormData({ ...formData, [name]: files[0] });
+  const handleFormChange = (e) => {
+    const { name, value, files } = e.target;
 
-  } else if (name === "price") {
-    const numericValue = Number(value);
-    if (numericValue >= 0) {
-      setFormData({ ...formData, [name]: numericValue });
-    }
+    if (name === "courseImage" || name === "qr_code") {
+      setFormData({ ...formData, [name]: files[0] });
 
-  } else if (name === "introVideo") {
-    let updatedValue = value;
-
-    try {
-      const url = new URL(value);
-      // Xử lý link dạng youtube.com/watch?v=...
-      if (url.hostname.includes("youtube.com") && url.searchParams.get("v")) {
-        const videoId = url.searchParams.get("v");
-        updatedValue = `https://www.youtube.com/embed/${videoId}`;
+    } else if (name === "price") {
+      const numericValue = Number(value);
+      if (numericValue >= 0) {
+        setFormData({ ...formData, [name]: numericValue });
       }
 
-      // Xử lý link dạng youtu.be/<id>
-      if (url.hostname === "youtu.be") {
-        const videoId = url.pathname.slice(1);
-        updatedValue = `https://www.youtube.com/embed/${videoId}`;
+    } else if (name === "introVideo") {
+      let updatedValue = value;
+
+      try {
+        const url = new URL(value);
+        // Xử lý link dạng youtube.com/watch?v=...
+        if (url.hostname.includes("youtube.com") && url.searchParams.get("v")) {
+          const videoId = url.searchParams.get("v");
+          updatedValue = `https://www.youtube.com/embed/${videoId}`;
+        }
+
+        // Xử lý link dạng youtu.be/<id>
+        if (url.hostname === "youtu.be") {
+          const videoId = url.pathname.slice(1);
+          updatedValue = `https://www.youtube.com/embed/${videoId}`;
+        }
+
+      } catch (error) {
+        console.warn("Invalid YouTube URL:", value);
       }
 
-    } catch (error) {
-      console.warn("Invalid YouTube URL:", value);
+      setFormData({ ...formData, [name]: updatedValue });
+
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
-
-    setFormData({ ...formData, [name]: updatedValue });
-
-  } else {
-    setFormData({ ...formData, [name]: value });
-  }
-};
+  };
 
   const handlePriceChange = (e) => {
     const value = e.target.value;
@@ -139,11 +306,7 @@ const handleFormChange = (e) => {
     setChapters(updated);
   };
 
-  const handleLessonChange = (chapterIndex, lessonIndex, field, value) => {
-    const updated = [...chapters];
-    updated[chapterIndex].lessons[lessonIndex][field] = value;
-    setChapters(updated);
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -153,7 +316,7 @@ const handleFormChange = (e) => {
       navigate("/login");
       return;
     }
-  
+
     const formDataToSend = new FormData();
     formDataToSend.append("title", formData.title);
     formDataToSend.append("description", formData.description);
@@ -167,7 +330,7 @@ const handleFormChange = (e) => {
     if (formData.qr_code) {
       formDataToSend.append("qr_code", formData.qr_code);
     }
-  
+
     // Tạo chapters và lessons để gửi lên
     const chaptersWithoutFiles = chapters.map((chapter, chapterIndex) => {
       const lessons = chapter.lessons.map((lesson, lessonIndex) => {
@@ -184,10 +347,11 @@ const handleFormChange = (e) => {
         lessons,
       };
     });
-  
+    console.log("📦 DỮ LIỆU GỬI LÊN BACKEND (chapters):");
+    console.log(JSON.stringify(chaptersWithoutFiles, null, 2));
     // Gửi bản chapters không chứa file
     formDataToSend.append("chapters", JSON.stringify(chaptersWithoutFiles));
-  
+
     chapters.forEach((chapter) => {
       chapter.lessons.forEach((lesson) => {
         if (lesson.document_link) {
@@ -195,21 +359,21 @@ const handleFormChange = (e) => {
         }
       });
     });
-  
+
     // Log dữ liệu gửi lên để kiểm tra
     console.log("--- FORM DATA GỬI LÊN SERVER ---");
     for (let pair of formDataToSend.entries()) {
-      console.log(pair[0]+ ':', pair[1]);
+      console.log(pair[0] + ':', pair[1]);
     }
     console.log("--- END FORM DATA ---");
-  
+
     // Kiểm tra xem đây có phải là yêu cầu sửa khóa học không
     const isEditing = !!location.state?.course;
     const method = isEditing ? "PUT" : "POST";
     const endpoint = isEditing
       ? `http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/${location.state.course.id}/`
       : "http://localhost:8000/api/teacher/teacher_courses/teacher_addcourses/";
-  
+
     try {
       const response = await fetch(endpoint, {
         method,
@@ -219,9 +383,9 @@ const handleFormChange = (e) => {
         body: formDataToSend,
         credentials: 'omit',
       });
-  
+
       const result = await response.json();
-  
+
       if (response.ok) {
         alert(isEditing ? "Cập nhật khóa học thành công!" : "Thêm khóa học mới thành công!");
         navigate("/teachercourses/listcourses");
@@ -233,197 +397,432 @@ const handleFormChange = (e) => {
       console.error("Lỗi ngoại lệ:", error);
       alert("Có lỗi xảy ra. Vui lòng thử lại!");
     }
-  };  
+  };
   return (
-      <div style={styles.outerContainer}>
-        <div style={styles.formContainer}>
-          <h2 style={styles.title}>
-            <FaBook size={24} color="#003366" /> {location.state?.course ? "CHỈNH SỬA KHÓA HỌC" : "THÊM KHÓA HỌC"}
-          </h2>
+    <div style={styles.outerContainer}>
+      <div style={styles.formContainer}>
+        <h2 style={styles.title}>
+          <FaBook size={24} color="#003366" /> {location.state?.course ? "CHỈNH SỬA KHÓA HỌC" : "THÊM KHÓA HỌC"}
+        </h2>
 
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.sectionContainer}>
-              <div style={styles.leftSection}>
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="Tiêu đề khóa học"
-                  required
-                  value={formData.title}
-                  onChange={handleFormChange}
-                  style={styles.input}
-                />
-                <textarea
-                  name="description"
-                  placeholder="Mô tả khóa học"
-                  required
-                  value={formData.description}
-                  onChange={handleFormChange}
-                  style={styles.textarea}
-                />
-                <input
-                  type="text"
-                  name="tags"
-                  placeholder="Từ khóa (cách nhau bằng dấu phẩy)"
-                  value={formData.tags}
-                  onChange={handleFormChange}
-                  style={styles.input}
-                />
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="Giá khóa học (VND)"
-                  value={formData.price}
-                  onChange={handlePriceChange}
-                  min="0"  // <-- Cái này tự chặn không cho nhập số âm
-                  style={styles.input}
-                />
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.sectionContainer}>
+            <div style={styles.leftSection}>
+              <input
+                type="text"
+                name="title"
+                placeholder="Tiêu đề khóa học"
+                required
+                value={formData.title}
+                onChange={handleFormChange}
+                style={styles.input}
+              />
+              <textarea
+                name="description"
+                placeholder="Mô tả khóa học"
+                required
+                value={formData.description}
+                onChange={handleFormChange}
+                style={styles.textarea}
+              />
+              <input
+                type="text"
+                name="tags"
+                placeholder="Từ khóa (cách nhau bằng dấu phẩy)"
+                value={formData.tags}
+                onChange={handleFormChange}
+                style={styles.input}
+              />
+              <input
+                type="number"
+                name="price"
+                placeholder="Giá khóa học (VND)"
+                value={formData.price}
+                onChange={handlePriceChange}
+                min="0"  // <-- Cái này tự chặn không cho nhập số âm
+                style={styles.input}
+              />
 
-                {formData.price > 0 && (
-                  <div style={styles.inputGroup}>
-                    <label htmlFor="qr_code" style={{ fontWeight: "bold", color: "#003366" }}>
-                      Ảnh QR thanh toán:
-                    </label>
-                    <input
-                      type="file"
-                      name="qr_code"        // <--- đổi từ "qrImage" thành "qr_code"
-                      id="qr_code"
-                      accept="image/*"
-                      onChange={handleFormChange}
-                      style={styles.input}
-                    />
-                  </div>
-                )}
-
-              </div>
-
-              <div style={styles.rightSection}>
+              {formData.price > 0 && (
                 <div style={styles.inputGroup}>
-                  <label style={styles.label}>Ảnh giới thiệu: &nbsp; </label>
+                  <label htmlFor="qr_code" style={{ fontWeight: "bold", color: "#003366" }}>
+                    Ảnh QR thanh toán:
+                  </label>
                   <input
                     type="file"
-                    name="courseImage"
+                    name="qr_code"
+                    id="qr_code"
                     accept="image/*"
                     onChange={handleFormChange}
-                    style={styles.input2}
+                    style={styles.input}
                   />
                 </div>
-                
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>Video giới thiệu:</label>
-                  <input
-                    type="text"
-                    name="introVideo"
-                    placeholder="https://www.youtube.com/..."
-                    value={formData.introVideo}
-                    onChange={handleFormChange}
-                    style={styles.input2}
-                  />
-                </div>
+              )}
 
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>Trình độ: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;</label>
-                  <select
-                    name="courseLevel"
-                    onChange={handleFormChange}
-                    style={{ 
-                      color: "#003366",  // chỉnh màu chữ của option
-                      padding: "10px",
-                      border: "1px solid #ccc",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    <option value="basic">Cơ bản</option>
-                    <option value="medium">Trung bình</option>
-                    <option value="hard">Nâng cao</option>
-                  </select>
+            </div>
 
-                </div>
+            <div style={styles.rightSection}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Ảnh giới thiệu: &nbsp; </label>
+                <input
+                  type="file"
+                  name="courseImage"
+                  accept="image/*"
+                  onChange={handleFormChange}
+                  style={styles.input2}
+                />
               </div>
 
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Video giới thiệu:</label>
+                <input
+                  type="text"
+                  name="introVideo"
+                  placeholder="https://www.youtube.com/..."
+                  value={formData.introVideo}
+                  onChange={handleFormChange}
+                  style={styles.input2}
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Trình độ: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;</label>
+                <select
+                  name="courseLevel"
+                  onChange={handleFormChange}
+                  style={{
+                    color: "#003366",  // chỉnh màu chữ của option
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <option value="basic">Cơ bản</option>
+                  <option value="medium">Trung bình</option>
+                  <option value="hard">Nâng cao</option>
+                </select>
+
+              </div>
             </div>
 
-            <hr style={{ margin: "20px 0" }} />
+          </div>
 
-            <div>
-              <h3 style={styles.stepTitle}>Chương trình giảng dạy</h3>
-              {chapters.map((chapter, chapterIndex) => (
-                <div key={chapterIndex} style={styles.chapter}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <input
-                      type="text"
-                      placeholder="Tiêu đề chương"
-                      value={chapter.title}
-                      onChange={(e) => handleChapterChange(chapterIndex, "title", e.target.value)}
-                      style={styles.input}
-                    />
-                    <FaEdit style={{ cursor: "pointer", color: "#003366"}} />
-                    <FaTrash style={{ cursor: "pointer", color: "#003366" }} onClick={() => deleteChapter(chapterIndex)} />
-                  </div>
+          <hr style={{ margin: "20px 0" }} />
 
-                  {chapter.lessons.map((lesson, lessonIndex) => (
-                    <div key={lessonIndex} style={styles.lesson}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <input
-                          type="text"
-                          placeholder="Tiêu đề bài học"
-                          value={lesson.title}
-                          onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "title", e.target.value)}
-                          style={styles.input}
-                        />
-                        <FaEdit style={{ cursor: "pointer", color: "#003366" }} />
-                        <FaTrash
-                          style={{ cursor: "pointer", color: "#003366" }}
-                          onClick={() => deleteLesson(chapterIndex, lessonIndex)}
-                        />
-                      </div>
-
-                      <div style={styles.lessonButtonGroup}>
-                        <label><FaVideo /> Link video bài giảng (YouTube):</label>
-                        <input
-                          type="text"
-                          placeholder="https://www.youtube.com/..."
-                          value={lesson.video}
-                          onChange={(e) =>
-                            handleLessonChange(chapterIndex, lessonIndex, "video", e.target.value)
-                          }
-                          style={styles.input3}
-                        />
-
-                        <label><FaFileAlt /> Tài liệu bài học:</label>
-                        <input
-                          type="file"
-                          accept=".pdf,.doc,.docx"
-                          onChange={(e) =>
-                            handleLessonChange(
-                              chapterIndex,
-                              lessonIndex,
-                              "document_link",
-                              e.target.files[0]
-                            )
-                          }
-                          style={styles.input3}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => addLesson(chapterIndex)} style={styles.addButton}>
-                    <FaPlus /> Thêm Bài học
-                  </button>
+          <div>
+            <h3 style={styles.stepTitle}>Chương trình giảng dạy</h3>
+            {chapters.map((chapter, chapterIndex) => (
+              <div key={chapterIndex} style={styles.chapter}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <input
+                    type="text"
+                    placeholder="Tiêu đề chương"
+                    value={chapter.title}
+                    onChange={(e) => handleChapterChange(chapterIndex, "title", e.target.value)}
+                    style={styles.input}
+                  />
+                  <FaEdit style={{ cursor: "pointer", color: "#003366" }} />
+                  <FaTrash style={{ cursor: "pointer", color: "#003366" }} onClick={() => deleteChapter(chapterIndex)} />
                 </div>
-              ))}
 
-              <button type="button" onClick={addChapter} style={styles.addButton}>
-                <FaPlus /> Thêm Chương
-              </button>
-            </div>
+                {chapter.lessons.map((lesson, lessonIndex) => (
+                  <div key={lessonIndex} style={styles.lesson}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <input
+                        type="text"
+                        placeholder="Tiêu đề bài học"
+                        value={lesson.title}
+                        onChange={(e) => handleLessonChange(chapterIndex, lessonIndex, "title", e.target.value)}
+                        style={styles.input}
+                      />
+                      <FaEdit style={{ cursor: "pointer", color: "#003366" }} />
+                      <FaTrash
+                        style={{ cursor: "pointer", color: "#003366" }}
+                        onClick={() => deleteLesson(chapterIndex, lessonIndex)}
+                      />
+                    </div>
 
-            <button type="submit" style={styles.button}>
-              {location.state?.course ? "Cập nhật Khóa học" : "Thêm khóa học"}
+                    <div style={styles.lessonButtonGroup}>
+                      <label><FaVideo /> Link video bài giảng (YouTube):</label>
+                      <input
+                        type="text"
+                        placeholder="https://www.youtube.com/..."
+                        value={lesson.video}
+                        onChange={(e) =>
+                          handleLessonChange(chapterIndex, lessonIndex, "video", e.target.value)
+                        }
+                        style={styles.input3}
+                      />
+
+                      <label><FaFileAlt /> Tài liệu bài học:</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) =>
+                          handleLessonChange(
+                            chapterIndex,
+                            lessonIndex,
+                            "document_link",
+                            e.target.files[0]
+                          )
+                        }
+                        style={styles.input3}
+                      />
+                      {/* Hiển thị danh sách câu hỏi đã có */}
+                      {chapters[chapterIndex]?.lessons[lessonIndex]?.exercise?.map((ex, index) => (
+                        <div key={index} style={{ border: '1px solid #ccc', borderRadius: 8, padding: 10, marginBottom: 15 }}>
+                          <p><strong>Câu {index + 1}:</strong> {renderWithLatex(ex.question)}</p>
+                          {ex.answers.map((ans, i) => (
+                            <p key={i}>
+                              <strong>Đáp án {String.fromCharCode(65 + i)}:</strong> {renderWithLatex(ans.choice_text)}
+                              {ans.is_correct && <span style={{ color: 'green' }}> ✓ Đáp án đúng</span>}
+                            </p>
+                          ))}
+
+                          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(chapterIndex, lessonIndex, index)}
+                              style={{ ...styles.addButton, backgroundColor: '#28a745' }}
+                            >
+                              <FaEdit style={{ marginRight: 5 }} /> Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExercise(chapterIndex, lessonIndex, index)}
+                              style={{ ...styles.addButton, backgroundColor: '#dc3545' }}
+                            >
+                              <FaTrash style={{ marginRight: 5 }} /> Xóa
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+
+
+                      {/* Nếu đang thêm bài tập ở bài học này thì hiện form */}
+                      {addingExerciseIndex.chapter === chapterIndex &&
+                        addingExerciseIndex.lesson === lessonIndex &&
+                        !isEditing && ( // ✅ Phải có dấu ngoặc tròn ở đây
+                          <div style={{ border: '1px solid #aaa', borderRadius: 8, padding: 15, backgroundColor: '#eef', color: '#003366', marginBottom: 15 }}>
+                            <h4>Câu {lesson.exercise?.length + 1 || 1}</h4>
+                            <textarea
+                              name="question"
+                              value={exerciseFormData.question}
+                              onChange={handleInputChange}
+                              rows={3}
+                              placeholder="Nhập đề bài"
+                              style={styles.input3}
+                            />
+
+                            {/* Render bản xem trước LaTeX */}
+                            <div
+                              style={{
+                                marginTop: "10px",
+                                background: "#f8f8f8",
+                                padding: "10px",
+                                minHeight: "40px",
+                                border: "1px solid #eee",
+                                borderRadius: "4px",
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                overflowWrap: "break-word",
+                                maxWidth: "100%",
+                              }}
+                            >
+                              {renderWithLatex(exerciseFormData.question)}
+                            </div>
+
+                            {exerciseFormData.answers.map((ans, idx) => (
+                              <div key={idx} style={{ marginBottom: 10 }}>
+                                <label>
+                                  Đáp án {String.fromCharCode(65 + idx)}:
+                                  <input
+                                    type="text"
+                                    name="choice_text"
+                                    value={ans.choice_text}
+                                    onChange={(e) => handleInputChange(e, idx)}
+                                    style={{ ...styles.input3, marginTop: 5 }}
+                                  />
+                                </label>
+
+                                {/* Render LaTeX dưới ô input */}
+                                <div
+                                  style={{
+                                    marginTop: "5px",
+                                    background: "#f8f8f8",
+                                    padding: "6px 10px",
+                                    border: "1px solid #eee",
+                                    borderRadius: "4px",
+                                    fontSize: "14px",
+                                    color: "#333"
+                                  }}
+                                >
+                                  {renderWithLatex(ans.choice_text)}
+                                </div>
+
+                                <label style={{ marginLeft: 20 }}>
+                                  <input
+                                    type="checkbox"
+                                    name="is_correct"
+                                    checked={ans.is_correct}
+                                    onChange={(e) => handleInputChange(e, idx)}
+                                  />
+                                  Đáp án đúng
+                                </label>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={handleAddAnswer}
+                              style={{ ...styles.addButton, backgroundColor: '#28a745', marginBottom: 10 }}
+                            >
+                              <FaPlus /> Thêm đáp án
+                            </button>
+
+                            <div style={{ display: 'flex', gap: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleAddExercise(chapterIndex, lessonIndex);
+                                  setAddingExerciseIndex({ chapter: null, lesson: null }); // đóng form lại sau khi thêm
+                                }}
+                                style={styles.addButton}
+                              >
+                                <FaPlus /> Thêm câu hỏi
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelAdd}
+                                style={{ ...styles.addButton, backgroundColor: '#dc3545' }}
+                              >
+                                <FaTimes /> Hủy
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditing(false); // 👈 Tắt sửa
+                          setAddingExerciseIndex({ chapter: chapterIndex, lesson: lessonIndex });
+                        }}
+                        style={{ ...styles.addButton, marginBottom: 15 }}
+                      >
+                        <FaPlus /> Thêm bài tập
+                      </button>
+
+                      {isEditing && addingExerciseIndex.chapter === chapterIndex &&
+                        addingExerciseIndex.lesson === lessonIndex && (
+                          <div style={{ border: '1px solid #aaa', borderRadius: 8, padding: 15, backgroundColor: '#eef', color: '#003366', marginBottom: 15 }}>
+                            <h4>Sửa Câu {editingQuestionIndex + 1}</h4>
+
+                            <textarea
+                              name="question"
+                              value={exerciseFormData.question}
+                              onChange={handleInputChange}
+                              rows={3}
+                              placeholder="Nhập đề bài"
+                              style={styles.input3}
+                            />
+
+                            <div style={{
+                              marginTop: "10px",
+                              background: "#f8f8f8",
+                              padding: "10px",
+                              minHeight: "40px",
+                              border: "1px solid #eee",
+                              borderRadius: "4px",
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              overflowWrap: "break-word",
+                              maxWidth: "100%",
+                            }}>
+                              {renderWithLatex(exerciseFormData.question)}
+                            </div>
+
+                            {exerciseFormData.answers.map((ans, idx) => (
+                              <div key={idx} style={{ marginBottom: 10 }}>
+                                <label>
+                                  Đáp án {String.fromCharCode(65 + idx)}:
+                                  <input
+                                    type="text"
+                                    name="choice_text"
+                                    value={ans.choice_text}
+                                    onChange={(e) => handleInputChange(e, idx)}
+                                    style={{ ...styles.input3, marginTop: 5 }}
+                                  />
+                                </label>
+
+                                <div style={{
+                                  marginTop: "5px",
+                                  background: "#f8f8f8",
+                                  padding: "6px 10px",
+                                  border: "1px solid #eee",
+                                  borderRadius: "4px",
+                                  fontSize: "14px",
+                                  color: "#333"
+                                }}>
+                                  {renderWithLatex(ans.choice_text)}
+                                </div>
+
+                                <label style={{ marginLeft: 20 }}>
+                                  <input
+                                    type="checkbox"
+                                    name="is_correct"
+                                    checked={ans.is_correct}
+                                    onChange={(e) => handleInputChange(e, idx)}
+                                  />
+                                  Đáp án đúng
+                                </label>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={handleAddAnswer}
+                              style={{ ...styles.addButton, backgroundColor: '#28a745', marginBottom: 10 }}
+                            >
+                              <FaPlus /> Thêm đáp án
+                            </button>
+
+                            <div style={{ display: 'flex', gap: 10 }}>
+                              <button type="button" style={styles.addButton} onClick={handleSaveEdit}>
+                                <FaSave /> Lưu sửa
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                style={{ ...styles.addButton, backgroundColor: '#dc3545' }}
+                              >
+                                <FaTimes /> Hủy
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={() => addLesson(chapterIndex)} style={styles.addButton}>
+                  <FaPlus /> Thêm Bài học
+                </button>
+              </div>
+            ))}
+
+            <button type="button" onClick={addChapter} style={styles.addButton}>
+              <FaPlus /> Thêm Chương
             </button>
-          </form>
-        </div>
+          </div>
+
+          <button type="submit" style={styles.button}>
+            {location.state?.course ? "Cập nhật Khóa học" : "Thêm khóa học"}
+          </button>
+        </form>
       </div>
+    </div>
   );
 }
 

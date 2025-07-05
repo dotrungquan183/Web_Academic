@@ -17,9 +17,7 @@ import {
 } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 // Lấy userId từ token
-
-const BASE_URL = "http://localhost:8000";
-
+import { renderWithLatex } from "../../../TeacherForumTab/TeacherLatexInputKaTeX"; // nếu file khác thì sửa đường dẫn lại
 const TeacherDetailCourses = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -31,6 +29,9 @@ const TeacherDetailCourses = () => {
   const [expandedChapters, setExpandedChapters] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const token = getToken();
+  const BASE_URL = "http://localhost:8000";
+  const [showReview, setShowReview] = useState(false);
+
   let userId = null;
 
   if (token) {
@@ -132,213 +133,269 @@ const TeacherDetailCourses = () => {
   console.log("🔐 userId từ token:", userId);
   console.log("📚 userId của khóa học:", course.user);
   return (
-      <div style={styles.pageLayout}>
-        <div style={styles.containerStyle}>
-          <div style={styles.headerWithButton}>
-            <h2 style={{ textTransform: "uppercase", margin: 0 }}>{course.title}</h2>
+    <div style={styles.pageLayout}>
+      <div style={styles.containerStyle}>
+        <div style={styles.headerWithButton}>
+          <h2 style={{ textTransform: "uppercase", margin: 0 }}>{course.title}</h2>
 
-            {/* Nhóm 2 nút ở góc trên bên phải */}
-            <div>
-              {userId === course.user && (
-                <button
-                  style={{ ...styles.editButton, marginRight: "10px", backgroundColor: "#003366" }}
-                  onClick={() => handleDelete(course.id)}
-                >
-                  <FaTrash style={{ marginRight: "6px" }} />
-                  Xóa
-                </button>
-              )}
-
+          {/* Nhóm 2 nút ở góc trên bên phải */}
+          <div>
+            {userId === course.user && (
               <button
-                style={styles.editButton}
-                onClick={() =>
-                  navigate(`/teachercourses/listcourses/addcourses/${course.id}`, {
-                    state: { course },
-                  })
-                }
+                style={{ ...styles.editButton, marginRight: "10px", backgroundColor: "#003366" }}
+                onClick={() => handleDelete(course.id)}
               >
-                <FaEdit style={{ marginRight: "10px" }} />
-                Chỉnh sửa
+                <FaTrash style={{ marginRight: "6px" }} />
+                Xóa
               </button>
+            )}
 
-              <button
-                style={{ ...styles.editButton, marginLeft: "10px" }}
-                onClick={() => setModalOpen(true)}
-              >
-                <FaEdit style={{ marginRight: "6px" }} />
-                Danh sách học viên
-              </button>
+            <button
+              style={styles.editButton}
+              onClick={() =>
+                navigate(`/teachercourses/listcourses/addcourses/${course.id}`, {
+                  state: { course },
+                })
+              }
+            >
+              <FaEdit style={{ marginRight: "10px" }} />
+              Chỉnh sửa
+            </button>
 
-              <StudentListModal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-              />
-            </div>
+            <button
+              style={{ ...styles.editButton, marginLeft: "10px" }}
+              onClick={() => setModalOpen(true)}
+            >
+              <FaEdit style={{ marginRight: "6px" }} />
+              Danh sách học viên
+            </button>
 
+            <StudentListModal
+              isOpen={modalOpen}
+              onClose={() => setModalOpen(false)}
+            />
           </div>
 
-          <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
+        </div>
 
-          <div style={styles.courseContentWrapper}>
-            <div style={styles.videoWrapper}>
-              {introVideoURL ? (
-                <iframe
-                  width="100%"
-                  height="300"
-                  src={introVideoURL}  // Đảm bảo introVideoURL là link embed từ backend
-                  title="Giới thiệu khóa học"
-                  frameBorder="0"
-                  allowFullScreen
-                ></iframe>
-              ) : (
-                <p>Không có video được chọn.</p>
-              )}
-            </div>
+        <p style={{ fontSize: "18px", marginBottom: "20px" }}>{course.intro}</p>
 
-            <div style={styles.courseInfo}>
-              <p>{course.description}</p>
-              <div style={styles.additionalInfoWrapper}>
-                <div style={styles.additionalInfoItem}>
-                  <FaMoneyBillWave style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Phí: </span>{course.fee} VNĐ
-                </div>
-                <div style={styles.additionalInfoItem}>
-                  <FaClock style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Thời gian học: </span>{course.total_duration}
-                </div>
-                <div style={styles.additionalInfoItem}>
-                  <FaUserTie style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Giáo viên: </span>{course.teacher}
-                </div>
-                <div style={styles.additionalInfoItem}>
-                  <FaUsers style={styles.iconStyle} />
-                  <span style={{ fontWeight: "bold" }}>Số học viên: </span>{course.student_count}
-                </div>
+        <div style={styles.courseContentWrapper}>
+          <div style={styles.videoWrapper}>
+            {introVideoURL ? (
+              <iframe
+                width="100%"
+                height="300"
+                src={introVideoURL}  // Đảm bảo introVideoURL là link embed từ backend
+                title="Giới thiệu khóa học"
+                frameBorder="0"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <p>Không có video được chọn.</p>
+            )}
+          </div>
+
+          <div style={styles.courseInfo}>
+            <p>{course.description}</p>
+            <div style={styles.additionalInfoWrapper}>
+              <div style={styles.additionalInfoItem}>
+                <FaMoneyBillWave style={styles.iconStyle} />
+                <span style={{ fontWeight: "bold" }}>Phí: </span>{course.fee} VNĐ
+              </div>
+              <div style={styles.additionalInfoItem}>
+                <FaClock style={styles.iconStyle} />
+                <span style={{ fontWeight: "bold" }}>Thời gian học: </span>{course.total_duration}
+              </div>
+              <div style={styles.additionalInfoItem}>
+                <FaUserTie style={styles.iconStyle} />
+                <span style={{ fontWeight: "bold" }}>Giáo viên: </span>{course.teacher}
+              </div>
+              <div style={styles.additionalInfoItem}>
+                <FaUsers style={styles.iconStyle} />
+                <span style={{ fontWeight: "bold" }}>Số học viên: </span>{course.student_count}
               </div>
             </div>
           </div>
+        </div>
 
-          <div style={styles.containerContent}>
-            <h3>Nội dung khóa học</h3>
-            {course.chapters.map((chapter, chapterIndex) => (
-              <div key={chapter.id}>
-                <div
-                  onClick={() => toggleChapter(chapter.id)}
-                  style={{
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    fontWeight: "bold",
-                    marginTop: "10px"
-                  }}
-                >
-                  {expandedChapters[chapter.id] ? <FaMinus /> : <FaPlus />}
-                  <span style={{ marginLeft: "8px" }}>{`${chapterIndex + 1}. ${chapter.title}`}</span>
-                </div>
+        <div style={styles.containerContent}>
+          <h3>Nội dung khóa học</h3>
+          {course.chapters.map((chapter, chapterIndex) => (
+            <div key={chapter.id}>
+              <div
+                onClick={() => toggleChapter(chapter.id)}
+                style={{
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  fontWeight: "bold",
+                  marginTop: "10px"
+                }}
+              >
+                {expandedChapters[chapter.id] ? <FaMinus /> : <FaPlus />}
+                <span style={{ marginLeft: "8px" }}>{`${chapterIndex + 1}. ${chapter.title}`}</span>
+              </div>
 
-                {expandedChapters[chapter.id] && (
-                  <ul style={{ listStyle: "none", paddingLeft: "20px" }}>
-                    {chapter.lessons.map((lesson, lessonIndex) => {
-                      const lessonVideoURL = lesson.video; // Đảm bảo rằng lesson.video đã là URL đầy đủ
-                      const isSelected = videoURL === lessonVideoURL;
+              {expandedChapters[chapter.id] && (
+                <ul style={{ listStyle: "none", paddingLeft: "20px" }}>
+                  {chapter.lessons.map((lesson, lessonIndex) => {
+                    const lessonVideoURL = lesson.video; // Đảm bảo rằng lesson.video đã là URL đầy đủ
+                    const isSelected = videoURL === lessonVideoURL;
 
-                      return (
-                        <li
-                          key={lesson.id}
+                    return (
+                      <li
+                        key={lesson.id}
+                        style={{
+                          cursor: "default",
+                          color: "#1976d2",
+                          padding: "5px 0"
+                        }}
+                      >
+                        {/* Tiêu đề bài học */}
+                        <div
                           onClick={() => handleLessonClick(lesson)}
                           style={{
                             cursor: "pointer",
-                            color: "#1976d2",
-                            padding: "5px 0"
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center"
                           }}
                         >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span>{`${chapterIndex + 1}.${lessonIndex + 1} ${lesson.title}`}</span>
-                            <span style={{ fontSize: "14px", color: "#666" }}>{lesson.duration || "--:--"}</span>
-                          </div>
+                          <span>{`${chapterIndex + 1}.${lessonIndex + 1} ${lesson.title}`}</span>
+                          <span style={{ fontSize: "14px", color: "#666" }}>{lesson.duration || "--:--"}</span>
+                        </div>
 
-                          {/* Hiển thị video nếu được chọn */}
-                          {isSelected && (
-                            <div style={{ marginTop: "10px" }}>
-                              <iframe
-                                key={lessonVideoURL}
-                                width="100%"  // Điều chỉnh chiều rộng của iframe
-                                height="400"  // Điều chỉnh chiều cao của iframe (có thể thay đổi theo nhu cầu)
-                                src={lessonVideoURL}  // Đây là link YouTube embed sẵn
-                                title="Video khóa học"  // Thêm thuộc tính title để cải thiện accessibility
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
+                        {/* Nội dung bài học nếu được chọn */}
+                        {isSelected && (
+                          <div style={{ marginTop: "10px" }}>
+                            <iframe
+                              key={lessonVideoURL}
+                              width="100%"
+                              height="400"
+                              src={lessonVideoURL}
+                              title="Video khóa học"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              style={{ width: "100%", borderRadius: "8px" }}
+                            >
+                              Trình duyệt không hỗ trợ video.
+                            </iframe>
+
+                            {/* Tài liệu */}
+                            {lesson.document_link && (
+                              <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366" }}>
+                                📚 Tài liệu:{" "}
+                                <a
+                                  href={`${BASE_URL}${lesson.document_link}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: "#1d4ed8", textDecoration: "underline" }}
+                                >
+                                  Xem tài liệu
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Nút xem bài kiểm tra */}
+                            {lesson.homeworks?.[0]?.questions?.length > 0 && (
+                              <div style={{ marginTop: "10px" }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowReview(prev => !prev); // Toggle
+                                  }}
+                                  style={{
+                                    padding: "10px 20px",
+                                    backgroundColor: "#1d4ed8",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    cursor: "pointer"
+                                  }}
+                                >
+                                  📄 {showReview ? 'Ẩn bài kiểm tra' : 'Xem bài kiểm tra'}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Hiển thị bài kiểm tra và đáp án */}
+                            {showReview && lesson.homeworks?.[0]?.questions?.map((q, index) => (
+                              <div
+                                key={q.id}
                                 style={{
-                                  width: "100%",
-                                  borderRadius: "8px"
+                                  marginTop: "20px",
+                                  border: "1px solid #ccc",
+                                  padding: "20px",
+                                  borderRadius: "8px",
+                                  background: "#f9f9f9"
                                 }}
                               >
-                                Trình duyệt không hỗ trợ video.
-                              </iframe>
+                                <p style={{ fontWeight: "bold", marginBottom: "12px" }}>
+                                  Câu {index + 1}: {renderWithLatex(q.question_text)}
+                                </p>
+
+                                {q.choices.map((ans, i) => (
+                                  <p key={i}>
+                                    <strong>Đáp án {String.fromCharCode(65 + i)}:</strong>{" "}
+                                    {renderWithLatex(ans.choice_text)}
+                                    {ans.is_correct && (
+                                      <span style={{ color: "green", marginLeft: "8px" }}>✓ Đáp án đúng</span>
+                                    )}
+                                  </p>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </li>
 
 
-                              {/* Hiển thị tài liệu nếu có */}
-                              {lesson.document_link && (
-                                <div style={{ marginTop: "8px", fontSize: "16px", color: "#003366" }}>
-                                  📚 Tài liệu:{" "}
-                                  <a
-                                    href={`${BASE_URL}${lesson.document_link}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ color: "#1d4ed8", textDecoration: "underline" }}
-                                  >
-                                    Xem tài liệu
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={styles.sidebarWrapper}>
-          <div style={styles.sidebarBox}>
-            <h3 style={styles.sidebarTitle}>
-              <FaBookOpen style={styles.iconStyle} /> Khóa học mới nhất
-            </h3>
-            <ul>
-              {latestCourses.map((course) => (
-                <li
-                  key={course.id}
-                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
-                  style={{ ...styles.linkStyle, cursor: 'pointer' }}
-                >
-                  {course.title}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div style={styles.sidebarBox}>
-            <h3 style={styles.sidebarTitle}>
-              <FaFire style={styles.iconStyle} /> Khóa học nổi bật
-            </h3>
-            <ul>
-              {hotCourses.map((course) => (
-                <li
-                  key={course.id}
-                  onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
-                  style={{ ...styles.linkStyle, cursor: 'pointer' }}
-                >
-                  {course.title}
-                </li>
-              ))}
-            </ul>
-          </div>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ))}
         </div>
       </div>
+
+      <div style={styles.sidebarWrapper}>
+        <div style={styles.sidebarBox}>
+          <h3 style={styles.sidebarTitle}>
+            <FaBookOpen style={styles.iconStyle} /> Khóa học mới nhất
+          </h3>
+          <ul>
+            {latestCourses.map((course) => (
+              <li
+                key={course.id}
+                onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                style={{ ...styles.linkStyle, cursor: 'pointer' }}
+              >
+                {course.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div style={styles.sidebarBox}>
+          <h3 style={styles.sidebarTitle}>
+            <FaFire style={styles.iconStyle} /> Khóa học nổi bật
+          </h3>
+          <ul>
+            {hotCourses.map((course) => (
+              <li
+                key={course.id}
+                onClick={() => navigate(`/teachercourses/listcourses/${course.id}`)}
+                style={{ ...styles.linkStyle, cursor: 'pointer' }}
+              >
+                {course.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -351,7 +408,7 @@ const styles = {
     alignItems: "flex-start",
     width: "100%",
     boxSizing: "border-box",
-    marginBottom: "40px", 
+    marginBottom: "40px",
   },
   containerStyle: {
     backgroundColor: "#ffffff",
@@ -359,7 +416,7 @@ const styles = {
     borderRadius: "8px",
     border: "1px solid #ddd",
     marginTop: "15px",
-    flex: 3, 
+    flex: 3,
     color: "#003366",
     boxSizing: "border-box",
   },
@@ -411,19 +468,19 @@ const styles = {
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   },
   sidebarWrapper: {
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  gap: "20px",
-  marginTop: "15px", // Dịch xuống 20px
-},
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+    marginTop: "15px", // Dịch xuống 20px
+  },
 
   sidebarBox: {
     backgroundColor: "#f5f5f5",
     padding: "16px",
     borderRadius: "10px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-    color:"#003366",
+    color: "#003366",
   },
   sidebarTitle: {
     display: "flex",
@@ -431,7 +488,7 @@ const styles = {
     gap: "8px",
     marginBottom: "10px",
     fontSize: "18px",
-    color: "#003366", 
+    color: "#003366",
   },
   editButton: {
     padding: "8px 12px",
