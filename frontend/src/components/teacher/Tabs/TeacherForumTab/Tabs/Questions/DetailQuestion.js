@@ -512,315 +512,315 @@ function TeacherForumQuestionDetail() {
     handleSubmitEditCommentAnswer(commentId, newContent, answerId);
   };
 
-const handleSubmitEditCommentAnswer = async (commentId, newContent, answerId) => {
-  const token = getToken();
-  if (!token) {
-    alert("❌ Không có token xác thực");
-    return;
-  }
-
-  // ✅ Payload gửi lên
-  const payload = { content: newContent, type_comment: "answer" };
-  console.log("📤 Payload gửi lên backend:", payload); // <== LOG payload
-
-  try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    // ✅ Lấy raw response text
-    const rawResponse = await response.text();
-    console.log("📥 Raw response text:", rawResponse); // <== LOG raw text
-
-    let result;
-    try {
-      result = JSON.parse(rawResponse);
-    } catch {
-      result = { error: rawResponse };
-    }
-
-    if (!response.ok) {
-      alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
-      console.error(
-        "handleSubmitEditCommentAnswer: Server returned error",
-        { status: response.status, body: result }
-      );
+  const handleSubmitEditCommentAnswer = async (commentId, newContent, answerId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Không có token xác thực");
       return;
     }
 
-    console.log("✅ Comment updated successfully:", result); // <== LOG OK
-    alert("✅ Bình luận đã được cập nhật!");
-    await fetchAnswerComments(answerId); // ✅ Reload danh sách comment
-  } catch (error) {
-    alert("❌ Có lỗi xảy ra khi gửi request.");
-    console.error(
-      "handleSubmitEditCommentAnswer: Lỗi khi gọi API",
-      error
-    ); // <== LOG lỗi
-  }
-};
+    // ✅ Payload gửi lên
+    const payload = { content: newContent, type_comment: "answer" };
+    console.log("📤 Payload gửi lên backend:", payload); // <== LOG payload
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      // ✅ Lấy raw response text
+      const rawResponse = await response.text();
+      console.log("📥 Raw response text:", rawResponse); // <== LOG raw text
+
+      let result;
+      try {
+        result = JSON.parse(rawResponse);
+      } catch {
+        result = { error: rawResponse };
+      }
+
+      if (!response.ok) {
+        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+        console.error(
+          "handleSubmitEditCommentAnswer: Server returned error",
+          { status: response.status, body: result }
+        );
+        return;
+      }
+
+      console.log("✅ Comment updated successfully:", result); // <== LOG OK
+      alert("✅ Bình luận đã được cập nhật!");
+      await fetchAnswerComments(answerId); // ✅ Reload danh sách comment
+    } catch (error) {
+      alert("❌ Có lỗi xảy ra khi gửi request.");
+      console.error(
+        "handleSubmitEditCommentAnswer: Lỗi khi gọi API",
+        error
+      ); // <== LOG lỗi
+    }
+  };
 
 
   const handleDeleteCommentAnswer = (answerId, commentId) => {
-  const token = getToken();
-  if (!token) {
-    alert("❌ Bạn chưa đăng nhập!");
-    return;
-  }
-
-  const decoded = jwtDecode(token);
-  const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-  const commentList = answerComments[answerId] || [];
-  const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-  if (!comment) {
-    alert("❌ Không tìm thấy bình luận!");
-    return;
-  }
-
-  const commentUserId =
-    comment.user_id ??
-    (comment.user && typeof comment.user === "object" ? comment.user.id : null);
-
-  if (Number(commentUserId) !== Number(currentUserId)) {
-    alert("❌ Bạn không có quyền xoá bình luận này!");
-    return;
-  }
-
-  if (!window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
-    return;
-  }
-
-  fetch(
-    `http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/?type_comment=answer`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  )
-    .then(async (res) => {
-      const resultText = await res.text(); // Raw text để log
-      let result;
-      try {
-        result = JSON.parse(resultText); // Parse JSON nếu có
-      } catch {
-        result = { raw: resultText };
-      }
-
-      if (!res.ok) {
-        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
-        console.error(
-          "handleDeleteCommentAnswer: Server returned error",
-          { status: res.status, body: result }
-        );
-        return;
-      }
-
-      // ✅ Thành công
-      setAnswerComments((prev) => {
-        const updated = { ...prev };
-        updated[answerId] = updated[answerId].filter((c) => c.id !== commentId);
-        return updated;
-      });
-
-      alert("✅ Đã xoá bình luận thành công!");
-    })
-    .catch((error) => {
-      console.error("❌ Lỗi khi xoá bình luận:", error);
-      alert("❌ Đã xảy ra lỗi khi xoá bình luận!");
-    });
-};
-
-
-  const handleEditCommentQuestion = (questionId, commentId) => {
-  const token = getToken();
-  if (!token) {
-    alert("❌ Bạn chưa đăng nhập!");
-    return;
-  }
-
-  const decoded = jwtDecode(token);
-  const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-  const rawData = comments[questionId];
-  let commentList = [];
-
-  if (rawData && !Array.isArray(rawData) && typeof rawData === "object") {
-    commentList = [rawData];
-  } else if (Array.isArray(rawData)) {
-    commentList = rawData;
-  }
-
-  const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-  if (!comment) {
-    alert("❌ Không tìm thấy bình luận!");
-    return;
-  }
-
-  const commentUserId =
-    comment.user_id ??
-    (comment.user && typeof comment.user === "object" ? comment.user.id : null) ??
-    null;
-
-  if (Number(commentUserId) !== Number(currentUserId)) {
-    alert("❌ Bạn không có quyền chỉnh sửa bình luận này!");
-    return;
-  }
-
-  const newContent = prompt("📝 Nhập nội dung mới cho bình luận:", comment.content);
-  if (!newContent || newContent.trim() === "") {
-    alert("❌ Nội dung không hợp lệ!");
-    return;
-  }
-
-  // ✅ Gọi hàm submit
-  handleSubmitEditCommentQuestion(commentId, newContent, questionId);
-};
-
-const handleSubmitEditCommentQuestion = async (commentId, newContent, questionId) => {
-  const token = getToken();
-  if (!token) {
-    alert("❌ Không có token xác thực");
-    return;
-  }
-
-  // ✅ Payload gửi lên
-  const payload = { content: newContent, type_comment: "question" };
-  console.log("📤 Payload gửi lên backend:", payload); // <== LOG payload
-
-  try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    // ✅ Lấy raw text để log
-    const rawResponse = await response.text();
-    console.log("📥 Raw response text:", rawResponse); // <== LOG raw text
-
-    // ✅ Parse JSON nếu có thể
-    let result;
-    try {
-      result = JSON.parse(rawResponse);
-    } catch {
-      result = { error: rawResponse };
-    }
-
-    if (!response.ok) {
-      console.error(
-        "❌ Server returned error:",
-        { status: response.status, body: result } // <== LOG lỗi chi tiết
-      );
-      alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
       return;
     }
 
-    console.log("✅ Comment updated successfully:", result); // <== LOG OK
-    alert("✅ Bình luận đã được cập nhật!");
-    await fetchComments(questionId); // reload danh sách
-  } catch (error) {
-    console.error("❌ Fetch request failed:", error); // <== LOG lỗi fetch
-    alert("❌ Có lỗi xảy ra khi gửi request.");
-  }
-};
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
 
-
-
-
-const handleDeleteCommentQuestion = (questionId, commentId) => {
-  const token = getToken();
-  if (!token) {
-    alert("❌ Bạn chưa đăng nhập!");
-    return;
-  }
-
-  const decoded = jwtDecode(token);
-  const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
-  const commentList = comments[questionId] || [];
-  console.log("📌 Danh sách comment của questionId =", questionId);
-  console.table(commentList);
-
-  const comment = commentList.find((c) => Number(c.id) === Number(commentId));
-  if (!comment) {
-    alert("❌ Không tìm thấy bình luận!");
-    return;
-  }
-
-  console.log("🧩 Full comment object:", comment);
-
-  const commentUserId =
-    comment.user_id ??
-    (comment.user && typeof comment.user === "object" ? comment.user.id : null);
-
-  console.log("👤 currentUserId:", currentUserId);
-  console.log("🗑️ commentUserId:", commentUserId);
-
-  if (Number(commentUserId) !== Number(currentUserId)) {
-    alert("❌ Bạn không có quyền xoá bình luận này!");
-    return;
-  }
-
-  if (!window.confirm("Bạn có chắc muốn xoá bình luận này?")) return;
-
-  fetch(
-    `http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/?type_comment=question`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const commentList = answerComments[answerId] || [];
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      return;
     }
-  )
-    .then(async (res) => {
-      const resultText = await res.text();
+
+    const commentUserId =
+      comment.user_id ??
+      (comment.user && typeof comment.user === "object" ? comment.user.id : null);
+
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền xoá bình luận này!");
+      return;
+    }
+
+    if (!window.confirm("Bạn có chắc muốn xoá bình luận này?")) {
+      return;
+    }
+
+    fetch(
+      `http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/?type_comment=answer`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+      .then(async (res) => {
+        const resultText = await res.text(); // Raw text để log
+        let result;
+        try {
+          result = JSON.parse(resultText); // Parse JSON nếu có
+        } catch {
+          result = { raw: resultText };
+        }
+
+        if (!res.ok) {
+          alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+          console.error(
+            "handleDeleteCommentAnswer: Server returned error",
+            { status: res.status, body: result }
+          );
+          return;
+        }
+
+        // ✅ Thành công
+        setAnswerComments((prev) => {
+          const updated = { ...prev };
+          updated[answerId] = updated[answerId].filter((c) => c.id !== commentId);
+          return updated;
+        });
+
+        alert("✅ Đã xoá bình luận thành công!");
+      })
+      .catch((error) => {
+        console.error("❌ Lỗi khi xoá bình luận:", error);
+        alert("❌ Đã xảy ra lỗi khi xoá bình luận!");
+      });
+  };
+
+
+  const handleEditCommentQuestion = (questionId, commentId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
+    const rawData = comments[questionId];
+    let commentList = [];
+
+    if (rawData && !Array.isArray(rawData) && typeof rawData === "object") {
+      commentList = [rawData];
+    } else if (Array.isArray(rawData)) {
+      commentList = rawData;
+    }
+
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      return;
+    }
+
+    const commentUserId =
+      comment.user_id ??
+      (comment.user && typeof comment.user === "object" ? comment.user.id : null) ??
+      null;
+
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền chỉnh sửa bình luận này!");
+      return;
+    }
+
+    const newContent = prompt("📝 Nhập nội dung mới cho bình luận:", comment.content);
+    if (!newContent || newContent.trim() === "") {
+      alert("❌ Nội dung không hợp lệ!");
+      return;
+    }
+
+    // ✅ Gọi hàm submit
+    handleSubmitEditCommentQuestion(commentId, newContent, questionId);
+  };
+
+  const handleSubmitEditCommentQuestion = async (commentId, newContent, questionId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Không có token xác thực");
+      return;
+    }
+
+    // ✅ Payload gửi lên
+    const payload = { content: newContent, type_comment: "question" };
+    console.log("📤 Payload gửi lên backend:", payload); // <== LOG payload
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/student/student_forum/student_question/student_comment/${commentId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      // ✅ Lấy raw text để log
+      const rawResponse = await response.text();
+      console.log("📥 Raw response text:", rawResponse); // <== LOG raw text
+
+      // ✅ Parse JSON nếu có thể
       let result;
       try {
-        result = JSON.parse(resultText);
+        result = JSON.parse(rawResponse);
       } catch {
-        result = { raw: resultText };
+        result = { error: rawResponse };
       }
 
-      if (!res.ok) {
-        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+      if (!response.ok) {
         console.error(
-          "handleDeleteCommentQuestion: Server returned error",
-          { status: res.status, body: result }
+          "❌ Server returned error:",
+          { status: response.status, body: result } // <== LOG lỗi chi tiết
         );
+        alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
         return;
       }
 
-      // ✅ Xóa bình luận thành công
-      setComments((prev) => {
-        const updated = { ...prev };
-        updated[questionId] = updated[questionId].filter((c) => c.id !== commentId);
-        return updated;
-      });
+      console.log("✅ Comment updated successfully:", result); // <== LOG OK
+      alert("✅ Bình luận đã được cập nhật!");
+      await fetchComments(questionId); // reload danh sách
+    } catch (error) {
+      console.error("❌ Fetch request failed:", error); // <== LOG lỗi fetch
+      alert("❌ Có lỗi xảy ra khi gửi request.");
+    }
+  };
 
-      alert("✅ Đã xoá bình luận thành công!");
-    })
-    .catch((error) => {
-      console.error("❌ Lỗi khi xoá bình luận:", error);
-      alert("❌ Đã xảy ra lỗi khi xoá bình luận!");
-    });
-};
+
+
+
+  const handleDeleteCommentQuestion = (questionId, commentId) => {
+    const token = getToken();
+    if (!token) {
+      alert("❌ Bạn chưa đăng nhập!");
+      return;
+    }
+
+    const decoded = jwtDecode(token);
+    const currentUserId = decoded.user_id || decoded.id || decoded.sub;
+
+    const commentList = comments[questionId] || [];
+    console.log("📌 Danh sách comment của questionId =", questionId);
+    console.table(commentList);
+
+    const comment = commentList.find((c) => Number(c.id) === Number(commentId));
+    if (!comment) {
+      alert("❌ Không tìm thấy bình luận!");
+      return;
+    }
+
+    console.log("🧩 Full comment object:", comment);
+
+    const commentUserId =
+      comment.user_id ??
+      (comment.user && typeof comment.user === "object" ? comment.user.id : null);
+
+    console.log("👤 currentUserId:", currentUserId);
+    console.log("🗑️ commentUserId:", commentUserId);
+
+    if (Number(commentUserId) !== Number(currentUserId)) {
+      alert("❌ Bạn không có quyền xoá bình luận này!");
+      return;
+    }
+
+    if (!window.confirm("Bạn có chắc muốn xoá bình luận này?")) return;
+
+    fetch(
+      `http://localhost:8000/api/student/student_forum/student_question/student_comment/${commentId}/?type_comment=question`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+      .then(async (res) => {
+        const resultText = await res.text();
+        let result;
+        try {
+          result = JSON.parse(resultText);
+        } catch {
+          result = { raw: resultText };
+        }
+
+        if (!res.ok) {
+          alert(`❌ Lỗi: ${result.error || "Không rõ lỗi"}`);
+          console.error(
+            "handleDeleteCommentQuestion: Server returned error",
+            { status: res.status, body: result }
+          );
+          return;
+        }
+
+        // ✅ Xóa bình luận thành công
+        setComments((prev) => {
+          const updated = { ...prev };
+          updated[questionId] = updated[questionId].filter((c) => c.id !== commentId);
+          return updated;
+        });
+
+        alert("✅ Đã xoá bình luận thành công!");
+      })
+      .catch((error) => {
+        console.error("❌ Lỗi khi xoá bình luận:", error);
+        alert("❌ Đã xảy ra lỗi khi xoá bình luận!");
+      });
+  };
 
 
   // Xử lý vote
@@ -1292,7 +1292,43 @@ const handleDeleteCommentQuestion = (questionId, commentId) => {
               <p style={{ paddingLeft: "8px" }}>
                 {renderWithLatex(question.content)}
               </p>
+              {question.file_url && (() => {
+                const ext = question.file_name?.split(".").pop().toLowerCase();
+                const fullFileUrl = question.file_url.startsWith("http")
+                  ? question.file_url
+                  : `http://127.0.0.1:8000${question.file_url}`;
 
+                if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+                  return (
+                    <img
+                      src={fullFileUrl}
+                      alt="file đính kèm"
+                      style={{ maxWidth: "100%", marginTop: "10px" }}
+                    />
+                  );
+                }
+
+                if (["mp4", "webm", "ogg"].includes(ext)) {
+                  return (
+                    <video controls style={{ maxWidth: "100%", marginTop: "10px" }}>
+                      <source src={fullFileUrl} type={`video/${ext}`} />
+                      Trình duyệt không hỗ trợ video.
+                    </video>
+                  );
+                }
+
+                return (
+                  <a
+                    href={fullFileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "block", marginTop: "10px", textDecoration: "none" }}
+                    
+                  >
+                    📄 {question.file_name}
+                  </a>
+                );
+              })()}
               {/* Thông tin thêm về câu hỏi */}
               <div style={containerQuestionSelectStyle}>
                 <div style={topRowStyle}>

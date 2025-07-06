@@ -95,10 +95,13 @@ class StudentShowQuestionView(APIView):
                 "username": question.user.username,
                 "avatar": avatar,
                 "user_id": question.user.id,
-                "accepted_answer_id": question.accepted_answer_id
+                "accepted_answer_id": question.accepted_answer_id,
+                "file_url": question.image.url if question.image else None,
+                "file_name": question.image.name.split("/")[-1] if question.image else None,
             })
 
         return Response(question_list)
+    
     def post(self, request):
         question_id = request.data.get("question_id")
         user_id = request.data.get("user_id")

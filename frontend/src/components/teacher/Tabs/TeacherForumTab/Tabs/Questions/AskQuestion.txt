@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import TeacherForumLayout from "../../TeacherLayout";
 import { getToken } from "../../../../../auth/authHelper";
-import MathInput from "../../../../../MathInput";
+import LatexInputKaTeX from "../../TeacherLatexInputKaTeX";
 
 function TeacherAskQuestion() {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ function TeacherAskQuestion() {
 
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Check login
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -29,6 +30,7 @@ function TeacherAskQuestion() {
     }
   }, [navigate]);
 
+  // Nếu đang sửa câu hỏi
   useEffect(() => {
     const token = getToken();
     if (location.state?.question && token && !hasCheckedPermissionRef.current) {
@@ -74,42 +76,9 @@ function TeacherAskQuestion() {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  const { title, tags, bounty_amount } = formData;
+  const { title, description, tags, bounty_amount } = formData;
 
-  const editorDiv = document.querySelector('[contenteditable="true"]');
-  if (!editorDiv) {
-    alert("Không tìm thấy nội dung mô tả!");
-    return;
-  }
-
-  // 👉 Clone để xử lý
-  const clone = editorDiv.cloneNode(true);
-
-  // 👉 Thay thế từng <math-field> bằng $latex$
-  const mathFields = clone.querySelectorAll("math-field");
-  mathFields.forEach((mf) => {
-    const latex = mf.getValue?.() || mf.value || ""; // lấy LaTeX từ math-field
-
-    if (!latex.trim()) {
-      mf.remove(); // bỏ nếu rỗng
-      return;
-    }
-
-    // 👉 Tạo node text chứa LaTeX
-    const textNode = document.createTextNode(`$${latex}$`);
-    mf.replaceWith(textNode);
-  });
-
-  // ✅ Gỡ bỏ các <span>&nbsp;</span> rác (nếu có)
-  clone.querySelectorAll("span").forEach((span) => {
-    if (span.textContent.trim() === '\u00A0' || span.innerHTML.trim() === '&nbsp;') {
-      span.remove();
-    }
-  });
-
-  // 👉 Lấy nội dung sau khi đã xử lý math-field
-  const description = clone.innerHTML;
-
+  // ✅ Validate đầu vào
   if (!title || !description || !tags) {
     alert("Vui lòng điền đầy đủ thông tin!");
     return;
@@ -122,26 +91,50 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  const tagArray = tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+  // ✅ Parse tags thành mảng
+  const tagArray = tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
 
   const isEditing = !!location.state?.question;
+
+  // ✅ Dùng POST cho cả tạo và cập nhật
   const endpoint = isEditing
     ? `http://localhost:8000/api/student/student_forum/student_question/${location.state.question.id}/`
     : "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/";
 
   const payload = new FormData();
   payload.append("title", title);
-  payload.append("content", description); // ✅ đã convert ra $latex$
+  payload.append("content", description);
   payload.append("tags", JSON.stringify(tagArray));
   payload.append("bounty_amount", bounty_amount);
 
-  if (isEditing) payload.append("_method", "PUT");
-  if (selectedFile) payload.append("attachment", selectedFile);
+  if (isEditing) {
+    payload.append("_method", "PUT"); // 👈 báo cho backend đây là hành động cập nhật
+  }
+
+  if (selectedFile) {
+    payload.append("attachment", selectedFile);
+  }
+
+  // 🧾 Log dữ liệu gửi lên (debug)
+  console.log("🟢 Dữ liệu gửi lên:");
+  for (let [key, value] of payload.entries()) {
+    if (value instanceof File) {
+      console.log(`${key}:`, value.name);
+    } else {
+      console.log(`${key}:`, value);
+    }
+  }
 
   try {
     const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      method: "POST", // 👈 dùng POST cho cả thêm và sửa
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // ❌ KHÔNG set Content-Type vì dùng FormData
+      },
       body: payload,
     });
 
@@ -161,13 +154,13 @@ const handleSubmit = async (e) => {
 };
 
 
-
   return (
     <TeacherForumLayout>
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
-            <FaQuestionCircle size={24} color="#003366" /> {location.state?.question ? "Chỉnh sửa câu hỏi" : "Đặt Câu Hỏi"}
+            <FaQuestionCircle size={24} color="#003366" />{" "}
+            {location.state?.question ? "Chỉnh sửa câu hỏi" : "Đặt Câu Hỏi"}
           </h2>
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.sectionContainer}>
@@ -181,11 +174,16 @@ const handleSubmit = async (e) => {
                   onChange={handleChange}
                   style={styles.input}
                 />
-                <MathInput
+                <LatexInputKaTeX
                   value={formData.description}
                   onChange={handleDescriptionChange}
                   placeholder="Mô tả câu hỏi (hỗ trợ LaTeX)"
-                  style={{ width: "100%", minHeight: 120, maxHeight: 120, overflowY: "auto" }}
+                  style={{
+                    width: "100%",
+                    minHeight: 120,
+                    maxHeight: 120,
+                    overflowY: "auto",
+                  }}
                 />
                 <input
                   type="text"
@@ -204,6 +202,8 @@ const handleSubmit = async (e) => {
                   onChange={handleChange}
                   style={styles.input}
                 />
+
+                {/* 👇 Nút chọn file */}
                 <div style={{ marginBottom: "20px" }}>
                   <input
                     type="file"
@@ -212,6 +212,7 @@ const handleSubmit = async (e) => {
                     onChange={handleFileChange}
                     accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                   />
+
                   <label
                     onClick={() => fileInputRef.current.click()}
                     style={{
@@ -225,20 +226,33 @@ const handleSubmit = async (e) => {
                       cursor: "pointer",
                       color: "#333",
                       fontWeight: "500",
+                      transition: "all 0.2s",
                     }}
-                  >📎 Đính kèm file</label>
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f0f0f0")}
+                  >
+                    📎 Đính kèm file
+                  </label>
 
                   {selectedFile && (
                     <div style={{ marginTop: "10px" }}>
                       {selectedFile.type.startsWith("image/") ? (
+                        // 👇 Hiển thị ảnh nếu là file ảnh
                         <img
                           src={URL.createObjectURL(selectedFile)}
                           alt="Preview"
-                          style={{ marginTop: "8px", maxHeight: "200px", borderRadius: "6px", border: "1px solid #ccc" }}
+                          style={{
+                            marginTop: "8px",
+                            maxHeight: "200px",
+                            borderRadius: "6px",
+                            border: "1px solid #ccc",
+                          }}
                         />
                       ) : (
+                        // 👇 Nếu là file tài liệu → hiện nút xem trước
                         <div style={{ marginTop: "8px", color: "#555" }}>
-                          Đã chọn: <strong>{selectedFile.name}</strong><br />
+                          Đã chọn: <strong>{selectedFile.name}</strong>
+                          <br />
                           <a
                             href={URL.createObjectURL(selectedFile)}
                             target="_blank"
@@ -253,12 +267,17 @@ const handleSubmit = async (e) => {
                               color: "#0077cc",
                               border: "1px solid #ccc",
                             }}
-                          >🔍 Xem file</a>
+                          >
+                            🔍 Xem file
+                          </a>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
+
+
+
                 <button type="submit" style={styles.button}>
                   {location?.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
                 </button>
@@ -280,7 +299,6 @@ const handleSubmit = async (e) => {
     </TeacherForumLayout>
   );
 }
-
 
 const styles = {
   outerContainer: {

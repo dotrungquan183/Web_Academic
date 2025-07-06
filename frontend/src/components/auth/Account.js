@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
  import { getToken } from "../auth/authHelper";
 const AccountPage = () => {
-  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [modalType, setModalType] = useState("view");
   const [editMode, setEditMode] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
