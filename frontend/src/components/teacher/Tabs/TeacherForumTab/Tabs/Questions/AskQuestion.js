@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import TeacherForumLayout from "../../TeacherLayout";
 import { getToken } from "../../../../../auth/authHelper";
 import MathInput from "../../../../../MathInput";
+import { MathfieldElement } from 'mathlive';
 
 function TeacherAskQuestion() {
   const navigate = useNavigate();
@@ -72,93 +73,95 @@ function TeacherAskQuestion() {
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const { title, tags, bounty_amount } = formData;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { title, tags, bounty_amount } = formData;
 
-  const editorDiv = document.querySelector('[contenteditable="true"]');
-  if (!editorDiv) {
-    alert("Không tìm thấy nội dung mô tả!");
-    return;
-  }
-
-  // 👉 Clone để xử lý
-  const clone = editorDiv.cloneNode(true);
-
-  // 👉 Thay thế từng <math-field> bằng $latex$
-  const mathFields = clone.querySelectorAll("math-field");
-  mathFields.forEach((mf) => {
-    const latex = mf.getValue?.() || mf.value || ""; // lấy LaTeX từ math-field
-
-    if (!latex.trim()) {
-      mf.remove(); // bỏ nếu rỗng
+    const editorDiv = document.querySelector('[contenteditable="true"]');
+    if (!editorDiv) {
+      alert("Không tìm thấy nội dung mô tả!");
       return;
     }
 
-    // 👉 Tạo node text chứa LaTeX
-    const textNode = document.createTextNode(`$${latex}$`);
-    mf.replaceWith(textNode);
-  });
+    const clone = editorDiv.cloneNode(true);
 
-  // ✅ Gỡ bỏ các <span>&nbsp;</span> rác (nếu có)
-  clone.querySelectorAll("span").forEach((span) => {
-    if (span.textContent.trim() === '\u00A0' || span.innerHTML.trim() === '&nbsp;') {
-      span.remove();
-    }
-  });
+    // Thay thế math-field bằng LaTeX
+    const mathFields = clone.querySelectorAll("math-field");
+    mathFields.forEach((mf) => {
+      let latex = "";
+      try {
+        latex = mf.getValue ? mf.getValue() : (mf instanceof MathfieldElement && mf.getValue());
+      } catch (err) {
+        latex = mf.getAttribute("value") || "";
+      }
 
-  // 👉 Lấy nội dung sau khi đã xử lý math-field
-  const description = clone.innerHTML;
+      if (!latex.trim()) {
+        mf.remove();
+        return;
+      }
 
-  if (!title || !description || !tags) {
-    alert("Vui lòng điền đầy đủ thông tin!");
-    return;
-  }
-
-  const token = getToken();
-  if (!token) {
-    alert("Bạn chưa đăng nhập!");
-    navigate("/login");
-    return;
-  }
-
-  const tagArray = tags.split(",").map((tag) => tag.trim()).filter(Boolean);
-
-  const isEditing = !!location.state?.question;
-  const endpoint = isEditing
-    ? `http://localhost:8000/api/student/student_forum/student_question/${location.state.question.id}/`
-    : "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/";
-
-  const payload = new FormData();
-  payload.append("title", title);
-  payload.append("content", description); // ✅ đã convert ra $latex$
-  payload.append("tags", JSON.stringify(tagArray));
-  payload.append("bounty_amount", bounty_amount);
-
-  if (isEditing) payload.append("_method", "PUT");
-  if (selectedFile) payload.append("attachment", selectedFile);
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: payload,
+      const textNode = document.createTextNode(`$${latex}$`);
+      mf.replaceWith(textNode);
     });
 
-    const result = await response.json();
+    // Loại bỏ các <span> rác chứa &nbsp;
+    clone.querySelectorAll("span").forEach((span) => {
+      if (span.textContent.trim() === "\u00A0" || span.innerHTML.trim() === "&nbsp;") {
+        span.remove();
+      }
+    });
 
-    if (response.ok) {
-      alert(isEditing ? "✅ Cập nhật câu hỏi thành công!" : "✅ Câu hỏi đã được đăng!");
-      navigate("/teacherforum/question");
-    } else {
-      console.error("❌ Lỗi từ backend:", result);
-      alert(`Lỗi: ${result.error || JSON.stringify(result)}`);
+    const description = clone.innerHTML;
+
+    if (!title || !description || !tags) {
+      alert("Vui lòng điền đầy đủ thông tin!");
+      return;
     }
-  } catch (error) {
-    console.error("❌ Lỗi fetch:", error);
-    alert("❌ Có lỗi xảy ra. Vui lòng thử lại!");
-  }
-};
+
+    const token = getToken();
+    if (!token) {
+      alert("Bạn chưa đăng nhập!");
+      navigate("/login");
+      return;
+    }
+
+    const tagArray = tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+    const isEditing = !!location.state?.question;
+
+    const endpoint = isEditing
+      ? `http://localhost:8000/api/student/student_forum/student_question/${location.state.question.id}/`
+      : "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/";
+
+    const payload = new FormData();
+    payload.append("title", title);
+    payload.append("content", description);
+    payload.append("tags", JSON.stringify(tagArray));
+    payload.append("bounty_amount", bounty_amount);
+
+    if (isEditing) payload.append("_method", "PUT");
+    if (selectedFile) payload.append("attachment", selectedFile);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: payload,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(isEditing ? "✅ Cập nhật câu hỏi thành công!" : "✅ Câu hỏi đã được đăng!");
+        navigate("/teacherforum/question");
+      } else {
+        console.error("❌ Lỗi từ backend:", result);
+        alert(`Lỗi: ${result.error || JSON.stringify(result)}`);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi fetch:", error);
+      alert("❌ Có lỗi xảy ra. Vui lòng thử lại!");
+    }
+  };
 
 
 

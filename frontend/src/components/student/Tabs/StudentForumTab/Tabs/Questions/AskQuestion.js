@@ -4,11 +4,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import StudentForumLayout from "../../StudentLayout";
 import { getToken } from "../../../../../auth/authHelper";
-import LatexInputKaTeX from "../../StudentLatexInputKaTeX";
+import MathInput from "../../../../../MathInput";
+import { MathfieldElement } from 'mathlive';
+
 function StudentAskQuestion() {
   const navigate = useNavigate();
   const location = useLocation();
-  const hasCheckedPermissionRef = useRef(false); // ✅ chặn lặp kiểm tra quyền
+  const hasCheckedPermissionRef = useRef(false);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -17,7 +20,8 @@ function StudentAskQuestion() {
     bounty_amount: 0,
   });
 
-  // Check đăng nhập
+  const [selectedFile, setSelectedFile] = useState(null);
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -26,21 +30,14 @@ function StudentAskQuestion() {
     }
   }, [navigate]);
 
-  // Nếu có dữ liệu (sửa câu hỏi) thì kiểm tra user_id trước khi cho sửa
   useEffect(() => {
     const token = getToken();
-
-    if (
-      location.state?.question &&
-      token &&
-      !hasCheckedPermissionRef.current
-    ) {
-      hasCheckedPermissionRef.current = true; // ✅ set chỉ 1 lần duy nhất
-
+    if (location.state?.question && token && !hasCheckedPermissionRef.current) {
+      hasCheckedPermissionRef.current = true;
       const decoded = jwtDecode(token);
       const currentUserId = decoded.user_id || decoded.id || decoded.sub;
-
       const q = location.state.question;
+
       if (q.user_id && q.user_id !== currentUserId) {
         alert("Bạn không có quyền chỉnh sửa câu hỏi này!");
         navigate("/studentforum/question");
@@ -57,8 +54,9 @@ function StudentAskQuestion() {
   }, [location.state, navigate]);
 
   const handleDescriptionChange = (value) => {
-    setFormData(prev => ({ ...prev, description: value }));
+    setFormData((prev) => ({ ...prev, description: value }));
   };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "bounty_amount" && (isNaN(value) || Number(value) < 0)) {
@@ -68,9 +66,52 @@ function StudentAskQuestion() {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, description, tags, bounty_amount } = formData;
+    const { title, tags, bounty_amount } = formData;
+
+    const editorDiv = document.querySelector('[contenteditable="true"]');
+    if (!editorDiv) {
+      alert("Không tìm thấy nội dung mô tả!");
+      return;
+    }
+
+    const clone = editorDiv.cloneNode(true);
+
+    // Thay thế math-field bằng LaTeX
+    const mathFields = clone.querySelectorAll("math-field");
+    mathFields.forEach((mf) => {
+      let latex = "";
+      try {
+        latex = mf.getValue ? mf.getValue() : (mf instanceof MathfieldElement && mf.getValue());
+      } catch (err) {
+        latex = mf.getAttribute("value") || "";
+      }
+
+      if (!latex.trim()) {
+        mf.remove();
+        return;
+      }
+
+      const textNode = document.createTextNode(`$${latex}$`);
+      mf.replaceWith(textNode);
+    });
+
+    // Loại bỏ các <span> rác chứa &nbsp;
+    clone.querySelectorAll("span").forEach((span) => {
+      if (span.textContent.trim() === "\u00A0" || span.innerHTML.trim() === "&nbsp;") {
+        span.remove();
+      }
+    });
+
+    const description = clone.innerHTML;
 
     if (!title || !description || !tags) {
       alert("Vui lòng điền đầy đủ thông tin!");
@@ -85,49 +126,51 @@ function StudentAskQuestion() {
     }
 
     const tagArray = tags.split(",").map((tag) => tag.trim()).filter(Boolean);
-    const questionData = {
-      title,
-      content: description,
-      tags: tagArray,
-      bounty_amount: Number(bounty_amount),
-    };
-
     const isEditing = !!location.state?.question;
-    const method = isEditing ? "PUT" : "POST";
+
     const endpoint = isEditing
       ? `http://localhost:8000/api/student/student_forum/student_question/${location.state.question.id}/`
       : "http://localhost:8000/api/student/student_forum/student_question/student_askquestion/";
 
+    const payload = new FormData();
+    payload.append("title", title);
+    payload.append("content", description);
+    payload.append("tags", JSON.stringify(tagArray));
+    payload.append("bounty_amount", bounty_amount);
+
+    if (isEditing) payload.append("_method", "PUT");
+    if (selectedFile) payload.append("attachment", selectedFile);
+
     try {
       const response = await fetch(endpoint, {
-        method,
-        body: JSON.stringify(questionData),
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: payload,
       });
 
       const result = await response.json();
+
       if (response.ok) {
-        alert(isEditing ? "Cập nhật câu hỏi thành công!" : "Câu hỏi đã được đăng!");
+        alert(isEditing ? "✅ Cập nhật câu hỏi thành công!" : "✅ Câu hỏi đã được đăng!");
         navigate("/studentforum/question");
       } else {
+        console.error("❌ Lỗi từ backend:", result);
         alert(`Lỗi: ${result.error || JSON.stringify(result)}`);
       }
     } catch (error) {
-      alert("Có lỗi xảy ra. Vui lòng thử lại!");
-      console.error(error);
+      console.error("❌ Lỗi fetch:", error);
+      alert("❌ Có lỗi xảy ra. Vui lòng thử lại!");
     }
   };
+
+
 
   return (
     <StudentForumLayout>
       <div style={styles.outerContainer}>
         <div style={styles.formContainer}>
           <h2 style={styles.title}>
-            <FaQuestionCircle size={24} color="#003366" />{" "}
-            {location.state?.question ? "Chỉnh sửa câu hỏi" : "Đặt Câu Hỏi"}
+            <FaQuestionCircle size={24} color="#003366" /> {location.state?.question ? "Chỉnh sửa câu hỏi" : "Đặt Câu Hỏi"}
           </h2>
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.sectionContainer}>
@@ -141,21 +184,11 @@ function StudentAskQuestion() {
                   onChange={handleChange}
                   style={styles.input}
                 />
-
-                {/* Thay textarea mô tả bằng LatexInputKaTeX */}
-                <LatexInputKaTeX
+                <MathInput
                   value={formData.description}
                   onChange={handleDescriptionChange}
                   placeholder="Mô tả câu hỏi (hỗ trợ LaTeX)"
-                  style={{
-                    width: "100%",
-                    minHeight: 120,
-                    maxHeight: 120,
-                    overflowY: "auto",
-                    whiteSpace: "normal",
-                    wordBreak: "break-word",
-                    overflowWrap: "break-word",
-                  }}
+                  style={{ width: "100%", minHeight: 120, maxHeight: 120, overflowY: "auto" }}
                 />
                 <input
                   type="text"
@@ -174,6 +207,61 @@ function StudentAskQuestion() {
                   onChange={handleChange}
                   style={styles.input}
                 />
+                <div style={{ marginBottom: "20px" }}>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  />
+                  <label
+                    onClick={() => fileInputRef.current.click()}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 16px",
+                      backgroundColor: "#f0f0f0",
+                      border: "1px solid #ccc",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      color: "#333",
+                      fontWeight: "500",
+                    }}
+                  >📎 Đính kèm file</label>
+
+                  {selectedFile && (
+                    <div style={{ marginTop: "10px" }}>
+                      {selectedFile.type.startsWith("image/") ? (
+                        <img
+                          src={URL.createObjectURL(selectedFile)}
+                          alt="Preview"
+                          style={{ marginTop: "8px", maxHeight: "200px", borderRadius: "6px", border: "1px solid #ccc" }}
+                        />
+                      ) : (
+                        <div style={{ marginTop: "8px", color: "#555" }}>
+                          Đã chọn: <strong>{selectedFile.name}</strong><br />
+                          <a
+                            href={URL.createObjectURL(selectedFile)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-block",
+                              marginTop: "6px",
+                              padding: "6px 12px",
+                              backgroundColor: "#eaeaea",
+                              borderRadius: "4px",
+                              textDecoration: "none",
+                              color: "#0077cc",
+                              border: "1px solid #ccc",
+                            }}
+                          >🔍 Xem file</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <button type="submit" style={styles.button}>
                   {location?.state?.question ? "Cập nhật câu hỏi" : "Đăng câu hỏi"}
                 </button>
@@ -195,6 +283,7 @@ function StudentAskQuestion() {
     </StudentForumLayout>
   );
 }
+
 
 const styles = {
   outerContainer: {

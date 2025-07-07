@@ -1,15 +1,43 @@
-import React, { useRef, useEffect } from 'react';
-import 'mathlive';
-
-const MathInput = ({ value, onChange }) => {
-  const editorRef = useRef(null);
-
-  // Thêm math-field mới vào vị trí con trỏ
+// MathInput.js
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { MathfieldElement } from 'mathlive';
+ 
+// Đăng ký custom element nếu chưa có
+if (!customElements.get('math-field')) {
+  customElements.define('math-field', MathfieldElement);
+}
+ 
+const MathInput = ({ value, onChange, editorRef }) => {
+  const localEditorRef = useRef(null);
+  const effectiveEditorRef = editorRef || localEditorRef;
+  const [currentLatex, setCurrentLatex] = useState('');
+ 
+  // Hàm cập nhật nội dung HTML có chèn LaTeX
+  const updateContent = useCallback(() => {
+    if (!effectiveEditorRef.current) return;
+ 
+    const clone = effectiveEditorRef.current.cloneNode(true);
+    clone.querySelectorAll('math-field').forEach((mf) => {
+      try {
+        const latex = mf.getValue()?.trim();
+        if (latex) {
+          mf.replaceWith(document.createTextNode(`$${latex}$`));
+        } else {
+          mf.remove(); // bỏ math-field rỗng
+        }
+      } catch {}
+    });
+ 
+    const html = clone.innerHTML.trim();
+    onChange?.(html);
+  }, [effectiveEditorRef, onChange]);
+ 
+  // Hàm chèn một math-field vào vị trí con trỏ
   const insertMathField = () => {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
     const range = sel.getRangeAt(0);
-
+ 
     const mathField = document.createElement('math-field');
     mathField.setAttribute('virtualkeyboardmode', 'onfocus');
     mathField.setAttribute('smartmode', 'true');
@@ -18,108 +46,65 @@ const MathInput = ({ value, onChange }) => {
       'style',
       'border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; margin: 0 4px; font-size: 18px; display: inline-block; min-width: 60px;'
     );
-    mathField.setValue?.('\\sqrt{x}'); // Gợi ý mặc định (tuỳ bạn)
-
-    const spacer = document.createElement('span');
-    spacer.innerHTML = '\u00A0';
-
+ 
+    // Sự kiện khi người dùng nhấn Enter trong math-field
+    mathField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        try {
+          const latex = mathField.getValue()?.trim();
+          if (latex) {
+            const textNode = document.createTextNode(`$${latex}$`);
+            mathField.replaceWith(textNode);
+            setCurrentLatex(latex);
+            updateContent();
+          } else {
+            mathField.remove(); // không sinh ra $$ nếu rỗng
+          }
+        } catch (err) {
+          console.warn("Không thể lấy LaTeX:", err);
+          mathField.remove();
+        }
+      }
+    });
+ 
+    // Chèn math-field vào DOM
     range.deleteContents();
-    range.insertNode(spacer);
     range.insertNode(mathField);
-
-    setTimeout(() => mathField.focus(), 0);
-
-    range.setStartAfter(spacer);
-    range.setEndAfter(spacer);
+    range.setStartAfter(mathField);
+    range.setEndAfter(mathField);
     sel.removeAllRanges();
     sel.addRange(range);
+ 
+    // Tự động focus
+    setTimeout(() => mathField.focus(), 0);
   };
-
-  // Gửi nội dung mỗi khi có thay đổi
-  const triggerChange = () => {
-    const html = editorRef.current?.innerHTML || '';
-    onChange?.(html);
-  };
-
-  // Sự kiện khi contentEditable thay đổi
+ 
+  // Lắng nghe thay đổi nội dung của vùng editor
   useEffect(() => {
-    const editor = editorRef.current;
+    const editor = effectiveEditorRef.current;
     if (!editor) return;
-
-    const onInput = () => triggerChange();
-    editor.addEventListener('input', onInput);
-
-    return () => editor.removeEventListener('input', onInput);
-  }, [onChange]);
-
-  // Sự kiện khi math-field thay đổi bên trong
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const mathFields = editorRef.current?.querySelectorAll('math-field') || [];
-      mathFields.forEach((mf) => {
-        mf.addEventListener('input', triggerChange);
-      });
-    });
-
-    observer.observe(editorRef.current, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
-
-  // Backspace xóa math-field
-  useEffect(() => {
-    const editor = editorRef.current;
-    const handleKeyDown = (e) => {
-      if (e.key !== 'Backspace') return;
-
-      const sel = window.getSelection();
-      if (!sel.rangeCount) return;
-
-      const range = sel.getRangeAt(0);
-      const container = range.startContainer;
-      const offset = range.startOffset;
-
-      let prevNode = null;
-      if (container.nodeType === Node.TEXT_NODE && offset === 0) {
-        prevNode = container.parentNode?.previousSibling;
-      } else if (container.nodeType === Node.ELEMENT_NODE && offset > 0) {
-        prevNode = container.childNodes[offset - 1];
-      }
-
-      if (prevNode?.nodeName === 'MATH-FIELD') {
-        e.preventDefault();
-        prevNode.remove();
-        triggerChange();
-      }
+ 
+    editor.addEventListener('input', updateContent);
+    return () => {
+      editor.removeEventListener('input', updateContent);
     };
-
-    editor.addEventListener('keydown', handleKeyDown);
-    return () => editor.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Khi có prop value, khôi phục lại nội dung
+  }, [effectiveEditorRef, updateContent]);
+ 
+  // Đồng bộ prop value → innerHTML
   useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor || !value) return;
-
-    editor.innerHTML = value;
-
-    // Sau khi gán HTML, phải set lại .value cho từng math-field
-    const mathFields = editor.querySelectorAll('math-field');
-    mathFields.forEach((mf) => {
-      const latexMatch = mf.textContent?.match(/\$([^\$]+)\$/);
-      if (latexMatch) {
-        mf.setValue?.(latexMatch[1]);
-      }
-    });
-  }, [value]);
-
+    if (effectiveEditorRef.current && value !== effectiveEditorRef.current.innerHTML) {
+      effectiveEditorRef.current.innerHTML = value || '';
+    }
+  }, [value, effectiveEditorRef]);
+ 
   return (
     <div>
       <div style={{ marginBottom: 10 }}>
-        <button onClick={insertMathField}>➕ Math Equation</button>
+        <button type="button" onClick={insertMathField}>➕ Math Equation</button>
       </div>
       <div
-        ref={editorRef}
+        ref={effectiveEditorRef}
         contentEditable
         suppressContentEditableWarning
         style={{
@@ -134,8 +119,13 @@ const MathInput = ({ value, onChange }) => {
           outline: 'none',
         }}
       />
+      <div style={{ marginTop: 10, fontStyle: 'italic', color: '#555' }}>
+        <strong>Mã LaTeX vừa nhập:</strong> <code>{currentLatex || '(chưa có)'}</code>
+      </div>
     </div>
   );
 };
-
+ 
 export default MathInput;
+ 
+ 
